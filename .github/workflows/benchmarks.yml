@@ -188,7 +188,7 @@ jobs:
 
     - name: Inspect Dragonfly Help
       run: |
-        docker exec dragonfly dragonfly --help
+        docker exec dragonfly dragonfly --help || true
 
     - name: Check Redis TLS logs
       run: docker logs redis-tls
