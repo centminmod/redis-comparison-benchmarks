@@ -4,7 +4,7 @@ FROM docker.dragonflydb.io/dragonflydb/dragonfly:latest
 RUN mkdir -p /tls
 
 # Copy the DragonflyDB configuration file (if it uses one similar to Redis)
-COPY dragonfly-tls.conf /etc/dragonfly/dragonfly.conf
+#COPY dragonfly-tls.conf /etc/dragonfly/dragonfly.conf
 COPY test.crt /tls/test.crt
 COPY test.key /tls/test.key
 COPY ca.crt /tls/ca.crt
@@ -19,4 +19,4 @@ RUN chmod 0755 /tls
 # Expose the default port
 EXPOSE 6379 6392
 
-CMD [ "dragonfly", "/etc/dragonfly/dragonfly.conf" ]
+CMD [ "dragonfly", "--tls", "--tls_key_file=/tls/test.key", "--tls_cert_file=/tls/test.crt" ]
