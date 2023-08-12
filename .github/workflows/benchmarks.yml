@@ -1,4 +1,4 @@
-name: Benchmark Redis vs KeyDB
+name: Benchmark Redis vs KeyDB vs Dragonfly
 
 on:
   workflow_dispatch:
