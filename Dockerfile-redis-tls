@@ -2,9 +2,8 @@ FROM redis:latest
 
 # Create directory for TLS certificates
 RUN mkdir -p /tls
-COPY test.crt /tls/test.crt
-COPY test.key /tls/test.key
-COPY ca.crt /tls/ca.crt
 
 # Expose the default Redis port
 EXPOSE 6379
+
+CMD [ "redis-server", "/usr/local/etc/redis/redis.conf" ]

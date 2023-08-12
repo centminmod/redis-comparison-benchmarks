@@ -2,9 +2,8 @@ FROM docker.dragonflydb.io/dragonflydb/dragonfly:latest
 
 # Create directory for TLS certificates
 RUN mkdir -p /tls
-COPY test.crt /tls/test.crt
-COPY test.key /tls/test.key
-COPY ca.crt /tls/ca.crt
 
 # Expose the default port
 EXPOSE 6381
+
+CMD [ "dragonfly-server", "/etc/dragonfly/dragonfly.conf" ]
