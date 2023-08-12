@@ -186,6 +186,10 @@ jobs:
     - name: Test Dragonfly Connectivity
       run: docker exec dragonfly redis-cli -h 127.0.0.1 -p 6379 PING
 
+    - name: Inspect Dragonfly Help
+      run: |
+        docker exec dragonfly dragonfly --help
+
     - name: Check Redis TLS logs
       run: docker logs redis-tls
 
@@ -212,7 +216,7 @@ jobs:
     # - name: Check Dragonfly TLS config
     #   run: |
     #     docker exec dragonfly-tls ls -lAh /etc/dragonfly/
-    
+   
     # - name: Test Dragonfly TLS Connectivity
     #   run: |
     #     docker exec dragonfly-tls redis-cli --help
