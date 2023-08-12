@@ -41,11 +41,21 @@ jobs:
         echo "==== Disk Info ===="
         df -hT
 
-    - name: Generate TLS Certificates
+    - name: Generate TLS Certificates and Client Certificates
       run: |
+        # Generate server private key and self-signed certificate
         openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out test.key
         openssl req -new -x509 -days 365 -key test.key -out test.crt -subj "/C=US/ST=Some-State/O=OrganizationName/OU=OrganizationalUnit/CN=test.com"
         cp test.crt ca.crt
+        
+        # Generate client private key (RSA 2048 bits)
+        openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out client_priv.pem
+        
+        # Create a certificate signing request (CSR) for the client
+        openssl req -new -key client_priv.pem -out client.csr -subj "/CN=client"
+        
+        # Sign the client's CSR with the CA's private key to get the client's certificate
+        openssl x509 -req -in client.csr -CA ca.crt -CAkey test.key -CAcreateserial -out client_cert.pem -days 365
 
     - name: Update Redis Configuration for TLS
       run: |
@@ -259,7 +269,7 @@ jobs:
     
     - name: Memtier 1 Threads Benchmark Dragonfly with TLS
       run: |
-        memtier_benchmark -s 127.0.0.1 -p 6392 --protocol=redis --tls --cert=${PWD}/test.crt --key=${PWD}/test.key --cacert=${PWD}/ca.crt -t 1 --hide-histogram --requests=20000 --clients=100 --pipeline=20 --data-size=128 | tee ./benchmarklogs/dragonfly_benchmarks_1threads_tls.txt || true
+        memtier_benchmark -s 127.0.0.1 -p 6392 --protocol=redis --tls --cert=${PWD}/client_cert.pem --key=${PWD}/client_priv.pem --cacert=${PWD}/ca.crt -t 1 --hide-histogram --requests=20000 --clients=100 --pipeline=20 --data-size=128 | tee ./benchmarklogs/dragonfly_benchmarks_1threads_tls.txt || true
     
     - name: Memtier 2 Threads Benchmark Redis with TLS
       run: |
@@ -271,7 +281,7 @@ jobs:
     
     - name: Memtier 2 Threads Benchmark Dragonfly with TLS
       run: |
-        memtier_benchmark -s 127.0.0.1 -p 6392 --protocol=redis --tls --cert=${PWD}/test.crt --key=${PWD}/test.key --cacert=${PWD}/ca.crt -t 2 --hide-histogram --requests=20000 --clients=100 --pipeline=20 --data-size=128 | tee ./benchmarklogs/dragonfly_benchmarks_2threads_tls.txt || true
+        memtier_benchmark -s 127.0.0.1 -p 6392 --protocol=redis --tls --cert=${PWD}/client_cert.pem --key=${PWD}/client_priv.pem --cacert=${PWD}/ca.crt -t 2 --hide-histogram --requests=20000 --clients=100 --pipeline=20 --data-size=128 | tee ./benchmarklogs/dragonfly_benchmarks_2threads_tls.txt || true
     
     - name: Memtier 4 Threads Benchmark Redis with TLS
       run: |
@@ -283,7 +293,7 @@ jobs:
     
     - name: Memtier 4 Threads Benchmark Dragonfly with TLS
       run: |
-        memtier_benchmark -s 127.0.0.1 -p 6392 --protocol=redis --tls --cert=${PWD}/test.crt --key=${PWD}/test.key --cacert=${PWD}/ca.crt -t 4 --hide-histogram --requests=20000 --clients=100 --pipeline=20 --data-size=128 | tee ./benchmarklogs/dragonfly_benchmarks_4threads_tls.txt || true
+        memtier_benchmark -s 127.0.0.1 -p 6392 --protocol=redis --tls --cert=${PWD}/client_cert.pem --key=${PWD}/client_priv.pem --cacert=${PWD}/ca.crt -t 4 --hide-histogram --requests=20000 --clients=100 --pipeline=20 --data-size=128 | tee ./benchmarklogs/dragonfly_benchmarks_4threads_tls.txt || true
 
     - name: Convert Redis 1 Threads Benchmark to MD
       run: |

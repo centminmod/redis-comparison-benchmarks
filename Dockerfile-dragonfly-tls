@@ -8,12 +8,14 @@ RUN mkdir -p /tls
 COPY test.crt /tls/test.crt
 COPY test.key /tls/test.key
 COPY ca.crt /tls/ca.crt
+COPY client_cert.pem /tls/client_cert.pem
+COPY client_priv.pem /tls/client_priv.pem
 
 # Ensure correct permissions (if necessary)
 # This will depend on the user that DragonflyDB runs as inside the container.
 #RUN chown -R dragonfly:dragonfly /tls
 RUN chmod -R 0644 /tls
-RUN chmod 0600 /tls/test.key
+RUN chmod 0600 /tls/test.key /tls/client_priv.pem
 RUN chmod 0755 /tls
 
 # Expose the default port
