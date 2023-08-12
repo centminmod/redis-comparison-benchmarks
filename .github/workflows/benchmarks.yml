@@ -116,7 +116,7 @@ jobs:
           -v ${PWD}/test.crt:/tls/test.crt \
           -v ${PWD}/test.key:/tls/test.key \
           -v ${PWD}/ca.crt:/tls/ca.crt \
-          redis:latest-tls
+          redis-tls:latest
         sleep 20
     
     - name: Run KeyDB container with TLS
@@ -125,7 +125,7 @@ jobs:
           -v ${PWD}/test.crt:/tls/test.crt \
           -v ${PWD}/test.key:/tls/test.key \
           -v ${PWD}/ca.crt:/tls/ca.crt \
-          keydb:latest-tls
+          keydb-tls:latest
         sleep 20
     
     - name: Run Dragonfly container with TLS
@@ -134,7 +134,7 @@ jobs:
           -v ${PWD}/test.crt:/tls/test.crt \
           -v ${PWD}/test.key:/tls/test.key \
           -v ${PWD}/ca.crt:/tls/ca.crt \
-          dragonfly:latest-tls
+          dragonfly-tls:latest
         sleep 20
 
     - name: Check Redis logs
