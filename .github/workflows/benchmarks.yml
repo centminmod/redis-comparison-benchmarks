@@ -166,7 +166,7 @@ jobs:
 
     - name: Check Redis config
       run: |
-        docker exec redis cat ls -lAhc/redis/
+        docker exec redis ls -lAh /etc/redis/
     
     - name: Test Redis Connectivity
       run: docker exec redis redis-cli -h 127.0.0.1 -p 6379 PING
