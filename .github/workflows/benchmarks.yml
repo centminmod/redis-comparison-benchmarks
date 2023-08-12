@@ -137,7 +137,7 @@ jobs:
           -v ${PWD}/test.crt:/tls/test.crt \
           -v ${PWD}/test.key:/tls/test.key \
           -v ${PWD}/ca.crt:/tls/ca.crt \
-          -v ${PWD}/redis.conf:/etc/redis/redis.conf \
+          -v ${PWD}/redis.conf:/usr/local/etc/redis/redis.conf \
           redis-tls:latest
         sleep 20
     
