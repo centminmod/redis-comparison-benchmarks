@@ -60,13 +60,13 @@ jobs:
       run: docker logs redis
     
     - name: Test Redis Connectivity
-      run: echo "PING" | redis-cli -h 127.0.0.1 -p 6379
+      run: docker exec redis redis-cli -h 127.0.0.1 -p 6379 PING
 
     - name: Check KeyDB logs
       run: docker logs keydb
     
     - name: Test KeyDB Connectivity
-      run: echo "PING" | redis-cli -h 127.0.0.1 -p 6380
+      run: docker exec keydb keydb-cli -h 127.0.0.1 -p 6380 PING
 
     - name: Install memtier_benchmark
       run: |
