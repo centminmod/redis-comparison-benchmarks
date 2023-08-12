@@ -1,0 +1,10 @@
+FROM eqalpha/keydb:latest
+
+# Create directory for TLS certificates
+RUN mkdir -p /tls
+COPY test.crt /tls/test.crt
+COPY test.key /tls/test.key
+COPY ca.crt /tls/ca.crt
+
+# Expose the default KeyDB port (same as Redis)
+EXPOSE 6380
