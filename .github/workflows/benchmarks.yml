@@ -206,7 +206,7 @@ jobs:
     - name: Test Dragonfly TLS Connectivity
       run: |
         docker exec dragonfly-tls redis-cli --help
-        docker exec dragonfly-tls redis-cli -h 127.0.0.1 -p 6392 --tls --cert /tls/test.crt --key /tls/test.key --cacert /tls/ca.crt PING
+        docker exec dragonfly-tls redis-cli -h 127.0.0.1 -p 6392 --cert /tls/test.crt --key /tls/test.key --cacert /tls/ca.crt PING
 
     - name: Install memtier_benchmark
       run: |
