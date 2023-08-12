@@ -19,4 +19,4 @@ RUN chmod 0755 /tls
 # Expose the default port
 EXPOSE 6379 6392
 
-CMD [ "dragonfly-server", "/etc/dragonfly/dragonfly.conf" ]
+CMD [ "dragonfly", "/etc/dragonfly/dragonfly.conf" ]
