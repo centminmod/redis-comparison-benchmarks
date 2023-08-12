@@ -7,7 +7,7 @@ RUN mkdir -p /tls
 COPY keydb-tls.conf /etc/keydb/keydb.conf
 
 # Ensure correct permissions (if necessary)
-RUN chown -R keydb:keydb /tls
+#RUN chown -R keydb:keydb /tls
 
 # Expose the default KeyDB port (same as Redis)
 EXPOSE 6379 6391
