@@ -50,23 +50,23 @@ jobs:
     - name: Update Redis Configuration for TLS
       run: |
         echo "tls-port 6390" >> redis.conf
-        echo "tls-cert-file /tls/test.crt" >> redis.conf
-        echo "tls-key-file /tls/test.key" >> redis.conf
-        echo "tls-ca-cert-file /tls/ca.crt" >> redis.conf
+        echo "tls-cert-file /tls/test.crt" >> redis-tls.conf
+        echo "tls-key-file /tls/test.key" >> redis-tls.conf
+        echo "tls-ca-cert-file /tls/ca.crt" >> redis-tls.conf
     
     - name: Update KeyDB Configuration for TLS
       run: |
-        echo "tls-port 6390" >> keydb.conf
-        echo "tls-cert-file /tls/test.crt" >> keydb.conf
-        echo "tls-key-file /tls/test.key" >> keydb.conf
-        echo "tls-ca-cert-file /tls/ca.crt" >> keydb.conf
+        echo "tls-port 6390" >> keydb-tls.conf
+        echo "tls-cert-file /tls/test.crt" >> keydb-tls.conf
+        echo "tls-key-file /tls/test.key" >> keydb-tls.conf
+        echo "tls-ca-cert-file /tls/ca.crt" >> keydb-tls.conf
     
     - name: Update Dragonfly Configuration for TLS
       run: |
-        echo "tls-port 6390" >> dragonfly.conf
-        echo "tls-cert-file /tls/test.crt" >> dragonfly.conf
-        echo "tls-key-file /tls/test.key" >> dragonfly.conf
-        echo "tls-ca-cert-file /tls/ca.crt" >> dragonfly.conf
+        echo "tls-port 6390" >> dragonfly-tls.conf
+        echo "tls-cert-file /tls/test.crt" >> dragonfly-tls.conf
+        echo "tls-key-file /tls/test.key" >> dragonfly-tls.conf
+        echo "tls-ca-cert-file /tls/ca.crt" >> dragonfly-tls.conf
 
     - name: Build Redis Docker image
       uses: docker/build-push-action@v2
