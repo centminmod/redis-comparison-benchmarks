@@ -110,12 +110,34 @@ jobs:
         docker run -d --name dragonfly -p 6381:6379 dragonfly:latest
         sleep 20
 
+    - name: Update Redis Configuration for TLS
+      run: |
+        echo "tls-port 6390" >> redis.conf
+        echo "tls-cert-file /tls/test.crt" >> redis.conf
+        echo "tls-key-file /tls/test.key" >> redis.conf
+        echo "tls-ca-cert-file /tls/ca.crt" >> redis.conf
+    
+    - name: Update KeyDB Configuration for TLS
+      run: |
+        echo "tls-port 6390" >> keydb.conf
+        echo "tls-cert-file /tls/test.crt" >> keydb.conf
+        echo "tls-key-file /tls/test.key" >> keydb.conf
+        echo "tls-ca-cert-file /tls/ca.crt" >> keydb.conf
+    
+    - name: Update Dragonfly Configuration for TLS
+      run: |
+        echo "tls-port 6390" >> dragonfly.conf
+        echo "tls-cert-file /tls/test.crt" >> dragonfly.conf
+        echo "tls-key-file /tls/test.key" >> dragonfly.conf
+        echo "tls-ca-cert-file /tls/ca.crt" >> dragonfly.conf
+
     - name: Run Redis container with TLS
       run: |
         docker run -d --name redis-tls -p 6390:6379 \
           -v ${PWD}/test.crt:/tls/test.crt \
           -v ${PWD}/test.key:/tls/test.key \
           -v ${PWD}/ca.crt:/tls/ca.crt \
+          -v ${PWD}/redis.conf:/etc/redis/redis.conf \
           redis-tls:latest
         sleep 20
     
@@ -125,6 +147,7 @@ jobs:
           -v ${PWD}/test.crt:/tls/test.crt \
           -v ${PWD}/test.key:/tls/test.key \
           -v ${PWD}/ca.crt:/tls/ca.crt \
+          -v ${PWD}/keydb.conf:/etc/keydb/keydb.conf \
           keydb-tls:latest
         sleep 20
     
@@ -134,6 +157,7 @@ jobs:
           -v ${PWD}/test.crt:/tls/test.crt \
           -v ${PWD}/test.key:/tls/test.key \
           -v ${PWD}/ca.crt:/tls/ca.crt \
+          -v ${PWD}/dragonfly.conf:/etc/dragonfly/dragonfly.conf \
           dragonfly-tls:latest
         sleep 20
 
