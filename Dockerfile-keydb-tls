@@ -3,7 +3,13 @@ FROM eqalpha/keydb:latest
 # Create directory for TLS certificates
 RUN mkdir -p /tls
 
+# Copy the KeyDB configuration file
+COPY keydb-tls.conf /etc/keydb/keydb.conf
+
+# Ensure correct permissions (if necessary)
+RUN chown -R keydb:keydb /tls
+
 # Expose the default KeyDB port (same as Redis)
-EXPOSE 6380
+EXPOSE 6379 6391
 
 CMD [ "keydb-server", "/etc/keydb/keydb.conf" ]

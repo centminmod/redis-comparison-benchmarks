@@ -47,6 +47,27 @@ jobs:
         openssl req -new -x509 -days 365 -key test.key -out test.crt -subj "/C=US/ST=Some-State/O=OrganizationName/OU=OrganizationalUnit/CN=test.com"
         cp test.crt ca.crt
 
+    - name: Update Redis Configuration for TLS
+      run: |
+        echo "tls-port 6390" >> redis.conf
+        echo "tls-cert-file /tls/test.crt" >> redis.conf
+        echo "tls-key-file /tls/test.key" >> redis.conf
+        echo "tls-ca-cert-file /tls/ca.crt" >> redis.conf
+    
+    - name: Update KeyDB Configuration for TLS
+      run: |
+        echo "tls-port 6390" >> keydb.conf
+        echo "tls-cert-file /tls/test.crt" >> keydb.conf
+        echo "tls-key-file /tls/test.key" >> keydb.conf
+        echo "tls-ca-cert-file /tls/ca.crt" >> keydb.conf
+    
+    - name: Update Dragonfly Configuration for TLS
+      run: |
+        echo "tls-port 6390" >> dragonfly.conf
+        echo "tls-cert-file /tls/test.crt" >> dragonfly.conf
+        echo "tls-key-file /tls/test.key" >> dragonfly.conf
+        echo "tls-ca-cert-file /tls/ca.crt" >> dragonfly.conf
+
     - name: Build Redis Docker image
       uses: docker/build-push-action@v2
       with:
@@ -109,27 +130,6 @@ jobs:
       run: |
         docker run -d --name dragonfly -p 6381:6379 dragonfly:latest
         sleep 20
-
-    - name: Update Redis Configuration for TLS
-      run: |
-        echo "tls-port 6390" >> redis.conf
-        echo "tls-cert-file /tls/test.crt" >> redis.conf
-        echo "tls-key-file /tls/test.key" >> redis.conf
-        echo "tls-ca-cert-file /tls/ca.crt" >> redis.conf
-    
-    - name: Update KeyDB Configuration for TLS
-      run: |
-        echo "tls-port 6390" >> keydb.conf
-        echo "tls-cert-file /tls/test.crt" >> keydb.conf
-        echo "tls-key-file /tls/test.key" >> keydb.conf
-        echo "tls-ca-cert-file /tls/ca.crt" >> keydb.conf
-    
-    - name: Update Dragonfly Configuration for TLS
-      run: |
-        echo "tls-port 6390" >> dragonfly.conf
-        echo "tls-cert-file /tls/test.crt" >> dragonfly.conf
-        echo "tls-key-file /tls/test.key" >> dragonfly.conf
-        echo "tls-ca-cert-file /tls/ca.crt" >> dragonfly.conf
 
     - name: Run Redis container with TLS
       run: |

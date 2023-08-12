@@ -3,7 +3,14 @@ FROM docker.dragonflydb.io/dragonflydb/dragonfly:latest
 # Create directory for TLS certificates
 RUN mkdir -p /tls
 
+# Copy the DragonflyDB configuration file (if it uses one similar to Redis)
+COPY dragonfly-tls.conf /etc/dragonfly/dragonfly.conf
+
+# Ensure correct permissions (if necessary)
+# This will depend on the user that DragonflyDB runs as inside the container.
+# RUN chown -R dragonfly:dragonfly /tls
+
 # Expose the default port
-EXPOSE 6381
+EXPOSE 6379 6392
 
 CMD [ "dragonfly-server", "/etc/dragonfly/dragonfly.conf" ]
