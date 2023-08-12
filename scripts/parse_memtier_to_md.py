@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import sys
 
-def parse_to_md(filename):
+def parse_to_md(filename, prefix):
     with open(filename, 'r') as file:
         lines = file.readlines()
 
@@ -23,6 +23,9 @@ def parse_to_md(filename):
 
     stats_lines = lines[start_index + 2: end_index]
 
+    # Add prefix to the first column
+    stats_lines = [f"{prefix} {line}" for line in stats_lines]
+
     # Convert to markdown table format
     header = "| " + " | ".join(stats_lines[0].split()) + " |\n"
     separator = "| " + " | ".join(["---"] * len(stats_lines[0].split())) + " |\n"
@@ -34,4 +37,6 @@ def parse_to_md(filename):
         file.write(md_table)
 
 if __name__ == "__main__":
-    parse_to_md(sys.argv[1])
+    if len(sys.argv) < 3:
+        raise ValueError("Expected filename and prefix as arguments.")
+    parse_to_md(sys.argv[1], sys.argv[2])

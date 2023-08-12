@@ -102,32 +102,32 @@ jobs:
 
     - name: Convert Redis 1 Threads Benchmark to MD
       run: |
-        python scripts/parse_memtier_to_md.py ./benchmarklogs/redis_benchmarks_1threads.txt
+        python scripts/parse_memtier_to_md.py ./benchmarklogs/redis_benchmarks_1threads.txt Redis
         cat ./benchmarklogs/redis_benchmarks_1threads.md
 
     - name: Convert KeyDB 1 Threads Benchmark to MD
       run: |
-        python scripts/parse_memtier_to_md.py ./benchmarklogs/keydb_benchmarks_1threads.txt
+        python scripts/parse_memtier_to_md.py ./benchmarklogs/keydb_benchmarks_1threads.txt KeyDB
         cat ./benchmarklogs/keydb_benchmarks_1threads.md
 
     - name: Convert Redis 2 Threads Benchmark to MD
       run: |
-        python scripts/parse_memtier_to_md.py ./benchmarklogs/redis_benchmarks_2threads.txt
+        python scripts/parse_memtier_to_md.py ./benchmarklogs/redis_benchmarks_2threads.txt Redis
         cat ./benchmarklogs/redis_benchmarks_2threads.md
 
     - name: Convert KeyDB 2 Threads Benchmark to MD
       run: |
-        python scripts/parse_memtier_to_md.py ./benchmarklogs/keydb_benchmarks_2threads.txt
+        python scripts/parse_memtier_to_md.py ./benchmarklogs/keydb_benchmarks_2threads.txt KeyDB
         cat ./benchmarklogs/keydb_benchmarks_2threads.md
 
     - name: Convert Redis 4 Threads Benchmark to MD
       run: |
-        python scripts/parse_memtier_to_md.py ./benchmarklogs/redis_benchmarks_4threads.txt
+        python scripts/parse_memtier_to_md.py ./benchmarklogs/redis_benchmarks_4threads.txt Redis
         cat ./benchmarklogs/redis_benchmarks_4threads.md
 
     - name: Convert KeyDB 4 Threads Benchmark to MD
       run: |
-        python scripts/parse_memtier_to_md.py ./benchmarklogs/keydb_benchmarks_4threads.txt
+        python scripts/parse_memtier_to_md.py ./benchmarklogs/keydb_benchmarks_4threads.txt KeyDB
         cat ./benchmarklogs/keydb_benchmarks_4threads.md
 
     - name: Upload Benchmark Logs
