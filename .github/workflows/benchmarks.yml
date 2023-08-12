@@ -133,32 +133,17 @@ jobs:
 
     - name: Run Redis container with TLS
       run: |
-        docker run -d --name redis-tls -p 6390:6379 \
-          -v ${PWD}/test.crt:/tls/test.crt \
-          -v ${PWD}/test.key:/tls/test.key \
-          -v ${PWD}/ca.crt:/tls/ca.crt \
-          -v ${PWD}/redis-tls.conf:/usr/local/etc/redis/redis.conf \
-          redis-tls:latest
+        docker run -d --name redis-tls -p 6390:6379 redis-tls:latest
         sleep 20
     
     - name: Run KeyDB container with TLS
       run: |
-        docker run -d --name keydb-tls -p 6391:6379 \
-          -v ${PWD}/test.crt:/tls/test.crt \
-          -v ${PWD}/test.key:/tls/test.key \
-          -v ${PWD}/ca.crt:/tls/ca.crt \
-          -v ${PWD}/keydb-tls.conf:/etc/keydb/keydb.conf \
-          keydb-tls:latest
+        docker run -d --name keydb-tls -p 6391:6379 keydb-tls:latest
         sleep 20
     
     - name: Run Dragonfly container with TLS
       run: |
-        docker run -d --name dragonfly-tls -p 6392:6379 \
-          -v ${PWD}/test.crt:/tls/test.crt \
-          -v ${PWD}/test.key:/tls/test.key \
-          -v ${PWD}/ca.crt:/tls/ca.crt \
-          -v ${PWD}/dragonfly-tls.conf:/etc/dragonfly/dragonfly.conf \
-          dragonfly-tls:latest
+        docker run -d --name dragonfly-tls -p 6392:6379 dragonfly-tls:latest
         sleep 20
 
     - name: Check Redis logs

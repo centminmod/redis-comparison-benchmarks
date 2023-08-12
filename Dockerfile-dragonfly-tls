@@ -5,10 +5,15 @@ RUN mkdir -p /tls
 
 # Copy the DragonflyDB configuration file (if it uses one similar to Redis)
 COPY dragonfly-tls.conf /etc/dragonfly/dragonfly.conf
+COPY test.crt /tls/test.crt
+COPY test.key /tls/test.key
+COPY ca.crt /tls/ca.crt
 
 # Ensure correct permissions (if necessary)
 # This will depend on the user that DragonflyDB runs as inside the container.
-# RUN chown -R dragonfly:dragonfly /tls
+RUN chown -R dragonfly:dragonfly /tls
+RUN chmod -R 0644 /tls
+RUN chmod 0600 /tls/test.key
 
 # Expose the default port
 EXPOSE 6379 6392
