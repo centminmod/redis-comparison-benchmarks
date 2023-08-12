@@ -49,12 +49,24 @@ jobs:
     - name: Run Redis container
       run: |
         docker run -d --name redis -p 6379:6379 redis:latest
-        sleep 10
+        sleep 20
 
     - name: Run KeyDB container
       run: |
-        docker run -d --name keydb -p 6380:6380 keydb:latest
-        sleep 10
+        docker run -d --name keydb -p 6380:6379 keydb:latest
+        sleep 20
+
+    - name: Check Redis logs
+      run: docker logs redis
+    
+    - name: Test Redis Connectivity
+      run: echo "PING" | redis-cli -h 127.0.0.1 -p 6379
+
+    - name: Check KeyDB logs
+      run: docker logs keydb
+    
+    - name: Test KeyDB Connectivity
+      run: echo "PING" | redis-cli -h 127.0.0.1 -p 6380
 
     - name: Install memtier_benchmark
       run: |
