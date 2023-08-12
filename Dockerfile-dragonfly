@@ -1,0 +1,4 @@
+FROM docker.dragonflydb.io/dragonflydb/dragonfly:latest
+
+# Expose the default port
+EXPOSE 6381

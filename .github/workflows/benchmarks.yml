@@ -46,6 +46,14 @@ jobs:
         load: true
         tags: keydb:latest
 
+    - name: Build Dragonfly Docker image
+      uses: docker/build-push-action@v2
+      with:
+        context: .
+        file: ./Dockerfile-dragonfly
+        load: true
+        tags: dragonfly:latest
+
     - name: Run Redis container
       run: |
         docker run -d --name redis -p 6379:6379 redis:latest
@@ -54,6 +62,11 @@ jobs:
     - name: Run KeyDB container
       run: |
         docker run -d --name keydb -p 6380:6379 keydb:latest
+        sleep 20
+
+    - name: Run Dragonfly container
+      run: |
+        docker run -d --name dragonfly -p 6381:6379 dragonfly:latest
         sleep 20
 
     - name: Check Redis logs
@@ -67,6 +80,12 @@ jobs:
     
     - name: Test KeyDB Connectivity
       run: docker exec keydb keydb-cli -h 127.0.0.1 -p 6379 PING
+
+    - name: Check Dragonfly logs
+      run: docker logs dragonfly
+    
+    - name: Test Dragonfly Connectivity
+      run: docker exec dragonfly redis-cli -h 127.0.0.1 -p 6379 PING
 
     - name: Install memtier_benchmark
       run: |
@@ -88,17 +107,26 @@ jobs:
     - name: Memtier 1 Threads Benchmark KeyDB
       run: memtier_benchmark -s 127.0.0.1 -p 6380 --protocol=redis -t 1 --hide-histogram --requests=20000 --clients=100 --pipeline=20 --data-size=128 | tee ./benchmarklogs/keydb_benchmarks_1threads.txt || true
 
+    - name: Memtier 1 Threads Benchmark Dragonfly
+      run: memtier_benchmark -s 127.0.0.1 -p 6381 --protocol=redis -t 1 --hide-histogram --requests=20000 --clients=100 --pipeline=20 --data-size=128 | tee ./benchmarklogs/dragonfly_benchmarks_1threads.txt || true
+
     - name: Memtier 2 Threads Benchmark Redis
       run: memtier_benchmark -s 127.0.0.1 -p 6379 --protocol=redis -t 2 --hide-histogram --requests=20000 --clients=100 --pipeline=20 --data-size=128 | tee ./benchmarklogs/redis_benchmarks_2threads.txt || true
 
     - name: Memtier 2 Threads Benchmark KeyDB
       run: memtier_benchmark -s 127.0.0.1 -p 6380 --protocol=redis -t 2 --hide-histogram --requests=20000 --clients=100 --pipeline=20 --data-size=128 | tee ./benchmarklogs/keydb_benchmarks_2threads.txt || true
 
+    - name: Memtier 2 Threads Benchmark Dragonfly
+      run: memtier_benchmark -s 127.0.0.1 -p 6381 --protocol=redis -t 2 --hide-histogram --requests=20000 --clients=100 --pipeline=20 --data-size=128 | tee ./benchmarklogs/dragonfly_benchmarks_2threads.txt || true
+
     - name: Memtier 4 Threads Benchmark Redis
       run: memtier_benchmark -s 127.0.0.1 -p 6379 --protocol=redis -t 4 --hide-histogram --requests=20000 --clients=100 --pipeline=20 --data-size=128 | tee ./benchmarklogs/redis_benchmarks_4threads.txt || true
 
     - name: Memtier 4 Threads Benchmark KeyDB
       run: memtier_benchmark -s 127.0.0.1 -p 6380 --protocol=redis -t 4 --hide-histogram --requests=20000 --clients=100 --pipeline=20 --data-size=128 | tee ./benchmarklogs/keydb_benchmarks_4threads.txt || true
+
+    - name: Memtier 4 Threads Benchmark Dragonfly
+      run: memtier_benchmark -s 127.0.0.1 -p 6381 --protocol=redis -t 4 --hide-histogram --requests=20000 --clients=100 --pipeline=20 --data-size=128 | tee ./benchmarklogs/dragonfly_benchmarks_4threads.txt || true
 
     - name: Convert Redis 1 Threads Benchmark to MD
       run: |
@@ -110,6 +138,11 @@ jobs:
         python scripts/parse_memtier_to_md.py ./benchmarklogs/keydb_benchmarks_1threads.txt KeyDB
         cat ./benchmarklogs/keydb_benchmarks_1threads.md
 
+    - name: Convert Dragonfly 1 Threads Benchmark to MD
+      run: |
+        python scripts/parse_memtier_to_md.py ./benchmarklogs/dragonfly_benchmarks_1threads.txt Dragonfly
+        cat ./benchmarklogs/dragonfly_benchmarks_1threads.md
+
     - name: Convert Redis 2 Threads Benchmark to MD
       run: |
         python scripts/parse_memtier_to_md.py ./benchmarklogs/redis_benchmarks_2threads.txt Redis
@@ -119,6 +152,11 @@ jobs:
       run: |
         python scripts/parse_memtier_to_md.py ./benchmarklogs/keydb_benchmarks_2threads.txt KeyDB
         cat ./benchmarklogs/keydb_benchmarks_2threads.md
+
+    - name: Convert Dragonfly 2 Threads Benchmark to MD
+      run: |
+        python scripts/parse_memtier_to_md.py ./benchmarklogs/dragonfly_benchmarks_2threads.txt Dragonfly
+        cat ./benchmarklogs/dragonfly_benchmarks_2threads.md
 
     - name: Convert Redis 4 Threads Benchmark to MD
       run: |
@@ -130,6 +168,11 @@ jobs:
         python scripts/parse_memtier_to_md.py ./benchmarklogs/keydb_benchmarks_4threads.txt KeyDB
         cat ./benchmarklogs/keydb_benchmarks_4threads.md
 
+    - name: Convert Dragonfly 4 Threads Benchmark to MD
+      run: |
+        python scripts/parse_memtier_to_md.py ./benchmarklogs/dragonfly_benchmarks_4threads.txt Dragonfly
+        cat ./benchmarklogs/dragonfly_benchmarks_4threads.md
+
     - name: Upload Benchmark Logs
       uses: actions/upload-artifact@v3
       with:
@@ -140,3 +183,4 @@ jobs:
       run: |
         docker stop redis
         docker stop keydb
+        docker stop dragonfly
