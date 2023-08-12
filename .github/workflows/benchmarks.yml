@@ -82,11 +82,23 @@ jobs:
     - name: Create Benchmark Logs Directory
       run: mkdir -p ./benchmarklogs
 
-    - name: Benchmark Redis
-      run: memtier_benchmark -s 127.0.0.1 -p 6379 --protocol=redis | tee ./benchmarklogs/redis_benchmarks.txt || true
+    - name: Memtier 1 Threads Benchmark Redis
+      run: memtier_benchmark -s 127.0.0.1 -p 6379 --protocol=redis -t 1 | tee ./benchmarklogs/redis_benchmarks_1threads.txt || true
 
-    - name: Benchmark KeyDB
-      run: memtier_benchmark -s 127.0.0.1 -p 6380 --protocol=redis | tee ./benchmarklogs/keydb_benchmarks.txt || true
+    - name: Memtier 1 Threads Benchmark KeyDB
+      run: memtier_benchmark -s 127.0.0.1 -p 6380 --protocol=redis -t 1 | tee ./benchmarklogs/keydb_benchmarks_1threads.txt || true
+
+    - name: Memtier 2 Threads Benchmark Redis
+      run: memtier_benchmark -s 127.0.0.1 -p 6379 --protocol=redis -t 2 | tee ./benchmarklogs/redis_benchmarks_2threads.txt || true
+
+    - name: Memtier 2 Threads Benchmark KeyDB
+      run: memtier_benchmark -s 127.0.0.1 -p 6380 --protocol=redis -t 2 | tee ./benchmarklogs/keydb_benchmarks_2threads.txt || true
+
+    - name: Memtier 4 Threads Benchmark Redis
+      run: memtier_benchmark -s 127.0.0.1 -p 6379 --protocol=redis -t 4 | tee ./benchmarklogs/redis_benchmarks_4threads.txt || true
+
+    - name: Memtier 4 Threads Benchmark KeyDB
+      run: memtier_benchmark -s 127.0.0.1 -p 6380 --protocol=redis -t 4 | tee ./benchmarklogs/keydb_benchmarks_4threads.txt || true
 
     - name: Upload Benchmark Logs
       uses: actions/upload-artifact@v3
