@@ -49,7 +49,7 @@ jobs:
 
     - name: Update Redis Configuration for TLS
       run: |
-        echo "tls-port 6390" >> redis.conf
+        echo "tls-port 6390" >> redis-tls.conf
         echo "tls-cert-file /tls/test.crt" >> redis-tls.conf
         echo "tls-key-file /tls/test.key" >> redis-tls.conf
         echo "tls-ca-cert-file /tls/ca.crt" >> redis-tls.conf
@@ -137,7 +137,7 @@ jobs:
           -v ${PWD}/test.crt:/tls/test.crt \
           -v ${PWD}/test.key:/tls/test.key \
           -v ${PWD}/ca.crt:/tls/ca.crt \
-          -v ${PWD}/redis.conf:/usr/local/etc/redis/redis.conf \
+          -v ${PWD}/redis-tls.conf:/usr/local/etc/redis/redis.conf \
           redis-tls:latest
         sleep 20
     
@@ -147,7 +147,7 @@ jobs:
           -v ${PWD}/test.crt:/tls/test.crt \
           -v ${PWD}/test.key:/tls/test.key \
           -v ${PWD}/ca.crt:/tls/ca.crt \
-          -v ${PWD}/keydb.conf:/etc/keydb/keydb.conf \
+          -v ${PWD}/keydb-tls.conf:/etc/keydb/keydb.conf \
           keydb-tls:latest
         sleep 20
     
@@ -157,7 +157,7 @@ jobs:
           -v ${PWD}/test.crt:/tls/test.crt \
           -v ${PWD}/test.key:/tls/test.key \
           -v ${PWD}/ca.crt:/tls/ca.crt \
-          -v ${PWD}/dragonfly.conf:/etc/dragonfly/dragonfly.conf \
+          -v ${PWD}/dragonfly-tls.conf:/etc/dragonfly/dragonfly.conf \
           dragonfly-tls:latest
         sleep 20
 
