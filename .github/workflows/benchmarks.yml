@@ -100,6 +100,36 @@ jobs:
     - name: Memtier 4 Threads Benchmark KeyDB
       run: memtier_benchmark -s 127.0.0.1 -p 6380 --protocol=redis -t 4 --hide-histogram --requests=20000 --clients=100 --pipeline=20 --data-size=128 | tee ./benchmarklogs/keydb_benchmarks_4threads.txt || true
 
+    - name: Convert Redis 1 Threads Benchmark to MD
+      run: |
+        python scripts/parse_memtier_to_md.py ./benchmarklogs/redis_benchmarks_1threads.txt
+        cat ./benchmarklogs/redis_benchmarks_1threads.md
+
+    - name: Convert KeyDB 1 Threads Benchmark to MD
+      run: |
+        python scripts/parse_memtier_to_md.py ./benchmarklogs/keydb_benchmarks_1threads.txt
+        cat ./benchmarklogs/keydb_benchmarks_1threads.md
+
+    - name: Convert Redis 2 Threads Benchmark to MD
+      run: |
+        python scripts/parse_memtier_to_md.py ./benchmarklogs/redis_benchmarks_2threads.txt
+        cat ./benchmarklogs/redis_benchmarks_2threads.md
+
+    - name: Convert KeyDB 2 Threads Benchmark to MD
+      run: |
+        python scripts/parse_memtier_to_md.py ./benchmarklogs/keydb_benchmarks_2threads.txt
+        cat ./benchmarklogs/keydb_benchmarks_2threads.md
+
+    - name: Convert Redis 4 Threads Benchmark to MD
+      run: |
+        python scripts/parse_memtier_to_md.py ./benchmarklogs/redis_benchmarks_4threads.txt
+        cat ./benchmarklogs/redis_benchmarks_4threads.md
+
+    - name: Convert KeyDB 4 Threads Benchmark to MD
+      run: |
+        python scripts/parse_memtier_to_md.py ./benchmarklogs/keydb_benchmarks_4threads.txt
+        cat ./benchmarklogs/keydb_benchmarks_4threads.md
+
     - name: Upload Benchmark Logs
       uses: actions/upload-artifact@v3
       with:
