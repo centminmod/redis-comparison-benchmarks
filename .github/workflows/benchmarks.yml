@@ -166,7 +166,7 @@ jobs:
 
     - name: Check Redis config
       run: |
-        docker exec redis cat /etc/redis/redis.conf
+        docker exec redis cat ls -lAhc/redis/
     
     - name: Test Redis Connectivity
       run: docker exec redis redis-cli -h 127.0.0.1 -p 6379 PING
@@ -176,7 +176,7 @@ jobs:
 
     - name: Check KeyDB config
       run: |
-        docker exec keydb cat /etc/keydb/keydb.conf
+        docker exec keydb ls -lAh /etc/keydb/
     
     - name: Test KeyDB Connectivity
       run: docker exec keydb keydb-cli -h 127.0.0.1 -p 6379 PING
@@ -186,7 +186,7 @@ jobs:
 
     - name: Check Dragonfly config
       run: |
-        docker exec dragonfly cat /etc/dragonfly/dragonfly.conf
+        docker exec dragonfly ls -lAh /etc/dragonfly/
     
     - name: Test Dragonfly Connectivity
       run: docker exec dragonfly redis-cli -h 127.0.0.1 -p 6379 PING
@@ -196,7 +196,7 @@ jobs:
 
     - name: Check Redis TLS config
       run: |
-        docker exec redis-tls cat /usr/local/etc/redis/redis.conf
+        docker exec redis-tls ls -lAh /usr/local/etc/redis/
     
     - name: Test Redis TLS Connectivity
       run: docker exec redis-tls redis-cli -h 127.0.0.1 -p 6379 --tls --cert /tls/test.crt --key /tls/test.key --cacert /tls/ca.crt PING
@@ -206,7 +206,7 @@ jobs:
 
     - name: Check KeyDB TLS config
       run: |
-        docker exec keydb-tls cat /etc/keydb/keydb.conf
+        docker exec keydb-tls ls -lAh /etc/keydb/
     
     - name: Test KeyDB TLS Connectivity
       run: docker exec keydb-tls keydb-cli -h 127.0.0.1 -p 6379 --tls --cert /tls/test.crt --key /tls/test.key --cacert /tls/ca.crt PING
@@ -216,7 +216,7 @@ jobs:
 
     - name: Check Dragonfly TLS config
       run: |
-        docker exec dragonfly-tls cat /etc/dragonfly/dragonfly.conf
+        docker exec dragonfly-tls ls -lAh /etc/dragonfly/
     
     - name: Test Dragonfly TLS Connectivity
       run: docker exec dragonfly-tls redis-cli -h 127.0.0.1 -p 6379 --tls --cert /tls/test.crt --key /tls/test.key --cacert /tls/ca.crt PING
