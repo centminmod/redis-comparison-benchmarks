@@ -44,7 +44,7 @@ jobs:
     - name: Generate TLS Certificates
       run: |
         openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out test.key
-        openssl req -new -key test.key -x509 -days 365 -out test.crt
+        openssl req -new -x509 -days 365 -key test.key -out test.crt -subj "/C=US/ST=Some-State/O=OrganizationName/OU=OrganizationalUnit/CN=test.com"
         cp test.crt ca.crt
 
     - name: Build Redis Docker image
