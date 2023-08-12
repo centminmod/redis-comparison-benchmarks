@@ -133,17 +133,17 @@ jobs:
 
     - name: Run Redis container with TLS
       run: |
-        docker run -d --name redis-tls -p 6390:6379 redis-tls:latest
+        docker run -d --name redis-tls -p 6390:6390 redis-tls:latest
         sleep 20
     
     - name: Run KeyDB container with TLS
       run: |
-        docker run -d --name keydb-tls -p 6391:6379 keydb-tls:latest
+        docker run -d --name keydb-tls -p 6391:6391 keydb-tls:latest
         sleep 20
     
     - name: Run Dragonfly container with TLS
       run: |
-        docker run -d --name dragonfly-tls -p 6392:6379 dragonfly-tls:latest
+        docker run -d --name dragonfly-tls -p 6392:6392 dragonfly-tls:latest
         sleep 20
 
     - name: Check Redis logs
@@ -184,7 +184,7 @@ jobs:
     #     docker exec redis-tls ls -lAh /usr/local/etc/redis/
     
     - name: Test Redis TLS Connectivity
-      run: docker exec redis-tls redis-cli -h 127.0.0.1 -p 6379 --tls --cert /tls/test.crt --key /tls/test.key --cacert /tls/ca.crt PING
+      run: docker exec redis-tls redis-cli -h 127.0.0.1 -p 6390 --tls --cert /tls/test.crt --key /tls/test.key --cacert /tls/ca.crt PING
 
     - name: Check KeyDB TLS logs
       run: docker logs keydb-tls
@@ -194,7 +194,7 @@ jobs:
     #     docker exec keydb-tls ls -lAh /etc/keydb/
     
     - name: Test KeyDB TLS Connectivity
-      run: docker exec keydb-tls keydb-cli -h 127.0.0.1 -p 6379 --tls --cert /tls/test.crt --key /tls/test.key --cacert /tls/ca.crt PING
+      run: docker exec keydb-tls keydb-cli -h 127.0.0.1 -p 6391 --tls --cert /tls/test.crt --key /tls/test.key --cacert /tls/ca.crt PING
 
     - name: Check Dragonfly TLS logs
       run: docker logs dragonfly-tls
@@ -204,7 +204,7 @@ jobs:
     #     docker exec dragonfly-tls ls -lAh /etc/dragonfly/
     
     - name: Test Dragonfly TLS Connectivity
-      run: docker exec dragonfly-tls redis-cli -h 127.0.0.1 -p 6379 --tls --cert /tls/test.crt --key /tls/test.key --cacert /tls/ca.crt PING
+      run: docker exec dragonfly-tls redis-cli -h 127.0.0.1 -p 6392 --tls --cert /tls/test.crt --key /tls/test.key --cacert /tls/ca.crt PING
 
     - name: Install memtier_benchmark
       run: |
