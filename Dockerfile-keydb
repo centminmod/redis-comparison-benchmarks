@@ -1,0 +1,4 @@
+FROM eqalpha/keydb:latest
+
+# Expose the default KeyDB port (same as Redis)
+EXPOSE 6380

@@ -1,0 +1,84 @@
+name: Benchmark Redis vs KeyDB
+
+on:
+  workflow_dispatch:
+    branches: [master]
+  push:
+    branches:
+      - master
+    paths-ignore:
+      - '.gitignore'
+      - 'readme.txt'
+      - 'readme.md'
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v1
+
+    - name: Cache Docker layers
+      uses: actions/cache@v2
+      with:
+        path: /tmp/.buildx-cache
+        key: ${{ runner.os }}-buildx-${{ github.sha }}
+        restore-keys: |
+          ${{ runner.os }}-buildx-
+
+    - name: Build Redis Docker image
+      uses: docker/build-push-action@v2
+      with:
+        context: .
+        file: ./Dockerfile-redis
+        load: true
+        tags: redis:latest
+
+    - name: Build KeyDB Docker image
+      uses: docker/build-push-action@v2
+      with:
+        context: .
+        file: ./Dockerfile-keydb
+        load: true
+        tags: keydb:latest
+
+    - name: Run Redis container
+      run: docker run -d --name redis redis:latest
+
+    - name: Run KeyDB container
+      run: docker run -d --name keydb keydb:latest
+
+    - name: Install memtier_benchmark
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential autoconf automake libpcre3-dev libevent-dev pkg-config zlib1g-dev libssl-dev
+        git clone https://github.com/RedisLabs/memtier_benchmark.git
+        cd memtier_benchmark
+        autoreconf -ivf
+        ./configure
+        make
+        sudo make install
+
+    - name: Create Benchmark Logs Directory
+      run: mkdir -p ./benchmarklogs
+
+    - name: Benchmark Redis
+      run: memtier_benchmark -s 127.0.0.1 -p 6379 --protocol=redis | tee ./benchmarklogs/redis_benchmarks.txt || true
+
+    - name: Benchmark KeyDB
+      run: memtier_benchmark -s 127.0.0.1 -p 6380 --protocol=redis | tee ./benchmarklogs/keydb_benchmarks.txt || true
+
+    - name: Upload Benchmark Logs
+      uses: actions/upload-artifact@v3
+      with:
+        name: benchmark_logs
+        path: benchmarklogs/*
+
+    - name: Cleanup
+      run: |
+        docker stop redis
+        docker stop keydb
