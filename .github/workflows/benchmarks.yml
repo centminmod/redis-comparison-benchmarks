@@ -47,10 +47,14 @@ jobs:
         tags: keydb:latest
 
     - name: Run Redis container
-      run: docker run -d --name redis redis:latest
+      run: |
+        docker run -d --name redis -p 6379:6379 redis:latest
+        sleep 10
 
     - name: Run KeyDB container
-      run: docker run -d --name keydb keydb:latest
+      run: |
+        docker run -d --name keydb -p 6380:6380 keydb:latest
+        sleep 10
 
     - name: Install memtier_benchmark
       run: |
