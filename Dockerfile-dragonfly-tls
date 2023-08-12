@@ -14,6 +14,7 @@ COPY ca.crt /tls/ca.crt
 #RUN chown -R dragonfly:dragonfly /tls
 RUN chmod -R 0644 /tls
 RUN chmod 0600 /tls/test.key
+RUN chmod 0755 /tls
 
 # Expose the default port
 EXPOSE 6379 6392

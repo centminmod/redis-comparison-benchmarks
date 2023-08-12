@@ -13,6 +13,7 @@ COPY ca.crt /tls/ca.crt
 RUN chown -R keydb:keydb /tls
 RUN chmod -R 0644 /tls
 RUN chmod 0600 /tls/test.key
+RUN chmod 0755 /tls
 
 # Expose the default KeyDB port (same as Redis)
 EXPOSE 6379 6391
