@@ -183,19 +183,19 @@ jobs:
       run: docker logs redis-tls
     
     - name: Test Redis TLS Connectivity
-      run: docker exec redis-tls redis-cli -h 127.0.0.1 -p 6379 PING
+      run: docker exec redis-tls redis-cli -h 127.0.0.1 -p 6379 --tls --cert /tls/test.crt --key /tls/test.key --cacert /tls/ca.crt PING
 
     - name: Check KeyDB TLS logs
       run: docker logs keydb-tls
     
     - name: Test KeyDB TLS Connectivity
-      run: docker exec keydb-tls keydb-cli -h 127.0.0.1 -p 6379 PING
+      run: docker exec keydb-tls keydb-cli -h 127.0.0.1 -p 6379 --tls --cert /tls/test.crt --key /tls/test.key --cacert /tls/ca.crt PING
 
     - name: Check Dragonfly TLS logs
       run: docker logs dragonfly-tls
     
     - name: Test Dragonfly TLS Connectivity
-      run: docker exec dragonfly-tls redis-cli -h 127.0.0.1 -p 6379 PING
+      run: docker exec dragonfly-tls redis-cli -h 127.0.0.1 -p 6379 --tls --cert /tls/test.crt --key /tls/test.key --cacert /tls/ca.crt PING
 
     - name: Install memtier_benchmark
       run: |
