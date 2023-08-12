@@ -49,21 +49,21 @@ jobs:
 
     - name: Update Redis Configuration for TLS
       run: |
-        echo "tls-port 6379" >> redis-tls.conf
+        echo "tls-port 6390" >> redis-tls.conf
         echo "tls-cert-file /tls/test.crt" >> redis-tls.conf
         echo "tls-key-file /tls/test.key" >> redis-tls.conf
         echo "tls-ca-cert-file /tls/ca.crt" >> redis-tls.conf
     
     - name: Update KeyDB Configuration for TLS
       run: |
-        echo "tls-port 6379" >> keydb-tls.conf
+        echo "tls-port 6391" >> keydb-tls.conf
         echo "tls-cert-file /tls/test.crt" >> keydb-tls.conf
         echo "tls-key-file /tls/test.key" >> keydb-tls.conf
         echo "tls-ca-cert-file /tls/ca.crt" >> keydb-tls.conf
     
     - name: Update Dragonfly Configuration for TLS
       run: |
-        echo "tls-port 6379" >> dragonfly-tls.conf
+        echo "tls-port 6392" >> dragonfly-tls.conf
         echo "tls-cert-file /tls/test.crt" >> dragonfly-tls.conf
         echo "tls-key-file /tls/test.key" >> dragonfly-tls.conf
         echo "tls-ca-cert-file /tls/ca.crt" >> dragonfly-tls.conf
