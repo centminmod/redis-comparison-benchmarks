@@ -21,17 +21,18 @@ def parse_to_md(filename, prefix):
             end_index = idx + start_index
             break
 
-    # Skip the redundant header lines
-    stats_lines = lines[start_index + 4: end_index]
+    # Skip the redundant separator lines but keep the header
+    stats_lines = lines[start_index + 2: end_index]
 
     # Add prefix to the first column
-    stats_lines = [f"{prefix} {line}" for line in stats_lines]
+    stats_lines = [f"{prefix} | " + " | ".join(line.split()) + " |\n" for line in stats_lines if line.strip() != "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |"]
 
     # Convert to markdown table format
-    body = "".join(["| " + " | ".join(line.split()) + " |\n" for line in stats_lines])
+    header = f"| {prefix} | Type | Ops/sec | Hits/sec | Misses/sec | Avg Latency | p50 Latency | p99 Latency | p99.9 Latency | KB/sec |\n"
+    separator = "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n"
+    body = "".join(stats_lines)
 
-    # We're not adding the header and separator here anymore
-    md_table = body
+    md_table = header + separator + body
 
     with open(filename.replace('.txt', '.md'), 'w') as file:
         file.write(md_table)

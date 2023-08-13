@@ -20,7 +20,7 @@ def combine_markdown_files(filenames, prefix):
     for idx, filename in enumerate(filenames):
         with open(filename, 'r') as file:
             lines = file.readlines()
-            start_index = 2 if idx == 0 else 4  # Skip the header and separator for subsequent files
+            start_index = 0 if idx == 0 else 2  # Skip the header and separator for subsequent files
             for line in lines[start_index:]:
                 combined_rows.append(line)
 
