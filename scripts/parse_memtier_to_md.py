@@ -24,8 +24,11 @@ def parse_to_md(filename, prefix):
     # Skip the redundant separator lines but keep the header
     stats_lines = lines[start_index + 2: end_index]
 
-    # Add prefix to the first column
-    stats_lines = [f"{prefix} | " + " | ".join(line.split()) + " |\n" for line in stats_lines if line.strip() != "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |"]
+    # Filter out redundant lines
+    stats_lines = [line for line in stats_lines if not line.startswith(prefix + " | Type") and not line.startswith(prefix + " | ---")]
+
+    # Add prefix to the first column and format lines
+    stats_lines = [f"{prefix} | " + " | ".join(line.split()) + " |\n" for line in stats_lines]
 
     # Convert to markdown table format
     header = f"| {prefix} | Type | Ops/sec | Hits/sec | Misses/sec | Avg Latency | p50 Latency | p99 Latency | p99.9 Latency | KB/sec |\n"
