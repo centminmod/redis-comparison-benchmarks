@@ -44,6 +44,12 @@ jobs:
         echo "==== Disk Info ===="
         df -hT
 
+    - name: Update System
+      run: |
+        sudo apt-get update -y
+        sudo DEBIAN_FRONTEND=noninteractive apt-get upgrade -y
+        sudo DEBIAN_FRONTEND=noninteractive apt-get dist-upgrade -y
+
     - name: Generate Distinct CA, Server, and Client Certificates
       run: |
         # Generate CA's private key and self-signed certificate
