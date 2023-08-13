@@ -400,6 +400,36 @@ jobs:
         python scripts/parse_memtier_to_md.py ./benchmarklogs/dragonfly_benchmarks_8threads_tls.txt "Dragonfly TLS"
         cat ./benchmarklogs/dragonfly_benchmarks_8threads_tls.md
 
+    - name: Combine Redis Benchmark MD Table
+      run: |
+        python scripts/combine_markdown_results.py "./benchmarklogs/redis_benchmarks_1threads.md ./benchmarklogs/redis_benchmarks_2threads.md ./benchmarklogs/redis_benchmarks_8threads.md" redis
+        cat ./benchmarklogs/combine_redis_results.md
+
+    - name: Combine KeyDB Benchmark MD Table
+      run: |
+        python scripts/combine_markdown_results.py "./benchmarklogs/keydb_benchmarks_1threads.md ./benchmarklogs/keydb_benchmarks_2threads.md ./benchmarklogs/keydb_benchmarks_8threads.md" keydb
+        cat ./benchmarklogs/combine_keydb_results.md
+
+    - name: Combine Dragonfly Benchmark MD Table
+      run: |
+        python scripts/combine_markdown_results.py "./benchmarklogs/dragonfly_benchmarks_1threads.md ./benchmarklogs/dragonfly_benchmarks_2threads.md ./benchmarklogs/dragonfly_benchmarks_8threads.md" dragonfly
+        cat ./benchmarklogs/combine_dragonfly_results.md
+
+    - name: Combine Redis TLS Benchmark MD Table
+      run: |
+        python scripts/combine_markdown_results.py "./benchmarklogs/redis_benchmarks_1threads_tls.md ./benchmarklogs/redis_benchmarks_2threads_tls.md ./benchmarklogs/redis_benchmarks_8threads_tls.md" "redis-tls"
+        cat ./benchmarklogs/combine_redis-tls_results.md
+
+    - name: Combine KeyDB TLS Benchmark MD Table
+      run: |
+        python scripts/combine_markdown_results.py "./benchmarklogs/keydb_benchmarks_1threads_tls.md ./benchmarklogs/keydb_benchmarks_2threads_tls.md ./benchmarklogs/keydb_benchmarks_8threads_tls.md" "keydb-tls"
+        cat ./benchmarklogs/combine_keydb-tls_results.md
+
+    - name: Combine Dragonfly TLS Benchmark MD Table
+      run: |
+        python scripts/combine_markdown_results.py "./benchmarklogs/dragonfly_benchmarks_1threads_tls.md ./benchmarklogs/dragonfly_benchmarks_2threads_tls.md ./benchmarklogs/dragonfly_benchmarks_8threads_tls.md" "dragonfly-tls"
+        cat ./benchmarklogs/combine_dragonfly-tls_results.md
+
     - name: Upload Benchmark Logs
       uses: actions/upload-artifact@v3
       with:
