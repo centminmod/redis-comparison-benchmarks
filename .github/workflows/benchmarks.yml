@@ -59,7 +59,7 @@ jobs:
         
         # Generate client's private key and CSR
         openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out client_priv.pem
-        openssl req -new -key client_priv.pem -out client.csr -subj "/CN=client"
+        openssl req -new -key client_priv.pem -out client.csr -subj "/C=US/ST=Some-State/O=OrganizationName/OU=OrganizationalUnit/CN=test.server.com"
         
         # Sign the client's CSR with the CA's private key to get the client's certificate
         openssl x509 -req -in client.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out client_cert.pem -days 365
