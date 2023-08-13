@@ -17,8 +17,10 @@ def combine_markdown_files(filenames, prefix):
     for idx, filename in enumerate(filenames):
         with open(filename, 'r') as file:
             lines = file.readlines()
-            body_lines = lines[2:] if idx == 0 else lines[4:]
-            combined_rows.extend(body_lines)
+            if idx == 0:  # For the first file, we've already appended the header and separator
+                combined_rows.extend(lines[2:])
+            else:  # For subsequent files, skip the header and separator
+                combined_rows.extend(lines[2:])
 
     # Write the combined results to a new markdown file with the provided prefix
     output_file = f"./benchmarklogs/combined_{prefix}_results.md"
