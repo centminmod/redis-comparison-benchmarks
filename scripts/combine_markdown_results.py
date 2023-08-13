@@ -21,7 +21,7 @@ def combine_markdown_files(filenames, prefix):
             combined_rows.extend(body_lines)
 
     # Write the combined results to a new markdown file with the provided prefix
-    output_file = f"combined_{prefix}_results.md"
+    output_file = f"./benchmarklogs/combined_{prefix}_results.md"
     with open(output_file, 'w') as file:
         file.writelines(combined_rows)
 
