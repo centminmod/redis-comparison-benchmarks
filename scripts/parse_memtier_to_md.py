@@ -27,9 +27,9 @@ def parse_to_md(filename, prefix):
     stats_lines = [f"{prefix} {line}" for line in stats_lines]
 
     # Convert to markdown table format
-    header = "| " + " | ".join(stats_lines[0].split()) + " |\n"
-    separator = "| " + " | ".join(["---"] * len(stats_lines[0].split())) + " |\n"
-    body = "".join(["| " + " | ".join(line.split()) + " |\n" for line in stats_lines[1:]])
+    header = f"| {prefix} | Type | Ops/sec | Hits/sec | Misses/sec | Avg Latency | p50 Latency | p99 Latency | p99.9 Latency | KB/sec |\n"
+    separator = "| " + " | ".join(["---"] * 10) + " |\n"  # 10 columns
+    body = "".join(["| " + " | ".join(line.split()) + " |\n" for line in stats_lines])
 
     md_table = header + separator + body
 
