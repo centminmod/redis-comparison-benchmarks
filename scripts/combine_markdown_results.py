@@ -14,10 +14,10 @@ def combine_markdown_files(filenames, prefix):
         combined_rows.append(lines[1])  # Separator
 
     # Extract body from each file
-    for filename in filenames:
+    for idx, filename in enumerate(filenames):
         with open(filename, 'r') as file:
             lines = file.readlines()
-            body_lines = lines[2:]
+            body_lines = lines[2:] if idx == 0 else lines[4:]
             combined_rows.extend(body_lines)
 
     # Write the combined results to a new markdown file with the provided prefix
