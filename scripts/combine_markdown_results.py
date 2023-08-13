@@ -20,9 +20,9 @@ def combine_markdown_files(filenames, prefix):
     for idx, filename in enumerate(filenames):
         with open(filename, 'r') as file:
             lines = file.readlines()
-            for line in lines[2:]:
-                if line != adjusted_header and line != separator:
-                    combined_rows.append(line)
+            start_index = 2 if idx == 0 else 4  # Skip the header and separator for subsequent files
+            for line in lines[start_index:]:
+                combined_rows.append(line)
 
     # Write the combined results to a new markdown file with the provided prefix
     output_file = f"./benchmarklogs/combined_{prefix}_results.md"
