@@ -13,7 +13,7 @@ COPY client_priv.pem /tls/client_priv.pem
 
 # Ensure correct permissions (if necessary)
 # This will depend on the user that DragonflyDB runs as inside the container.
-#RUN chown -R dragonfly:dragonfly /tls
+RUN chown -R dragonfly:dragonfly /tls
 RUN chmod -R 0644 /tls
 RUN chmod 0600 /tls/test.key /tls/client_priv.pem
 RUN chmod 0755 /tls
