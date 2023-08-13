@@ -25,7 +25,7 @@ def parse_to_md(filename, prefix):
     stats_lines = lines[start_index + 2: end_index]
 
     # Filter out redundant lines
-    stats_lines = [line for line in stats_lines if not line.startswith(prefix + " | Type") and not line.startswith(prefix + " | ---")]
+    stats_lines = [line for line in stats_lines if "Latency" not in line and not line.startswith("| ---")]
 
     # Add prefix to the first column and format lines
     stats_lines = [f"{prefix} | " + " | ".join(line.split()) + " |\n" for line in stats_lines]
