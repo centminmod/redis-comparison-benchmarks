@@ -318,92 +318,92 @@ jobs:
 
     - name: Convert Redis 1 Threads Benchmark to MD
       run: |
-        python scripts/parse_memtier_to_md.py ./benchmarklogs/redis_benchmarks_1threads.txt Redis
+        python scripts/parse_memtier_to_md.py ./benchmarklogs/redis_benchmarks_1threads.txt "Redis 1 Thread"
         cat ./benchmarklogs/redis_benchmarks_1threads.md
 
     - name: Convert KeyDB 1 Threads Benchmark to MD
       run: |
-        python scripts/parse_memtier_to_md.py ./benchmarklogs/keydb_benchmarks_1threads.txt KeyDB
+        python scripts/parse_memtier_to_md.py ./benchmarklogs/keydb_benchmarks_1threads.txt "KeyDB 1 Thread"
         cat ./benchmarklogs/keydb_benchmarks_1threads.md
 
     - name: Convert Dragonfly 1 Threads Benchmark to MD
       run: |
-        python scripts/parse_memtier_to_md.py ./benchmarklogs/dragonfly_benchmarks_1threads.txt Dragonfly
+        python scripts/parse_memtier_to_md.py ./benchmarklogs/dragonfly_benchmarks_1threads.txt "Dragonfly 1 Threads"
         cat ./benchmarklogs/dragonfly_benchmarks_1threads.md
 
     - name: Convert Redis 2 Threads Benchmark to MD
       run: |
-        python scripts/parse_memtier_to_md.py ./benchmarklogs/redis_benchmarks_2threads.txt Redis
+        python scripts/parse_memtier_to_md.py ./benchmarklogs/redis_benchmarks_2threads.txt "Redis 2 Threads"
         cat ./benchmarklogs/redis_benchmarks_2threads.md
 
     - name: Convert KeyDB 2 Threads Benchmark to MD
       run: |
-        python scripts/parse_memtier_to_md.py ./benchmarklogs/keydb_benchmarks_2threads.txt KeyDB
+        python scripts/parse_memtier_to_md.py ./benchmarklogs/keydb_benchmarks_2threads.txt "KeyDB 2 Threads"
         cat ./benchmarklogs/keydb_benchmarks_2threads.md
 
     - name: Convert Dragonfly 2 Threads Benchmark to MD
       run: |
-        python scripts/parse_memtier_to_md.py ./benchmarklogs/dragonfly_benchmarks_2threads.txt Dragonfly
+        python scripts/parse_memtier_to_md.py ./benchmarklogs/dragonfly_benchmarks_2threads.txt "Dragonfly 2 Thread"
         cat ./benchmarklogs/dragonfly_benchmarks_2threads.md
 
     - name: Convert Redis 8 Threads Benchmark to MD
       run: |
-        python scripts/parse_memtier_to_md.py ./benchmarklogs/redis_benchmarks_8threads.txt Redis
+        python scripts/parse_memtier_to_md.py ./benchmarklogs/redis_benchmarks_8threads.txt "Redis 8 Threads"
         cat ./benchmarklogs/redis_benchmarks_8threads.md
 
     - name: Convert KeyDB 8 Threads Benchmark to MD
       run: |
-        python scripts/parse_memtier_to_md.py ./benchmarklogs/keydb_benchmarks_8threads.txt KeyDB
+        python scripts/parse_memtier_to_md.py ./benchmarklogs/keydb_benchmarks_8threads.txt "KeyDB 8 Threads"
         cat ./benchmarklogs/keydb_benchmarks_8threads.md
 
     - name: Convert Dragonfly 8 Threads Benchmark to MD
       run: |
-        python scripts/parse_memtier_to_md.py ./benchmarklogs/dragonfly_benchmarks_8threads.txt Dragonfly
+        python scripts/parse_memtier_to_md.py ./benchmarklogs/dragonfly_benchmarks_8threads.txt "Dragonfly 8 Threads"
         cat ./benchmarklogs/dragonfly_benchmarks_8threads.md
 
     - name: Convert Redis 1 Threads Benchmark with TLS to MD
       run: |
-        python scripts/parse_memtier_to_md.py ./benchmarklogs/redis_benchmarks_1threads_tls.txt "Redis TLS"
+        python scripts/parse_memtier_to_md.py ./benchmarklogs/redis_benchmarks_1threads_tls.txt "Redis TLS 1 Thread"
         cat ./benchmarklogs/redis_benchmarks_1threads_tls.md
     
     - name: Convert KeyDB 1 Threads Benchmark with TLS to MD
       run: |
-        python scripts/parse_memtier_to_md.py ./benchmarklogs/keydb_benchmarks_1threads_tls.txt "KeyDB TLS"
+        python scripts/parse_memtier_to_md.py ./benchmarklogs/keydb_benchmarks_1threads_tls.txt "KeyDB TLS 1 Thread"
         cat ./benchmarklogs/keydb_benchmarks_1threads_tls.md
     
     - name: Convert Dragonfly 1 Threads Benchmark with TLS to MD
       run: |
-        python scripts/parse_memtier_to_md.py ./benchmarklogs/dragonfly_benchmarks_1threads_tls.txt "Dragonfly TLS"
+        python scripts/parse_memtier_to_md.py ./benchmarklogs/dragonfly_benchmarks_1threads_tls.txt "Dragonfly TLS 1 Thread"
         cat ./benchmarklogs/dragonfly_benchmarks_1threads_tls.md
     
     - name: Convert Redis 2 Threads Benchmark with TLS to MD
       run: |
-        python scripts/parse_memtier_to_md.py ./benchmarklogs/redis_benchmarks_2threads_tls.txt "Redis TLS"
+        python scripts/parse_memtier_to_md.py ./benchmarklogs/redis_benchmarks_2threads_tls.txt "Redis TLS 2 Threads"
         cat ./benchmarklogs/redis_benchmarks_2threads_tls.md
     
     - name: Convert KeyDB 2 Threads Benchmark with TLS to MD
       run: |
-        python scripts/parse_memtier_to_md.py ./benchmarklogs/keydb_benchmarks_2threads_tls.txt "KeyDB TLS"
+        python scripts/parse_memtier_to_md.py ./benchmarklogs/keydb_benchmarks_2threads_tls.txt "KeyDB TLS 2 Threads"
         cat ./benchmarklogs/keydb_benchmarks_2threads_tls.md
     
     - name: Convert Dragonfly 2 Threads Benchmark with TLS to MD
       run: |
-        python scripts/parse_memtier_to_md.py ./benchmarklogs/dragonfly_benchmarks_2threads_tls.txt "Dragonfly TLS"
+        python scripts/parse_memtier_to_md.py ./benchmarklogs/dragonfly_benchmarks_2threads_tls.txt "Dragonfly TLS 2 Threads"
         cat ./benchmarklogs/dragonfly_benchmarks_2threads_tls.md
     
     - name: Convert Redis 8 Threads Benchmark with TLS to MD
       run: |
-        python scripts/parse_memtier_to_md.py ./benchmarklogs/redis_benchmarks_8threads_tls.txt "Redis TLS"
+        python scripts/parse_memtier_to_md.py ./benchmarklogs/redis_benchmarks_8threads_tls.txt "Redis TLS 8 Threads"
         cat ./benchmarklogs/redis_benchmarks_8threads_tls.md
     
     - name: Convert KeyDB 8 Threads Benchmark with TLS to MD
       run: |
-        python scripts/parse_memtier_to_md.py ./benchmarklogs/keydb_benchmarks_8threads_tls.txt "KeyDB TLS"
+        python scripts/parse_memtier_to_md.py ./benchmarklogs/keydb_benchmarks_8threads_tls.txt "KeyDB TLS 8 Threads"
         cat ./benchmarklogs/keydb_benchmarks_8threads_tls.md
     
     - name: Convert Dragonfly 8 Threads Benchmark with TLS to MD
       run: |
-        python scripts/parse_memtier_to_md.py ./benchmarklogs/dragonfly_benchmarks_8threads_tls.txt "Dragonfly TLS"
+        python scripts/parse_memtier_to_md.py ./benchmarklogs/dragonfly_benchmarks_8threads_tls.txt "Dragonfly TLS 8 Threads"
         cat ./benchmarklogs/dragonfly_benchmarks_8threads_tls.md
 
     - name: Combine Redis Benchmark MD Table

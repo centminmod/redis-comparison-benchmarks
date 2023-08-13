@@ -21,7 +21,8 @@ def parse_to_md(filename, prefix):
             end_index = idx + start_index
             break
 
-    stats_lines = lines[start_index + 2: end_index]
+    # Skip the redundant header lines
+    stats_lines = lines[start_index + 4: end_index]
 
     # Add prefix to the first column
     stats_lines = [f"{prefix} {line}" for line in stats_lines]
