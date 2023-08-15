@@ -2,11 +2,19 @@
 
 # Redis vs KeyDB vs Dragonfly
 
+## Ops/sec
+
 ![Redis vs KeyDB vs Dragonfly - Ops/sec](charts/redis-keydb-dragonfly-ops-02.png)
+
+## Avg Latency
 
 ![Redis vs KeyDB vs Dragonfly - Avg Latency](charts/redis-keydb-dragonfly-latency-avg-01.png)
 
+## p50 Latency
+
 ![Redis vs KeyDB vs Dragonfly - p50 Latency](charts/redis-keydb-dragonfly-latency-p50-01.png)
+
+## p99 Latency
 
 ![Redis vs KeyDB vs Dragonfly - p99 Latency](charts/redis-keydb-dragonfly-latency-p99-01.png)
 
