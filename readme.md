@@ -94,8 +94,6 @@ Redis 8 Threads | Totals | 121485.00 | 1126.09 | 112766.10 | 6.58254 | 6.43100 |
 
 with `io-threads 12` and `io-threads-do-reads yes`
 
-```
-
 | Databases | Type | Ops/sec | Hits/sec | Misses/sec | Avg Latency | p50 Latency | p99 Latency | p99.9 Latency | KB/sec |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 Redis 1 Thread | Sets | 3814.44 | --- | --- | 1.68332 | 1.43900 | 9.85500 | 20.73500 | 1608.80 |
@@ -107,7 +105,6 @@ Redis 2 Threads | Totals | 62834.47 | 112.47 | 58794.84 | 3.09719 | 1.45500 | 15
 Redis 8 Threads | Sets | 5961.01 | --- | --- | 9.20864 | 9.85500 | 29.69500 | 48.63900 | 2514.17 |
 Redis 8 Threads | Gets | 89415.13 | 554.67 | 88860.45 | 9.09222 | 9.72700 | 28.92700 | 50.43100 | 3692.74 |
 Redis 8 Threads | Totals | 95376.14 | 554.67 | 88860.45 | 9.09950 | 9.72700 | 29.05500 | 50.43100 | 6206.91 |
-```
 
 # KeyDB Memtier Benchmarks
 
@@ -128,7 +125,6 @@ KeyDB 8 Threads | Totals | 189195.09 | 1753.72 | 175616.68 | 4.15271 | 4.12700 |
 # KeyDB Memtier Benchmarks
 
 with `io-threads 12` and `io-threads-do-reads yes`
-
 
 | Databases | Type | Ops/sec | Hits/sec | Misses/sec | Avg Latency | p50 Latency | p99 Latency | p99.9 Latency | KB/sec |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
