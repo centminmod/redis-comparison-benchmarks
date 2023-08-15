@@ -1,5 +1,5 @@
 #!/bin/bash
-MEMTIER_DRAGONFLY_TLS='y'
+MEMTIER_REDIS_TLS='y'
 MEMTIER_KEYDB_TLS='y'
 MEMTIER_DRAGONFLY_TLS='n'
 
@@ -210,40 +210,58 @@ fi
 
 # Convert txt results to markdown
 python scripts/parse_memtier_to_md.py ./benchmarklogs/redis_benchmarks_1threads.txt "Redis 1 Thread"
+cat ./benchmarklogs/redis_benchmarks_1threads.md
 python scripts/parse_memtier_to_md.py ./benchmarklogs/keydb_benchmarks_1threads.txt "KeyDB 1 Thread"
+cat ./benchmarklogs/keydb_benchmarks_1threads.md
 python scripts/parse_memtier_to_md.py ./benchmarklogs/dragonfly_benchmarks_1threads.txt "Dragonfly 1 Threads"
+cat ./benchmarklogs/dragonfly_benchmarks_1threads.md
 python scripts/parse_memtier_to_md.py ./benchmarklogs/redis_benchmarks_2threads.txt "Redis 2 Threads"
+cat ./benchmarklogs/redis_benchmarks_2threads.md
 python scripts/parse_memtier_to_md.py ./benchmarklogs/keydb_benchmarks_2threads.txt "KeyDB 2 Threads"
+cat ./benchmarklogs/keydb_benchmarks_2threads.md
 python scripts/parse_memtier_to_md.py ./benchmarklogs/dragonfly_benchmarks_2threads.txt "Dragonfly 2 Thread"
+cat ./benchmarklogs/dragonfly_benchmarks_2threads.md
 python scripts/parse_memtier_to_md.py ./benchmarklogs/redis_benchmarks_8threads.txt "Redis 8 Threads"
+cat ./benchmarklogs/redis_benchmarks_8threads.md
 python scripts/parse_memtier_to_md.py ./benchmarklogs/keydb_benchmarks_8threads.txt "KeyDB 8 Threads"
+cat ./benchmarklogs/keydb_benchmarks_8threads.md
 python scripts/parse_memtier_to_md.py ./benchmarklogs/dragonfly_benchmarks_8threads.txt "Dragonfly 8 Threads"
+cat ./benchmarklogs/dragonfly_benchmarks_8threads.md
 if [[ "$MEMTIER_REDIS_TLS" = [yY] ]]; then
   python scripts/parse_memtier_to_md.py ./benchmarklogs/redis_benchmarks_1threads_tls.txt "Redis TLS 1 Thread"
+  cat ./benchmarklogs/redis_benchmarks_1threads_tls.md
 fi
 if [[ "$MEMTIER_KEYDB_TLS" = [yY] ]]; then
   python scripts/parse_memtier_to_md.py ./benchmarklogs/keydb_benchmarks_1threads_tls.txt "KeyDB TLS 1 Thread"
+  cat ./benchmarklogs/keydb_benchmarks_1threads_tls.md
 fi
 if [[ "$MEMTIER_DRAGONFLY_TLS" = [yY] ]]; then
   python scripts/parse_memtier_to_md.py ./benchmarklogs/dragonfly_benchmarks_1threads_tls.txt "Dragonfly TLS 1 Thread"
+  cat ./benchmarklogs/dragonfly_benchmarks_1threads_tls.md
 fi
 if [[ "$MEMTIER_REDIS_TLS" = [yY] ]]; then
   python scripts/parse_memtier_to_md.py ./benchmarklogs/redis_benchmarks_2threads_tls.txt "Redis TLS 2 Threads"
+  cat ./benchmarklogs/redis_benchmarks_2threads_tls.md
 fi
 if [[ "$MEMTIER_KEYDB_TLS" = [yY] ]]; then
   python scripts/parse_memtier_to_md.py ./benchmarklogs/keydb_benchmarks_2threads_tls.txt "KeyDB TLS 2 Threads"
+  cat ./benchmarklogs/keydb_benchmarks_2threads_tls.md
 fi
 if [[ "$MEMTIER_DRAGONFLY_TLS" = [yY] ]]; then
   python scripts/parse_memtier_to_md.py ./benchmarklogs/dragonfly_benchmarks_2threads_tls.txt "Dragonfly TLS 2 Threads"
+  cat ./benchmarklogs/dragonfly_benchmarks_2threads_tls.md
 fi
 if [[ "$MEMTIER_REDIS_TLS" = [yY] ]]; then
   python scripts/parse_memtier_to_md.py ./benchmarklogs/redis_benchmarks_8threads_tls.txt "Redis TLS 8 Threads"
+  cat ./benchmarklogs/redis_benchmarks_8threads_tls.md
 fi
 if [[ "$MEMTIER_KEYDB_TLS" = [yY] ]]; then
   python scripts/parse_memtier_to_md.py ./benchmarklogs/keydb_benchmarks_8threads_tls.txt "KeyDB TLS 8 Threads"
+  cat ./benchmarklogs/keydb_benchmarks_8threads_tls.md
 fi
 if [[ "$MEMTIER_DRAGONFLY_TLS" = [yY] ]]; then
   python scripts/parse_memtier_to_md.py ./benchmarklogs/dragonfly_benchmarks_8threads_tls.txt "Dragonfly TLS 8 Threads"
+  cat ./benchmarklogs/dragonfly_benchmarks_8threads_tls.md
 fi
 
 # Combine Redis Benchmark MD Table
