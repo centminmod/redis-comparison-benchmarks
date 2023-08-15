@@ -1,5 +1,15 @@
 [![Benchmark Redis vs KeyDB](https://github.com/centminmod/redis-comparison-benchmarks/actions/workflows/benchmarks.yml/badge.svg)](https://github.com/centminmod/redis-comparison-benchmarks/actions/workflows/benchmarks.yml)
 
+# Redis vs KeyDB vs Dragonfly
+
+![Redis vs KeyDB vs Dragonfly - Ops/sec](charts/redis-keydb-dragonfly-ops-02.png)
+
+![Redis vs KeyDB vs Dragonfly - Avg Latency](charts/redis-keydb-dragonfly-latency-avg-01.png)
+
+![Redis vs KeyDB vs Dragonfly - p50 Latency](charts/redis-keydb-dragonfly-latency-p50-01.png)
+
+![Redis vs KeyDB vs Dragonfly - p99 Latency](charts/redis-keydb-dragonfly-latency-p99-01.png)
+
 # Redis Memtier Benchmarks
 
 | Databases | Type | Ops/sec | Hits/sec | Misses/sec | Avg Latency | p50 Latency | p99 Latency | p99.9 Latency | KB/sec |
