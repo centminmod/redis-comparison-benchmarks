@@ -3,6 +3,39 @@
 * [Redis vs KeyDB vs Dragonfly With IO Threads](#redis-vs-keydb-vs-dragonfly-with-io-threads)
 * [Redis vs KeyDB vs Dragonfly No IO Threads](#redis-vs-keydb-vs-dragonfly-no-io-threads)
 
+# Summary
+
+1. Ops/Sec (Throughput) Analysis:
+
+* Redis vs KeyDB vs Dragonfly With IO Threads:
+  * For single-threaded operations (both Sets and Gets), all three databases have comparable performance.
+  * KeyDB outperforms both Redis and Dragonfly significantly in multi-threaded scenarios, especially with 2 threads.
+  * Dragonfly surpasses KeyDB and Redis when scaled to 8 threads, especially in Gets operations.
+* Redis vs KeyDB vs Dragonfly No IO Threads:
+  * The patterns are quite similar to when IO Threads are enabled. However, the throughput is generally lower without IO Threads.
+  * KeyDB maintains its lead in the 2 thread scenarios.
+  * Again, Dragonfly shows its strength when scaled to 8 threads.
+
+2. Latency Analysis (Avg, p50, p99):
+
+* Redis vs KeyDB vs Dragonfly With IO Threads:
+  * KeyDB consistently showcases the lowest latency in almost all scenarios. Its p99 latency is particularly impressive, maintaining low values even under high concurrency.
+  * Dragonfly tends to have slightly higher latency than Redis in single-threaded operations but performs better as the number of threads increase.
+* Redis vs KeyDB vs Dragonfly No IO Threads:
+  * The latency patterns remain fairly consistent with the IO Threads scenario, but the actual latency values are generally higher without IO Threads.
+  * KeyDB's strength in latency remains evident, especially in multi-threaded operations.
+
+3. Summary Findings:
+
+* Throughput (Ops/Sec): KeyDB shines in multi-threaded scenarios, especially with 2 threads. Dragonfly, on the other hand, scales impressively with 8 threads. Redis provides consistent performance but doesn't lead in any particular scenario.
+* Latency: KeyDB offers the best latency performance across the board. It's particularly noticeable in high concurrency scenarios, where it maintains low p99 latencies. Dragonfly shows promise with increased threads, but its latency isn't as competitive as KeyDB's.
+
+4. Sweet Spots:
+
+* Redis: Best suited for applications that require consistent, predictable performance without the need to scale beyond a few threads. Redis is also a mature product with a vast ecosystem, making it a safe bet for general-purpose caching and storage scenarios.
+* KeyDB: Highly recommended for applications that require high throughput with low latency, especially if multi-threading is anticipated. Its performance in 2-thread scenarios is particularly noteworthy.
+* Dragonfly: Dragonfly seems to be the go-to for very high concurrency scenarios (like 8 threads). It scales well and might be more suitable for applications that can throw a lot of parallel threads at the database.
+
 # Redis vs KeyDB vs Dragonfly With IO Threads
 
 * Redis and KeyDB configured with `io-threads 12` and `io-threads-do-reads yes`
