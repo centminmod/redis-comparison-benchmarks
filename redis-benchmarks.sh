@@ -2,6 +2,7 @@
 MEMTIER_REDIS_TLS='y'
 MEMTIER_KEYDB_TLS='y'
 MEMTIER_DRAGONFLY_TLS='n'
+CPUS=$(nproc)
 
 echo "==== Kernel ===="
 uname -r
@@ -37,6 +38,15 @@ rm -rf redis-comparison-benchmarks
 git clone https://github.com/centminmod/redis-comparison-benchmarks
 cd redis-comparison-benchmarks
 \cp -af /tls/* .
+
+# Updated config for non-TLS
+echo "io-threads $CPUS" >> redis.conf
+echo "io-threads-do-reads yes" >> redis.conf
+
+echo "io-threads $CPUS" >> keydb.conf
+echo "io-threads-do-reads yes" >> keydb.conf
+
+# echo "" >> dragonfly.conf
 
 # Update configuration files for Redis, KeyDB, and Dragonfly with TLS settings
 echo "tls-port 6390" >> redis-tls.conf

@@ -70,6 +70,13 @@ jobs:
         # Sign the client's CSR with the CA's private key to get the client's certificate
         openssl x509 -req -in client.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out client_cert.pem -days 365
 
+    - name: Update Redis Configuration for non-TLS
+      run: |
+        echo "io-threads 2" >> redis.conf
+        echo "io-threads-do-reads yes" >> redis.conf
+        echo "io-threads 2" >> keydb.conf
+        echo "io-threads-do-reads yes" >> keydb.conf
+
     - name: Update Redis Configuration for TLS
       run: |
         echo "tls-port 6390" >> redis-tls.conf

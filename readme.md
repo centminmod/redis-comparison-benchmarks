@@ -1,6 +1,26 @@
 [![Benchmark Redis vs KeyDB](https://github.com/centminmod/redis-comparison-benchmarks/actions/workflows/benchmarks.yml/badge.svg)](https://github.com/centminmod/redis-comparison-benchmarks/actions/workflows/benchmarks.yml)
 
-# Redis vs KeyDB vs Dragonfly
+# Redis vs KeyDB vs Dragonfly With IO Threads
+
+* Redis and KeyDB configured with `io-threads 12` and `io-threads-do-reads yes`
+
+## Ops/sec
+
+![Redis vs KeyDB vs Dragonfly - Ops/sec](charts/redis-keydb-dragonfly-ops-03.png)
+
+## Avg Latency
+
+![Redis vs KeyDB vs Dragonfly - Avg Latency](charts/redis-keydb-dragonfly-latency-avg-02.png)
+
+## p50 Latency
+
+![Redis vs KeyDB vs Dragonfly - p50 Latency](charts/redis-keydb-dragonfly-latency-p50-02.png)
+
+## p99 Latency
+
+![Redis vs KeyDB vs Dragonfly - p99 Latency](charts/redis-keydb-dragonfly-latency-p99-02.png)
+
+# Redis vs KeyDB vs Dragonfly No IO Threads
 
 ## Ops/sec
 
@@ -20,6 +40,8 @@
 
 # Redis Memtier Benchmarks
 
+without IO threads
+
 | Databases | Type | Ops/sec | Hits/sec | Misses/sec | Avg Latency | p50 Latency | p99 Latency | p99.9 Latency | KB/sec |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 Redis 1 Thread | Sets | 5706.46 | --- | --- | 1.10241 | 0.99100 | 1.95900 | 4.07900 | 2406.80 |
@@ -32,7 +54,28 @@ Redis 8 Threads | Sets | 7592.81 | --- | --- | 6.65850 | 6.49500 | 9.21500 | 14.
 Redis 8 Threads | Gets | 113892.19 | 1126.09 | 112766.10 | 6.57747 | 6.43100 | 8.76700 | 14.46300 | 4862.18 |
 Redis 8 Threads | Totals | 121485.00 | 1126.09 | 112766.10 | 6.58254 | 6.43100 | 8.76700 | 14.46300 | 8064.59 |
 
+# Redis Memtier Benchmarks
+
+with `io-threads 12` and `io-threads-do-reads yes`
+
+```
+
+| Databases | Type | Ops/sec | Hits/sec | Misses/sec | Avg Latency | p50 Latency | p99 Latency | p99.9 Latency | KB/sec |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+Redis 1 Thread | Sets | 3814.44 | --- | --- | 1.68332 | 1.43900 | 9.85500 | 20.73500 | 1608.80 |
+Redis 1 Thread | Gets | 57216.58 | 36.92 | 57179.66 | 1.63532 | 1.41500 | 3.24700 | 27.00700 | 2242.78 |
+Redis 1 Thread | Totals | 61031.02 | 36.92 | 57179.66 | 1.63832 | 1.41500 | 3.26300 | 27.00700 | 3851.58 |
+Redis 2 Threads | Sets | 3927.15 | --- | --- | 3.25753 | 1.46300 | 18.55900 | 23.55100 | 1656.35 |
+Redis 2 Threads | Gets | 58907.31 | 112.47 | 58794.84 | 3.08650 | 1.45500 | 15.74300 | 26.11100 | 2337.19 |
+Redis 2 Threads | Totals | 62834.47 | 112.47 | 58794.84 | 3.09719 | 1.45500 | 15.93500 | 26.11100 | 3993.54 |
+Redis 8 Threads | Sets | 5961.01 | --- | --- | 9.20864 | 9.85500 | 29.69500 | 48.63900 | 2514.17 |
+Redis 8 Threads | Gets | 89415.13 | 554.67 | 88860.45 | 9.09222 | 9.72700 | 28.92700 | 50.43100 | 3692.74 |
+Redis 8 Threads | Totals | 95376.14 | 554.67 | 88860.45 | 9.09950 | 9.72700 | 29.05500 | 50.43100 | 6206.91 |
+```
+
 # KeyDB Memtier Benchmarks
+
+without IO threads
 
 | Databases | Type | Ops/sec | Hits/sec | Misses/sec | Avg Latency | p50 Latency | p99 Latency | p99.9 Latency | KB/sec |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -46,9 +89,26 @@ KeyDB 8 Threads | Sets | 11824.69 | --- | --- | 4.20102 | 4.12700 | 8.57500 | 12
 KeyDB 8 Threads | Gets | 177370.40 | 1753.72 | 175616.68 | 4.14949 | 4.12700 | 8.44700 | 11.96700 | 7572.14 |
 KeyDB 8 Threads | Totals | 189195.09 | 1753.72 | 175616.68 | 4.15271 | 4.12700 | 8.44700 | 12.03100 | 12559.42 |
 
-# Dragonfly Memtier Benchmarks
+# KeyDB Memtier Benchmarks
 
-Dragonfly was configured with `--proactor_threads=$(nproc)` which = 12 CPU threads.
+with `io-threads 12` and `io-threads-do-reads yes`
+
+
+| Databases | Type | Ops/sec | Hits/sec | Misses/sec | Avg Latency | p50 Latency | p99 Latency | p99.9 Latency | KB/sec |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+KeyDB 1 Thread | Sets | 5752.32 | --- | --- | 1.14006 | 1.00700 | 3.32700 | 7.48700 | 2426.14 |
+KeyDB 1 Thread | Gets | 86284.73 | 57.06 | 86227.67 | 1.08299 | 1.00700 | 1.83100 | 3.87100 | 3382.71 |
+KeyDB 1 Thread | Totals | 92037.05 | 57.06 | 86227.67 | 1.08656 | 1.00700 | 1.83900 | 5.05500 | 5808.85 |
+KeyDB 2 Threads | Sets | 9541.41 | --- | --- | 1.38931 | 1.29500 | 2.19100 | 20.73500 | 4024.27 |
+KeyDB 2 Threads | Gets | 143121.19 | 273.65 | 142847.55 | 1.31553 | 1.28700 | 2.07900 | 5.24700 | 5678.59 |
+KeyDB 2 Threads | Totals | 152662.61 | 273.65 | 142847.55 | 1.32014 | 1.28700 | 2.07900 | 5.95100 | 9702.85 |
+KeyDB 8 Threads | Sets | 11152.45 | --- | --- | 5.38483 | 0.88700 | 98.30300 | 127.99900 | 4703.75 |
+KeyDB 8 Threads | Gets | 167286.71 | 1059.71 | 166227.00 | 5.31853 | 0.87900 | 97.79100 | 129.02300 | 6917.05 |
+KeyDB 8 Threads | Totals | 178439.15 | 1059.71 | 166227.00 | 5.32267 | 0.87900 | 97.79100 | 129.02300 | 11620.80 |
+
+# Dragonfly Memtier Benchmarks 1st Run
+
+Ran with Redis & KeyDB runs no IO threads and Dragonfly was configured with `--proactor_threads=$(nproc)` which = 12 CPU threads.
 
 | Databases | Type | Ops/sec | Hits/sec | Misses/sec | Avg Latency | p50 Latency | p99 Latency | p99.9 Latency | KB/sec |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -61,6 +121,22 @@ Dragonfly 2 Thread | Totals | 130359.02 | 1218.86 | 120992.72 | 1.53219 | 0.6870
 Dragonfly 8 Threads | Sets | 18215.12 | --- | --- | 2.76942 | 2.39900 | 10.36700 | 25.47100 | 7682.56 |
 Dragonfly 8 Threads | Gets | 273226.78 | 2701.48 | 270525.30 | 2.74424 | 2.35100 | 10.30300 | 24.83100 | 11664.36 |
 Dragonfly 8 Threads | Totals | 291441.90 | 2701.48 | 270525.30 | 2.74581 | 2.35100 | 10.30300 | 24.83100 | 19346.92 |
+
+# Dragonfly Memtier Benchmarks 2nd Run
+
+Ran with Redis & KeyDB runs with IO threads and Dragonfly was configured with `--proactor_threads=$(nproc)` which = 12 CPU threads.
+
+| Databases | Type | Ops/sec | Hits/sec | Misses/sec | Avg Latency | p50 Latency | p99 Latency | p99.9 Latency | KB/sec |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+Dragonfly 1 Threads | Sets | 6379.52 | --- | --- | 1.36691 | 0.95900 | 9.08700 | 17.40700 | 2690.67 |
+Dragonfly 1 Threads | Gets | 95692.75 | 63.80 | 95628.96 | 1.30565 | 0.96700 | 8.76700 | 14.14300 | 3751.74 |
+Dragonfly 1 Threads | Totals | 102072.27 | 63.80 | 95628.96 | 1.30948 | 0.96700 | 8.76700 | 14.33500 | 6442.41 |
+Dragonfly 2 Thread | Sets | 8296.79 | --- | --- | 1.52514 | 0.74300 | 12.73500 | 20.47900 | 3499.33 |
+Dragonfly 2 Thread | Gets | 124451.91 | 235.96 | 124215.95 | 1.50333 | 0.74300 | 12.60700 | 19.96700 | 4937.10 |
+Dragonfly 2 Thread | Totals | 132748.71 | 235.96 | 124215.95 | 1.50470 | 0.74300 | 12.60700 | 20.09500 | 8436.42 |
+Dragonfly 8 Threads | Sets | 21324.85 | --- | --- | 2.48188 | 1.76700 | 11.00700 | 19.83900 | 8994.15 |
+Dragonfly 8 Threads | Gets | 319872.80 | 1959.97 | 317912.83 | 2.44320 | 1.73500 | 10.43100 | 18.68700 | 13201.18 |
+Dragonfly 8 Threads | Totals | 341197.65 | 1959.97 | 317912.83 | 2.44562 | 1.73500 | 10.49500 | 18.81500 | 22195.34 |
 
 # Memtier Benchmark Parameters
 
