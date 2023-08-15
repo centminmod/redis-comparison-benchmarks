@@ -211,7 +211,7 @@ jobs:
     #     docker exec redis-tls ls -lAh /usr/local/etc/redis/
     
     - name: Test Redis TLS Connectivity
-      run: docker exec redis-tls redis-cli -h 127.0.0.1 -p 6390 --tls --cert /tls/test.crt --key /tls/test.key --cacert /tls/ca.crt PING
+      run: docker exec redis-tls redis-cli -h 127.0.0.1 -p 6390 --tls --insecure --cert /tls/test.crt --key /tls/test.key --cacert /tls/ca.crt PING
 
     - name: Check KeyDB TLS logs
       run: docker logs keydb-tls
@@ -221,7 +221,7 @@ jobs:
     #     docker exec keydb-tls ls -lAh /etc/keydb/
     
     - name: Test KeyDB TLS Connectivity
-      run: docker exec keydb-tls keydb-cli -h 127.0.0.1 -p 6391 --tls --cert /tls/test.crt --key /tls/test.key --cacert /tls/ca.crt PING
+      run: docker exec keydb-tls keydb-cli -h 127.0.0.1 -p 6391 --tls --insecure --cert /tls/test.crt --key /tls/test.key --cacert /tls/ca.crt PING
 
     - name: Check Dragonfly TLS logs
       run: docker logs dragonfly-tls

@@ -10,13 +10,9 @@ free -m
 # Setup
 mkdir -p benchmarklogs /tls
 
-# git clone
-rm -rf redis-comparison-benchmarks
-git clone https://github.com/centminmod/redis-comparison-benchmarks
-cd redis-comparison-benchmarks
-
 # Generate SSL certificates for TLS benchmarks
 # Generate CA's private key and self-signed certificate
+pushd /tls
 openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out ca.key
 openssl req -new -x509 -days 365 -key ca.key -out ca.crt -subj "/C=US/ST=Some-State/O=OrganizationName/OU=OrganizationalUnit/CN=CA"
 # Generate server's private key and certificate signing request (CSR)
@@ -31,6 +27,13 @@ openssl req -new -key client_priv.pem -out client.csr -subj "/C=US/ST=Some-State
 openssl x509 -req -in client.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out client_cert.pem -days 365
 # list certs
 ls -lAhrt
+popd
+
+# git clone
+rm -rf redis-comparison-benchmarks
+git clone https://github.com/centminmod/redis-comparison-benchmarks
+cd redis-comparison-benchmarks
+\cp -af /tls/* .
 
 # Update configuration files for Redis, KeyDB, and Dragonfly with TLS settings
 echo "tls-port 6390" >> redis-tls.conf
@@ -51,6 +54,10 @@ echo "tls-ca-cert-file /tls/ca.crt" >> dragonfly-tls.conf
 # list confs
 ls -lAhrt
 
+# adjust dragonfly --proactor_threads=X
+sed -i "s|--proactor_threads=2|--proactor_threads=$(nproc)|" Dockerfile-dragonfly
+sed -i "s|--proactor_threads=2|--proactor_threads=$(nproc)|" Dockerfile-dragonfly-tls
+
 # Building Docker Images
 echo "docker build -t redis:latest -f Dockerfile-redis ."
 docker build -t redis:latest -f Dockerfile-redis .
@@ -70,8 +77,8 @@ docker images | egrep 'redis|keydb|dragonfly'
 systemctl restart docker
 echo "docker run --name redis -d -p 6377:6379 --ulimit memlock=-1 redis:latest"
 docker run --name redis -d -p 6377:6379 --ulimit memlock=-1 redis:latest
-echo "docker run --name keydb -d -p 6378:6380 --ulimit memlock=-1 keydb:latest"
-docker run --name keydb -d -p 6378:6380 --ulimit memlock=-1 keydb:latest
+echo "docker run --name keydb -d -p 6378:6379 --ulimit memlock=-1 keydb:latest"
+docker run --name keydb -d -p 6378:6379 --ulimit memlock=-1 keydb:latest
 echo "docker run --name dragonfly -d -p 6381:6381 --ulimit memlock=-1 dragonfly:latest"
 docker run --name dragonfly -d -p 6381:6381 --ulimit memlock=-1 dragonfly:latest
 echo "docker run --name redis-tls -d -p 6390:6390 --ulimit memlock=-1 redis-tls:latest"
@@ -81,20 +88,6 @@ docker run --name keydb-tls -d -p 6391:6391 --ulimit memlock=-1 keydb-tls:latest
 echo "docker run --name dragonfly-tls -d -p 6392:6392 --ulimit memlock=-1 dragonfly-tls:latest"
 docker run --name dragonfly-tls -d -p 6392:6392 --ulimit memlock=-1 dragonfly-tls:latest
 sleep 20
-
-# PING check
-echo "docker exec redis redis-cli -h 127.0.0.1 -p 6379 PING"
-docker exec redis redis-cli -h 127.0.0.1 -p 6379 PING
-echo "docker exec keydb keydb-cli -h 127.0.0.1 -p 6379 PING"
-docker exec keydb keydb-cli -h 127.0.0.1 -p 6379 PING
-echo "docker exec dragonfly redis-cli -h 127.0.0.1 -p 6379 PING"
-docker exec dragonfly redis-cli -h 127.0.0.1 -p 6379 PING
-echo "docker exec redis-tls redis-cli -h 127.0.0.1 -p 6390 --tls --cert /tls/test.crt --key /tls/test.key --cacert /tls/ca.crt PING"
-docker exec redis-tls redis-cli -h 127.0.0.1 -p 6390 --tls --cert /tls/test.crt --key /tls/test.key --cacert /tls/ca.crt PING
-echo "docker exec keydb-tls keydb-cli -h 127.0.0.1 -p 6391 --tls --cert /tls/test.crt --key /tls/test.key --cacert /tls/ca.crt PING"
-docker exec keydb-tls keydb-cli -h 127.0.0.1 -p 6391 --tls --cert /tls/test.crt --key /tls/test.key --cacert /tls/ca.crt PING
-# echo "docker exec dragonfly-tls redis-cli -h 127.0.0.1 -p 6392 --cert /tls/test.crt --key /tls/test.key --cacert /tls/ca.crt PING"
-# docker exec dragonfly-tls redis-cli -h 127.0.0.1 -p 6392 --cert /tls/test.crt --key /tls/test.key --cacert /tls/ca.crt PING
 
 # Get docker IP
 REDIS_CONTAINER_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' redis)
@@ -121,31 +114,71 @@ DRAGONFLY_TLS_CONTAINER_IP=$(docker inspect -f '{{range .NetworkSettings.Network
 echo $DRAGONFLY_TLS_CONTAINER_IP
 csf -a $DRAGONFLY_TLS_CONTAINER_IP dragonfly-tls
 
+# PING check
+# docker restart redis keydb dragonfly redis-tls keydb-tls dragonfly-tls
+# echo "docker exec redis redis-cli -h 127.0.0.1 -p 6379 PING"
+# docker exec redis redis-cli -h 127.0.0.1 -p 6379 PING
+# echo "docker exec keydb keydb-cli -h 127.0.0.1 -p 6379 PING"
+# docker exec keydb keydb-cli -h 127.0.0.1 -p 6379 PING
+# echo "docker exec dragonfly redis-cli -h 127.0.0.1 -p 6379 PING"
+# docker exec dragonfly redis-cli -h 127.0.0.1 -p 6379 PING
+# echo "docker exec redis-tls redis-cli -h 127.0.0.1 -p 6390 --tls --cert /tls/test.crt --key /tls/test.key --cacert /tls/ca.crt PING"
+# docker exec redis-tls redis-cli -h 127.0.0.1 -p 6390 --tls --cert /tls/test.crt --key /tls/test.key --cacert /tls/ca.crt PING
+# echo "docker exec keydb-tls keydb-cli -h 127.0.0.1 -p 6391 --tls --cert /tls/test.crt --key /tls/test.key --cacert /tls/ca.crt PING"
+# docker exec keydb-tls keydb-cli -h 127.0.0.1 -p 6391 --tls --cert /tls/test.crt --key /tls/test.key --cacert /tls/ca.crt PING
+# echo "docker exec dragonfly-tls redis-cli -h 127.0.0.1 -p 6392 --cert /tls/test.crt --key /tls/test.key --cacert /tls/ca.crt PING"
+# docker exec dragonfly-tls redis-cli -h 127.0.0.1 -p 6392 --cert /tls/test.crt --key /tls/test.key --cacert /tls/ca.crt PING
+docker restart redis keydb dragonfly redis-tls keydb-tls dragonfly-tls
+echo "redis-cli -h $REDIS_CONTAINER_IP -p 6379 PING"
+redis-cli -h $REDIS_CONTAINER_IP -p 6379 PING
+echo "redis-cli -h $KEYDB_CONTAINER_IP -p 6379 PING"
+redis-cli -h $KEYDB_CONTAINER_IP -p 6379 PING
+echo "redis-cli -h $DRAGONFLY_CONTAINER_IP -p 6379 PING"
+redis-cli -h $DRAGONFLY_CONTAINER_IP -p 6379 PING
+echo "redis-cli -h $REDIS_TLS_CONTAINER_IP -p 6390 --tls --insecure --cert /tls/test.crt --key /tls/test.key --cacert /tls/ca.crt PING"
+redis-cli -h $REDIS_TLS_CONTAINER_IP -p 6390 --tls --insecure --cert /tls/test.crt --key /tls/test.key --cacert /tls/ca.crt PING
+echo "redis-cli -h $KEYDB_TLS_CONTAINER_IP -p 6391 --tls --insecure --cert /tls/test.crt --key /tls/test.key --cacert /tls/ca.crt PING"
+redis-cli -h $KEYDB_TLS_CONTAINER_IP -p 6391 --tls --insecure --cert /tls/test.crt --key /tls/test.key --cacert /tls/ca.crt PING
+# echo "redis-cli -h $DRAGONFLY_TLS_CONTAINER_IP -p 6392 --insecure --cert /tls/test.crt --key /tls/test.key --cacert /tls/ca.crt PING"
+# redis-cli -h $DRAGONFLY_TLS_CONTAINER_IP -p 6392 --insecure --cert /tls/test.crt --key /tls/test.key --cacert /tls/ca.crt PING
 
 # Memtier Benchmarks for Redis, KeyDB, Dragonfly
+echo "memtier_benchmark -s \"$REDIS_CONTAINER_IP\" --ratio=1:15 -p 6379 --protocol=redis -t 1 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/redis_benchmarks_1threads.txt"
 memtier_benchmark -s "$REDIS_CONTAINER_IP" --ratio=1:15 -p 6379 --protocol=redis -t 1 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/redis_benchmarks_1threads.txt
-memtier_benchmark -s "$KEYDB_CONTAINER_IP" --ratio=1:15 -p 6380 --protocol=redis -t 1 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/keydb_benchmarks_1threads.txt
-memtier_benchmark -s "$DRAGONFLY_CONTAINER_IP" --ratio=1:15 -p 6381 --protocol=redis -t 1 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/dragonfly_benchmarks_1threads.txt
-
+echo "memtier_benchmark -s \"$KEYDB_CONTAINER_IP\" --ratio=1:15 -p 6379 --protocol=redis -t 1 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/keydb_benchmarks_1threads.txt"
+memtier_benchmark -s "$KEYDB_CONTAINER_IP" --ratio=1:15 -p 6379 --protocol=redis -t 1 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/keydb_benchmarks_1threads.txt
+echo "memtier_benchmark -s \"$DRAGONFLY_CONTAINER_IP\" --ratio=1:15 -p 6379 --protocol=redis -t 1 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/dragonfly_benchmarks_1threads.txt"
+memtier_benchmark -s "$DRAGONFLY_CONTAINER_IP" --ratio=1:15 -p 6379 --protocol=redis -t 1 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/dragonfly_benchmarks_1threads.txt
+echo "memtier_benchmark -s \"$REDIS_CONTAINER_IP\" --ratio=1:15 -p 6379 --protocol=redis -t 2 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/redis_benchmarks_2threads.txt"
 memtier_benchmark -s "$REDIS_CONTAINER_IP" --ratio=1:15 -p 6379 --protocol=redis -t 2 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/redis_benchmarks_2threads.txt
-memtier_benchmark -s "$KEYDB_CONTAINER_IP" --ratio=1:15 -p 6380 --protocol=redis -t 2 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/keydb_benchmarks_2threads.txt
-memtier_benchmark -s "$DRAGONFLY_CONTAINER_IP" --ratio=1:15 -p 6381 --protocol=redis -t 2 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/dragonfly_benchmarks_2threads.txt
-
+echo "memtier_benchmark -s \"$KEYDB_CONTAINER_IP\" --ratio=1:15 -p 6379 --protocol=redis -t 2 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/keydb_benchmarks_2threads.txt"
+memtier_benchmark -s "$KEYDB_CONTAINER_IP" --ratio=1:15 -p 6379 --protocol=redis -t 2 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/keydb_benchmarks_2threads.txt
+echo "memtier_benchmark -s \"$DRAGONFLY_CONTAINER_IP\" --ratio=1:15 -p 6379 --protocol=redis -t 2 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/dragonfly_benchmarks_2threads.txt"
+memtier_benchmark -s "$DRAGONFLY_CONTAINER_IP" --ratio=1:15 -p 6379 --protocol=redis -t 2 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/dragonfly_benchmarks_2threads.txt
+echo "memtier_benchmark -s \"$REDIS_CONTAINER_IP\" --ratio=1:15 -p 6379 --protocol=redis -t 8 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/redis_benchmarks_8threads.txt"
 memtier_benchmark -s "$REDIS_CONTAINER_IP" --ratio=1:15 -p 6379 --protocol=redis -t 8 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/redis_benchmarks_8threads.txt
-memtier_benchmark -s "$KEYDB_CONTAINER_IP" --ratio=1:15 -p 6380 --protocol=redis -t 8 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/keydb_benchmarks_8threads.txt
-memtier_benchmark -s "$DRAGONFLY_CONTAINER_IP" --ratio=1:15 -p 6381 --protocol=redis -t 8 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/dragonfly_benchmarks_8threads.txt
-
+echo "memtier_benchmark -s \"$KEYDB_CONTAINER_IP\" --ratio=1:15 -p 6379 --protocol=redis -t 8 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/keydb_benchmarks_8threads.txt"
+memtier_benchmark -s "$KEYDB_CONTAINER_IP" --ratio=1:15 -p 6379 --protocol=redis -t 8 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/keydb_benchmarks_8threads.txt
+echo "memtier_benchmark -s \"$DRAGONFLY_CONTAINER_IP\" --ratio=1:15 -p 6379 --protocol=redis -t 8 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/dragonfly_benchmarks_8threads.txt"
+memtier_benchmark -s "$DRAGONFLY_CONTAINER_IP" --ratio=1:15 -p 6379 --protocol=redis -t 8 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/dragonfly_benchmarks_8threads.txt
 # Memtier Benchmarks for Redis, KeyDB, Dragonfly with TLS
+echo "memtier_benchmark -s \"$REDIS_TLS_CONTAINER_IP\" --ratio=1:15 -p 6390 --protocol=redis --tls --cert=${PWD}/test.crt --key=${PWD}/test.key --cacert=${PWD}/ca.crt --tls-skip-verify -t 1 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/redis_benchmarks_1threads_tls.txt"
 memtier_benchmark -s "$REDIS_TLS_CONTAINER_IP" --ratio=1:15 -p 6390 --protocol=redis --tls --cert=${PWD}/test.crt --key=${PWD}/test.key --cacert=${PWD}/ca.crt --tls-skip-verify -t 1 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/redis_benchmarks_1threads_tls.txt
+echo "memtier_benchmark -s \"$KEYDB_TLS_CONTAINER_IP\" --ratio=1:15 -p 6391 --protocol=redis --tls --cert=${PWD}/test.crt --key=${PWD}/test.key --cacert=${PWD}/ca.crt --tls-skip-verify -t 1 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/keydb_benchmarks_1threads_tls.txt"
 memtier_benchmark -s "$KEYDB_TLS_CONTAINER_IP" --ratio=1:15 -p 6391 --protocol=redis --tls --cert=${PWD}/test.crt --key=${PWD}/test.key --cacert=${PWD}/ca.crt --tls-skip-verify -t 1 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/keydb_benchmarks_1threads_tls.txt
+echo "memtier_benchmark -s \"$DRAGONFLY_TLS_CONTAINER_IP\" --ratio=1:15 -p 6392 --protocol=redis --tls --cert=${PWD}/client_cert.pem --key=${PWD}/client_priv.pem --cacert=${PWD}/ca.crt -t 1 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/dragonfly_benchmarks_1threads_tls.txt"
 memtier_benchmark -s "$DRAGONFLY_TLS_CONTAINER_IP" --ratio=1:15 -p 6392 --protocol=redis --tls --cert=${PWD}/client_cert.pem --key=${PWD}/client_priv.pem --cacert=${PWD}/ca.crt -t 1 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/dragonfly_benchmarks_1threads_tls.txt
-
+echo "memtier_benchmark -s \"$REDIS_TLS_CONTAINER_IP\" --ratio=1:15 -p 6390 --protocol=redis --tls --cert=${PWD}/test.crt --key=${PWD}/test.key --cacert=${PWD}/ca.crt --tls-skip-verify -t 2 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/redis_benchmarks_2threads_tls.txt"
 memtier_benchmark -s "$REDIS_TLS_CONTAINER_IP" --ratio=1:15 -p 6390 --protocol=redis --tls --cert=${PWD}/test.crt --key=${PWD}/test.key --cacert=${PWD}/ca.crt --tls-skip-verify -t 2 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/redis_benchmarks_2threads_tls.txt
+echo "memtier_benchmark -s \"$KEYDB_TLS_CONTAINER_IP\" --ratio=1:15 -p 6391 --protocol=redis --tls --cert=${PWD}/test.crt --key=${PWD}/test.key --cacert=${PWD}/ca.crt --tls-skip-verify -t 2 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/keydb_benchmarks_2threads_tls.txt"
 memtier_benchmark -s "$KEYDB_TLS_CONTAINER_IP" --ratio=1:15 -p 6391 --protocol=redis --tls --cert=${PWD}/test.crt --key=${PWD}/test.key --cacert=${PWD}/ca.crt --tls-skip-verify -t 2 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/keydb_benchmarks_2threads_tls.txt
+echo "memtier_benchmark -s \"$DRAGONFLY_TLS_CONTAINER_IP\" --ratio=1:15 -p 6392 --protocol=redis --tls --cert=${PWD}/client_cert.pem --key=${PWD}/client_priv.pem --cacert=${PWD}/ca.crt -t 2 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/dragonfly_benchmarks_2threads_tls.txt"
 memtier_benchmark -s "$DRAGONFLY_TLS_CONTAINER_IP" --ratio=1:15 -p 6392 --protocol=redis --tls --cert=${PWD}/client_cert.pem --key=${PWD}/client_priv.pem --cacert=${PWD}/ca.crt -t 2 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/dragonfly_benchmarks_2threads_tls.txt
-
+echo "memtier_benchmark -s \"$REDIS_TLS_CONTAINER_IP\" --ratio=1:15 -p 6390 --protocol=redis --tls --cert=${PWD}/test.crt --key=${PWD}/test.key --cacert=${PWD}/ca.crt --tls-skip-verify -t 8 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/redis_benchmarks_8threads_tls.txt"
 memtier_benchmark -s "$REDIS_TLS_CONTAINER_IP" --ratio=1:15 -p 6390 --protocol=redis --tls --cert=${PWD}/test.crt --key=${PWD}/test.key --cacert=${PWD}/ca.crt --tls-skip-verify -t 8 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/redis_benchmarks_8threads_tls.txt
+echo "memtier_benchmark -s \"$KEYDB_TLS_CONTAINER_IP\" --ratio=1:15 -p 6391 --protocol=redis --tls --cert=${PWD}/test.crt --key=${PWD}/test.key --cacert=${PWD}/ca.crt --tls-skip-verify -t 8 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/keydb_benchmarks_8threads_tls.txt"
 memtier_benchmark -s "$KEYDB_TLS_CONTAINER_IP" --ratio=1:15 -p 6391 --protocol=redis --tls --cert=${PWD}/test.crt --key=${PWD}/test.key --cacert=${PWD}/ca.crt --tls-skip-verify -t 8 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/keydb_benchmarks_8threads_tls.txt
+echo "memtier_benchmark -s \"$DRAGONFLY_TLS_CONTAINER_IP\" --ratio=1:15 -p 6392 --protocol=redis --tls --cert=${PWD}/client_cert.pem --key=${PWD}/client_priv.pem --cacert=${PWD}/ca.crt -t 8 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/dragonfly_benchmarks_8threads_tls.txt"
 memtier_benchmark -s "$DRAGONFLY_TLS_CONTAINER_IP" --ratio=1:15 -p 6392 --protocol=redis --tls --cert=${PWD}/client_cert.pem --key=${PWD}/client_priv.pem --cacert=${PWD}/ca.crt -t 8 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/dragonfly_benchmarks_8threads_tls.txt
 
 # Convert txt results to markdown
@@ -195,5 +228,6 @@ cat ./benchmarklogs/combined_dragonfly-tls_results.md
 # Cleanup
 docker stop redis keydb dragonfly redis-tls keydb-tls dragonfly-tls
 docker rm redis keydb dragonfly redis-tls keydb-tls dragonfly-tls
+docker rmi redis keydb dragonfly redis-tls keydb-tls dragonfly-tls
 
 echo "Benchmarking process completed."
