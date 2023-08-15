@@ -1,5 +1,8 @@
 [![Benchmark Redis vs KeyDB](https://github.com/centminmod/redis-comparison-benchmarks/actions/workflows/benchmarks.yml/badge.svg)](https://github.com/centminmod/redis-comparison-benchmarks/actions/workflows/benchmarks.yml)
 
+* [Redis vs KeyDB vs Dragonfly With IO Threads](#redis-vs-keydb-vs-dragonfly-with-io-threads)
+* [Redis vs KeyDB vs Dragonfly No IO Threads](#redis-vs-keydb-vs-dragonfly-no-io-threads)
+
 # Redis vs KeyDB vs Dragonfly With IO Threads
 
 * Redis and KeyDB configured with `io-threads 12` and `io-threads-do-reads yes`
