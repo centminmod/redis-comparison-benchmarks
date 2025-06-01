@@ -1,8 +1,8 @@
 #!/bin/bash
-MEMTIER_REDIS_TLS='y'
-MEMTIER_KEYDB_TLS='y'
+MEMTIER_REDIS_TLS='n'
+MEMTIER_KEYDB_TLS='n'
 MEMTIER_DRAGONFLY_TLS='n'
-MEMTIER_VALKEY_TLS='y'
+MEMTIER_VALKEY_TLS='n'
 CPUS=$(nproc)
 
 echo "==== Kernel ===="
@@ -47,9 +47,8 @@ echo "io-threads-do-reads yes" >> redis.conf
 echo "io-threads $CPUS" >> keydb.conf
 echo "io-threads-do-reads yes" >> keydb.conf
 
-echo "io-threads $CPUS" >> valkey.conf
-echo "io-threads-do-reads yes" >> valkey.conf
-
+# echo "io-threads $CPUS" >> valkey.conf
+# echo "io-threads-do-reads yes" >> valkey.conf
 # echo "" >> dragonfly.conf
 
 # Update configuration files for Redis, KeyDB, and Dragonfly with TLS settings
