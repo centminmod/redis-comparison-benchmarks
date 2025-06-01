@@ -336,6 +336,121 @@ jobs:
         echo "=== Valkey Version ==="
         docker exec valkey valkey-server --version || docker exec valkey redis-cli INFO server | grep -E "(valkey_version|redis_version)" | head -1      
 
+    - name: Check Database Server Configurations
+      continue-on-error: true
+      run: |
+        echo "=================================="
+        echo "DATABASE CONFIGURATION ANALYSIS"
+        echo "=================================="
+        
+        echo ""
+        echo "=== REDIS CONFIGURATION ==="
+        echo "--- IO Threads ---"
+        docker exec redis redis-cli CONFIG GET "*io-threads*" || echo "Failed to get Redis IO thread config"
+        echo "--- Memory Settings ---"
+        docker exec redis redis-cli CONFIG GET "maxmemory*" || echo "Failed to get Redis memory config"
+        echo "--- Save/Persistence ---"
+        docker exec redis redis-cli CONFIG GET "save" || echo "Failed to get Redis save config"
+        docker exec redis redis-cli CONFIG GET "appendonly" || echo "Failed to get Redis AOF config"
+        echo "--- Network ---"
+        docker exec redis redis-cli CONFIG GET "*timeout*" || echo "Failed to get Redis timeout config"
+        docker exec redis redis-cli CONFIG GET "tcp-*" || echo "Failed to get Redis TCP config"
+        echo "--- Performance ---"
+        docker exec redis redis-cli CONFIG GET "lazyfree-*" || echo "Failed to get Redis lazyfree config"
+        docker exec redis redis-cli INFO stats | grep -E "(keyspace_|expired_|evicted_)" || echo "Failed to get Redis stats"
+        
+        echo ""
+        echo "=== KEYDB CONFIGURATION ==="
+        echo "--- IO Threads ---"
+        docker exec keydb keydb-cli CONFIG GET "*io-threads*" || echo "Failed to get KeyDB IO thread config"
+        echo "--- KeyDB Specific ---"
+        docker exec keydb keydb-cli CONFIG GET "*multimaster*" || echo "No multimaster config"
+        docker exec keydb keydb-cli CONFIG GET "*active-replica*" || echo "No active-replica config"
+        echo "--- Memory Settings ---"
+        docker exec keydb keydb-cli CONFIG GET "maxmemory*" || echo "Failed to get KeyDB memory config"
+        echo "--- Save/Persistence ---"
+        docker exec keydb keydb-cli CONFIG GET "save" || echo "Failed to get KeyDB save config"
+        docker exec keydb keydb-cli CONFIG GET "appendonly" || echo "Failed to get KeyDB AOF config"
+        echo "--- Performance ---"
+        docker exec keydb keydb-cli INFO stats | grep -E "(keyspace_|expired_|evicted_)" || echo "Failed to get KeyDB stats"
+        
+        echo ""
+        echo "=== DRAGONFLY CONFIGURATION ==="
+        echo "--- Dragonfly Help (Performance Options) ---"
+        docker exec dragonfly dragonfly --help | grep -E "(thread|memory|cache|performance)" || echo "Failed to get Dragonfly help"
+        echo "--- Dragonfly Logs (Config Info) ---"
+        docker logs dragonfly 2>&1 | grep -E "(thread|memory|port|bind)" | head -10 || echo "No config info in logs"
+        echo "--- Dragonfly Process Info ---"
+        docker exec dragonfly ps aux | grep dragonfly || echo "Failed to get Dragonfly process info"
+        echo "--- Dragonfly Memory Info ---"
+        docker exec dragonfly redis-cli INFO memory || echo "Failed to get Dragonfly memory info"
+        
+        echo ""
+        echo "=== VALKEY CONFIGURATION ==="
+        echo "--- IO Threads ---"
+        docker exec valkey redis-cli CONFIG GET "*io-threads*" || echo "Failed to get Valkey IO thread config"
+        echo "--- Valkey Specific Features ---"
+        docker exec valkey redis-cli CONFIG GET "*async*" || echo "No async config found"
+        docker exec valkey redis-cli MODULE LIST || echo "No modules loaded"
+        echo "--- Memory Settings ---"
+        docker exec valkey redis-cli CONFIG GET "maxmemory*" || echo "Failed to get Valkey memory config"
+        echo "--- Save/Persistence ---"
+        docker exec valkey redis-cli CONFIG GET "save" || echo "Failed to get Valkey save config"
+        docker exec valkey redis-cli CONFIG GET "appendonly" || echo "Failed to get Valkey AOF config"
+        echo "--- Network ---"
+        docker exec valkey redis-cli CONFIG GET "*timeout*" || echo "Failed to get Valkey timeout config"
+        echo "--- Performance ---"
+        docker exec valkey redis-cli CONFIG GET "lazyfree-*" || echo "Failed to get Valkey lazyfree config"
+        docker exec valkey redis-cli INFO stats | grep -E "(keyspace_|expired_|evicted_)" || echo "Failed to get Valkey stats"
+        
+        echo ""
+        echo "=== CONTAINER RESOURCE ANALYSIS ==="
+        echo "--- Container CPU Affinity ---"
+        for db in redis keydb dragonfly valkey; do
+          if docker ps | grep -q $db; then
+            echo "=== $db CPU affinity ==="
+            docker exec $db cat /proc/self/status | grep Cpus_allowed_list 2>/dev/null || echo "$db: Could not get CPU affinity"
+            docker exec $db cat /proc/self/status | grep "voluntary_ctxt_switches\|nonvoluntary_ctxt_switches" 2>/dev/null || echo "$db: Could not get context switch info"
+          fi
+        done
+        
+        echo ""
+        echo "--- Container Memory Usage ---"
+        docker stats --no-stream --format "table {{.Container}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.MemPerc}}\t{{.NetIO}}\t{{.BlockIO}}" 2>/dev/null || echo "Could not get container stats"
+        
+        echo ""
+        echo "=== BUILD AND VERSION DETAILS ==="
+        echo "--- Redis Build Info ---"
+        docker exec redis redis-cli INFO server | grep -E "(redis_version|redis_git|redis_build|gcc_version|arch_bits|multiplexing_api|executable)" || echo "Failed to get Redis build info"
+        
+        echo "--- KeyDB Build Info ---"
+        docker exec keydb keydb-cli INFO server | grep -E "(keydb_version|redis_version|gcc_version|arch_bits|multiplexing_api|executable)" || echo "Failed to get KeyDB build info"
+        
+        echo "--- Dragonfly Build Info ---"
+        docker exec dragonfly dragonfly --version 2>/dev/null || docker logs dragonfly 2>&1 | grep -i "version\|build" | head -3 || echo "Failed to get Dragonfly build info"
+        
+        echo "--- Valkey Build Info ---"
+        docker exec valkey redis-cli INFO server | grep -E "(valkey_version|redis_version|gcc_version|arch_bits|multiplexing_api|executable)" || echo "Failed to get Valkey build info"
+        
+        echo ""
+        echo "=== PERFORMANCE-RELATED SYSTEM INFO ==="
+        echo "--- Available System Resources ---"
+        echo "CPU cores: $(nproc)"
+        echo "Memory: $(free -h | grep '^Mem:' | awk '{print $2}')"
+        echo "--- Docker Network ---"
+        docker network ls
+        echo "--- Container Network Mode ---"
+        for db in redis keydb dragonfly valkey; do
+          if docker ps | grep -q $db; then
+            echo "$db network: $(docker inspect $db | grep -i networkmode | head -1)"
+          fi
+        done
+        
+        echo ""
+        echo "=================================="
+        echo "CONFIGURATION ANALYSIS COMPLETE"
+        echo "=================================="
+
     - name: Install memtier_benchmark
       run: |
         sudo apt-get update
