@@ -21,4 +21,4 @@ RUN chmod 0755 /tls
 # Expose the default port
 EXPOSE 6379 6392
 
-CMD [ "dragonfly", "--proactor_threads=2", "--tls", "--tls_key_file=/tls/test.key", "--tls_cert_file=/tls/test.crt", "--tls_ca_cert_file=/tls/ca.crt" ]
+CMD [ "dragonfly", "--proactor_threads=2", "--tls", "--tls_key_file=/tls/test.key", "--tls_cert_file=/tls/test.crt", "--tls_ca_cert_file=/tls/ca.crt", "--requirepass", "V3ryS3cur3P@sswOrd" ]
