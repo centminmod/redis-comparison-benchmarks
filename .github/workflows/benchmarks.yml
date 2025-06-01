@@ -355,88 +355,88 @@ jobs:
       run: mkdir -p ./benchmarklogs
 
     - name: Memtier 1 Threads Benchmark Redis
-      run: memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6379 --protocol=redis -t 1 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/redis_benchmarks_1threads.txt || true
+      run: memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6379 --protocol=redis -t 1 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=1024 --key-pattern=G:G --key-minimum=1 --key-maximum=1000000 --key-median=500000 --key-stddev=166667 | tee ./benchmarklogs/redis_benchmarks_1threads.txt || true
 
     - name: Memtier 1 Threads Benchmark KeyDB
-      run: memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6380 --protocol=redis -t 1 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/keydb_benchmarks_1threads.txt || true
+      run: memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6380 --protocol=redis -t 1 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=1024 --key-pattern=G:G --key-minimum=1 --key-maximum=1000000 --key-median=500000 --key-stddev=166667 | tee ./benchmarklogs/keydb_benchmarks_1threads.txt || true
 
     - name: Memtier 1 Threads Benchmark Dragonfly
-      run: memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6381 --protocol=redis -t 1 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/dragonfly_benchmarks_1threads.txt || true
+      run: memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6381 --protocol=redis -t 1 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=1024 --key-pattern=G:G --key-minimum=1 --key-maximum=1000000 --key-median=500000 --key-stddev=166667 | tee ./benchmarklogs/dragonfly_benchmarks_1threads.txt || true
 
     - name: Memtier 1 Threads Benchmark Valkey
-      run: memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6380 --protocol=redis -t 1 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/valkey_benchmarks_1threads.txt || true
+      run: memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6382 --protocol=redis -t 1 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=1024 --key-pattern=G:G --key-minimum=1 --key-maximum=1000000 --key-median=500000 --key-stddev=166667 | tee ./benchmarklogs/valkey_benchmarks_1threads.txt || true
 
     - name: Memtier 2 Threads Benchmark Redis
-      run: memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6379 --protocol=redis -t 2 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/redis_benchmarks_2threads.txt || true
+      run: memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6379 --protocol=redis -t 2 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=1024 --key-pattern=G:G --key-minimum=1 --key-maximum=1000000 --key-median=500000 --key-stddev=166667 | tee ./benchmarklogs/redis_benchmarks_2threads.txt || true
 
     - name: Memtier 2 Threads Benchmark KeyDB
-      run: memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6380 --protocol=redis -t 2 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/keydb_benchmarks_2threads.txt || true
+      run: memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6380 --protocol=redis -t 2 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=1024 --key-pattern=G:G --key-minimum=1 --key-maximum=1000000 --key-median=500000 --key-stddev=166667 | tee ./benchmarklogs/keydb_benchmarks_2threads.txt || true
 
     - name: Memtier 2 Threads Benchmark Dragonfly
-      run: memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6381 --protocol=redis -t 2 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/dragonfly_benchmarks_2threads.txt || true
+      run: memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6381 --protocol=redis -t 2 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=1024 --key-pattern=G:G --key-minimum=1 --key-maximum=1000000 --key-median=500000 --key-stddev=166667 | tee ./benchmarklogs/dragonfly_benchmarks_2threads.txt || true
 
     - name: Memtier 2 Threads Benchmark Valkey
-      run: memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6380 --protocol=redis -t 2 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/valkey_benchmarks_2threads.txt || true
+      run: memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6382 --protocol=redis -t 2 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=1024 --key-pattern=G:G --key-minimum=1 --key-maximum=1000000 --key-median=500000 --key-stddev=166667 | tee ./benchmarklogs/valkey_benchmarks_2threads.txt || true
 
     - name: Memtier 8 Threads Benchmark Redis
-      run: memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6379 --protocol=redis -t 8 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/redis_benchmarks_8threads.txt || true
+      run: memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6379 --protocol=redis -t 8 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=1024 --key-pattern=G:G --key-minimum=1 --key-maximum=1000000 --key-median=500000 --key-stddev=166667 | tee ./benchmarklogs/redis_benchmarks_8threads.txt || true
 
     - name: Memtier 8 Threads Benchmark KeyDB
-      run: memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6380 --protocol=redis -t 8 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/keydb_benchmarks_8threads.txt || true
+      run: memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6380 --protocol=redis -t 8 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=1024 --key-pattern=G:G --key-minimum=1 --key-maximum=1000000 --key-median=500000 --key-stddev=166667 | tee ./benchmarklogs/keydb_benchmarks_8threads.txt || true
 
     - name: Memtier 8 Threads Benchmark Dragonfly
-      run: memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6381 --protocol=redis -t 8 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/dragonfly_benchmarks_8threads.txt || true
+      run: memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6381 --protocol=redis -t 8 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=1024 --key-pattern=G:G --key-minimum=1 --key-maximum=1000000 --key-median=500000 --key-stddev=166667 | tee ./benchmarklogs/dragonfly_benchmarks_8threads.txt || true
 
     - name: Memtier 8 Threads Benchmark Valkey
-      run: memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6380 --protocol=redis -t 8 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/valkey_benchmarks_8threads.txt || true
+      run: memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6382 --protocol=redis -t 8 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=1024 --key-pattern=G:G --key-minimum=1 --key-maximum=1000000 --key-median=500000 --key-stddev=166667 | tee ./benchmarklogs/valkey_benchmarks_8threads.txt || true
 
     - name: Memtier 1 Threads Benchmark Redis with TLS
       run: |
-        memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6390 --protocol=redis --tls --cert=${PWD}/test.crt --key=${PWD}/test.key --cacert=${PWD}/ca.crt --tls-skip-verify -t 1 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/redis_benchmarks_1threads_tls.txt || true
+        memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6390 --protocol=redis --tls --cert=${PWD}/test.crt --key=${PWD}/test.key --cacert=${PWD}/ca.crt --tls-skip-verify -t 1 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=1024 --key-pattern=G:G --key-minimum=1 --key-maximum=1000000 --key-median=500000 --key-stddev=166667 | tee ./benchmarklogs/redis_benchmarks_1threads_tls.txt || true
     
     - name: Memtier 1 Threads Benchmark KeyDB with TLS
       run: |
-        memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6391 --protocol=redis --tls --cert=${PWD}/test.crt --key=${PWD}/test.key --cacert=${PWD}/ca.crt --tls-skip-verify -t 1 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/keydb_benchmarks_1threads_tls.txt || true
+        memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6391 --protocol=redis --tls --cert=${PWD}/test.crt --key=${PWD}/test.key --cacert=${PWD}/ca.crt --tls-skip-verify -t 1 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=1024 --key-pattern=G:G --key-minimum=1 --key-maximum=1000000 --key-median=500000 --key-stddev=166667 | tee ./benchmarklogs/keydb_benchmarks_1threads_tls.txt || true
     
     - name: Memtier 1 Threads Benchmark Dragonfly with TLS
       run: |
-        memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6392 --protocol=redis --tls --cert=${PWD}/client_cert.pem --key=${PWD}/client_priv.pem --cacert=${PWD}/ca.crt --password V3ryS3cur3P@sswOrd -t 1 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/dragonfly_benchmarks_1threads_tls.txt || true
+        memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6392 --protocol=redis --tls --cert=${PWD}/client_cert.pem --key=${PWD}/client_priv.pem --cacert=${PWD}/ca.crt --password V3ryS3cur3P@sswOrd -t 1 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=1024 --key-pattern=G:G --key-minimum=1 --key-maximum=1000000 --key-median=500000 --key-stddev=166667 | tee ./benchmarklogs/dragonfly_benchmarks_1threads_tls.txt || true
     
     - name: Memtier 1 Threads Benchmark Valkey with TLS
       run: |
-        memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6393 --protocol=redis --tls --cert=${PWD}/test.crt --key=${PWD}/test.key --cacert=${PWD}/ca.crt --tls-skip-verify -t 1 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/valkey_benchmarks_1threads_tls.txt || true
+        memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6393 --protocol=redis --tls --cert=${PWD}/test.crt --key=${PWD}/test.key --cacert=${PWD}/ca.crt --tls-skip-verify -t 1 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=1024 --key-pattern=G:G --key-minimum=1 --key-maximum=1000000 --key-median=500000 --key-stddev=166667 | tee ./benchmarklogs/valkey_benchmarks_1threads_tls.txt || true
 
     - name: Memtier 2 Threads Benchmark Redis with TLS
       run: |
-        memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6390 --protocol=redis --tls --cert=${PWD}/test.crt --key=${PWD}/test.key --cacert=${PWD}/ca.crt --tls-skip-verify -t 2 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/redis_benchmarks_2threads_tls.txt || true
+        memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6390 --protocol=redis --tls --cert=${PWD}/test.crt --key=${PWD}/test.key --cacert=${PWD}/ca.crt --tls-skip-verify -t 2 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=1024 --key-pattern=G:G --key-minimum=1 --key-maximum=1000000 --key-median=500000 --key-stddev=166667 | tee ./benchmarklogs/redis_benchmarks_2threads_tls.txt || true
     
     - name: Memtier 2 Threads Benchmark KeyDB with TLS
       run: |
-        memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6391 --protocol=redis --tls --cert=${PWD}/test.crt --key=${PWD}/test.key --cacert=${PWD}/ca.crt --tls-skip-verify -t 2 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/keydb_benchmarks_2threads_tls.txt || true
+        memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6391 --protocol=redis --tls --cert=${PWD}/test.crt --key=${PWD}/test.key --cacert=${PWD}/ca.crt --tls-skip-verify -t 2 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=1024 --key-pattern=G:G --key-minimum=1 --key-maximum=1000000 --key-median=500000 --key-stddev=166667 | tee ./benchmarklogs/keydb_benchmarks_2threads_tls.txt || true
     
     - name: Memtier 2 Threads Benchmark Dragonfly with TLS
       run: |
-        memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6392 --protocol=redis --tls --cert=${PWD}/client_cert.pem --key=${PWD}/client_priv.pem --cacert=${PWD}/ca.crt --password V3ryS3cur3P@sswOrd -t 2 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/dragonfly_benchmarks_2threads_tls.txt || true
+        memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6392 --protocol=redis --tls --cert=${PWD}/client_cert.pem --key=${PWD}/client_priv.pem --cacert=${PWD}/ca.crt --password V3ryS3cur3P@sswOrd -t 2 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=1024 --key-pattern=G:G --key-minimum=1 --key-maximum=1000000 --key-median=500000 --key-stddev=166667 | tee ./benchmarklogs/dragonfly_benchmarks_2threads_tls.txt || true
     
     - name: Memtier 2 Threads Benchmark Valkey with TLS
       run: |
-        memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6393 --protocol=redis --tls --cert=${PWD}/test.crt --key=${PWD}/test.key --cacert=${PWD}/ca.crt --tls-skip-verify -t 2 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/valkey_benchmarks_2threads_tls.txt || true
+        memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6393 --protocol=redis --tls --cert=${PWD}/test.crt --key=${PWD}/test.key --cacert=${PWD}/ca.crt --tls-skip-verify -t 2 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=1024 --key-pattern=G:G --key-minimum=1 --key-maximum=1000000 --key-median=500000 --key-stddev=166667 | tee ./benchmarklogs/valkey_benchmarks_2threads_tls.txt || true
 
     - name: Memtier 8 Threads Benchmark Redis with TLS
       run: |
-        memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6390 --protocol=redis --tls --cert=${PWD}/test.crt --key=${PWD}/test.key --cacert=${PWD}/ca.crt --tls-skip-verify -t 8 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/redis_benchmarks_8threads_tls.txt || true
+        memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6390 --protocol=redis --tls --cert=${PWD}/test.crt --key=${PWD}/test.key --cacert=${PWD}/ca.crt --tls-skip-verify -t 8 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=1024 --key-pattern=G:G --key-minimum=1 --key-maximum=1000000 --key-median=500000 --key-stddev=166667 | tee ./benchmarklogs/redis_benchmarks_8threads_tls.txt || true
     
     - name: Memtier 8 Threads Benchmark KeyDB with TLS
       run: |
-        memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6391 --protocol=redis --tls --cert=${PWD}/test.crt --key=${PWD}/test.key --cacert=${PWD}/ca.crt --tls-skip-verify -t 8 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/keydb_benchmarks_8threads_tls.txt || true
+        memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6391 --protocol=redis --tls --cert=${PWD}/test.crt --key=${PWD}/test.key --cacert=${PWD}/ca.crt --tls-skip-verify -t 8 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=1024 --key-pattern=G:G --key-minimum=1 --key-maximum=1000000 --key-median=500000 --key-stddev=166667 | tee ./benchmarklogs/keydb_benchmarks_8threads_tls.txt || true
     
     - name: Memtier 8 Threads Benchmark Dragonfly with TLS
       run: |
-        memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6392 --protocol=redis --tls --cert=${PWD}/client_cert.pem --key=${PWD}/client_priv.pem --cacert=${PWD}/ca.crt --password V3ryS3cur3P@sswOrd -t 8 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/dragonfly_benchmarks_8threads_tls.txt || true
+        memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6392 --protocol=redis --tls --cert=${PWD}/client_cert.pem --key=${PWD}/client_priv.pem --cacert=${PWD}/ca.crt --password V3ryS3cur3P@sswOrd -t 8 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=1024 --key-pattern=G:G --key-minimum=1 --key-maximum=1000000 --key-median=500000 --key-stddev=166667 | tee ./benchmarklogs/dragonfly_benchmarks_8threads_tls.txt || true
 
     - name: Memtier 8 Threads Benchmark Valkey with TLS
       run: |
-        memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6393 --protocol=redis --tls --cert=${PWD}/test.crt --key=${PWD}/test.key --cacert=${PWD}/ca.crt --tls-skip-verify -t 8 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/valkey_benchmarks_8threads_tls.txt || true
+        memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6393 --protocol=redis --tls --cert=${PWD}/test.crt --key=${PWD}/test.key --cacert=${PWD}/ca.crt --tls-skip-verify -t 8 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=1024 --key-pattern=G:G --key-minimum=1 --key-maximum=1000000 --key-median=500000 --key-stddev=166667 | tee ./benchmarklogs/valkey_benchmarks_8threads_tls.txt || true
 
     - name: Convert Redis 1 Threads Benchmark to MD
       continue-on-error: true
