@@ -100,7 +100,7 @@ jobs:
 
     - name: Update Valkey Configuration for non-TLS
       run: |
-        cat valkey.conf || true
+        echo '' >> valkey.conf
 
     - name: Update Valkey Configuration for TLS
       run: |
