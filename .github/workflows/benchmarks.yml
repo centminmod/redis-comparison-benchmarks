@@ -98,6 +98,19 @@ jobs:
         echo "tls-key-file /tls/test.key" >> dragonfly-tls.conf
         echo "tls-ca-cert-file /tls/ca.crt" >> dragonfly-tls.conf
 
+    - name: Update Valkey Configuration for non-TLS
+      run: |
+        echo "io-threads 2" >> valkey.conf
+        echo "io-threads-do-reads yes" >> valkey.conf
+
+    - name: Update Valkey Configuration for TLS
+      run: |
+        echo "tls-port 6393" >> valkey-tls.conf
+        echo "tls-cert-file /tls/test.crt" >> valkey-tls.conf
+        echo "tls-key-file /tls/test.key" >> valkey-tls.conf
+        echo "tls-ca-cert-file /tls/ca.crt" >> valkey-tls.conf
+        echo "tls-auth-clients no" >> valkey-tls.conf
+
     - name: Build Redis Docker image
       uses: docker/build-push-action@v2
       with:
@@ -146,6 +159,22 @@ jobs:
         load: true
         tags: dragonfly-tls:latest
 
+    - name: Build Valkey Docker image
+      uses: docker/build-push-action@v2
+      with:
+        context: .
+        file: ./Dockerfile-valkey
+        load: true
+        tags: valkey:latest
+
+    - name: Build Valkey Docker image with TLS
+      uses: docker/build-push-action@v2
+      with:
+        context: .
+        file: ./Dockerfile-valkey-tls
+        load: true
+        tags: valkey-tls:latest
+
     - name: Run Redis container
       run: |
         docker run -d --name redis -p 6379:6379 --ulimit memlock=-1 redis:latest
@@ -174,6 +203,16 @@ jobs:
     - name: Run Dragonfly container with TLS
       run: |
         docker run -d --name dragonfly-tls -p 6392:6392 --ulimit memlock=-1 dragonfly-tls:latest
+        sleep 20
+
+    - name: Run Valkey container
+      run: |
+        docker run -d --name valkey -p 6380:6379 --ulimit memlock=-1 valkey:latest
+        sleep 20
+
+    - name: Run Valkey container with TLS
+      run: |
+        docker run -d --name valkey-tls -p 6393:6393 --ulimit memlock=-1 valkey-tls:latest
         sleep 20
 
     - name: Check Redis logs
@@ -242,6 +281,18 @@ jobs:
     #     docker exec dragonfly-tls redis-cli --help
     #     docker exec dragonfly-tls redis-cli -h 127.0.0.1 -p 6392 --cert /tls/test.crt --key /tls/test.key --cacert /tls/ca.crt PING
 
+    - name: Check Valkey logs
+      run: docker logs valkey
+
+    - name: Test Valkey Connectivity
+      run: docker exec valkey redis-cli -h 127.0.0.1 -p 6379 PING
+
+    - name: Check Valkey TLS logs
+      run: docker logs valkey-tls
+
+    - name: Test Valkey TLS Connectivity
+      run: docker exec valkey-tls redis-cli -h 127.0.0.1 -p 6393 --tls --insecure --cert /tls/test.crt --key /tls/test.key --cacert /tls/ca.crt PING
+
     - name: Install memtier_benchmark
       run: |
         sudo apt-get update
@@ -269,6 +320,9 @@ jobs:
     - name: Memtier 1 Threads Benchmark Dragonfly
       run: memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6381 --protocol=redis -t 1 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/dragonfly_benchmarks_1threads.txt || true
 
+    - name: Memtier 1 Threads Benchmark Valkey
+      run: memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6380 --protocol=redis -t 1 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/valkey_benchmarks_1threads.txt || true
+
     - name: Memtier 2 Threads Benchmark Redis
       run: memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6379 --protocol=redis -t 2 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/redis_benchmarks_2threads.txt || true
 
@@ -278,6 +332,9 @@ jobs:
     - name: Memtier 2 Threads Benchmark Dragonfly
       run: memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6381 --protocol=redis -t 2 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/dragonfly_benchmarks_2threads.txt || true
 
+    - name: Memtier 2 Threads Benchmark Valkey
+      run: memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6380 --protocol=redis -t 2 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/valkey_benchmarks_2threads.txt || true
+
     - name: Memtier 8 Threads Benchmark Redis
       run: memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6379 --protocol=redis -t 8 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/redis_benchmarks_8threads.txt || true
 
@@ -286,6 +343,9 @@ jobs:
 
     - name: Memtier 8 Threads Benchmark Dragonfly
       run: memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6381 --protocol=redis -t 8 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/dragonfly_benchmarks_8threads.txt || true
+
+    - name: Memtier 8 Threads Benchmark Valkey
+      run: memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6380 --protocol=redis -t 8 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/valkey_benchmarks_8threads.txt || true
 
     - name: Memtier 1 Threads Benchmark Redis with TLS
       run: |
@@ -299,6 +359,10 @@ jobs:
       run: |
         memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6392 --protocol=redis --tls --cert=${PWD}/client_cert.pem --key=${PWD}/client_priv.pem --cacert=${PWD}/ca.crt -t 1 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/dragonfly_benchmarks_1threads_tls.txt || true
     
+    - name: Memtier 1 Threads Benchmark Valkey with TLS
+      run: |
+        memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6393 --protocol=redis --tls --cert=${PWD}/test.crt --key=${PWD}/test.key --cacert=${PWD}/ca.crt --tls-skip-verify -t 1 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/valkey_benchmarks_1threads_tls.txt || true
+
     - name: Memtier 2 Threads Benchmark Redis with TLS
       run: |
         memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6390 --protocol=redis --tls --cert=${PWD}/test.crt --key=${PWD}/test.key --cacert=${PWD}/ca.crt --tls-skip-verify -t 2 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/redis_benchmarks_2threads_tls.txt || true
@@ -311,6 +375,10 @@ jobs:
       run: |
         memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6392 --protocol=redis --tls --cert=${PWD}/client_cert.pem --key=${PWD}/client_priv.pem --cacert=${PWD}/ca.crt -t 2 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/dragonfly_benchmarks_2threads_tls.txt || true
     
+    - name: Memtier 2 Threads Benchmark Valkey with TLS
+      run: |
+        memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6393 --protocol=redis --tls --cert=${PWD}/test.crt --key=${PWD}/test.key --cacert=${PWD}/ca.crt --tls-skip-verify -t 2 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/valkey_benchmarks_2threads_tls.txt || true
+
     - name: Memtier 8 Threads Benchmark Redis with TLS
       run: |
         memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6390 --protocol=redis --tls --cert=${PWD}/test.crt --key=${PWD}/test.key --cacert=${PWD}/ca.crt --tls-skip-verify -t 8 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/redis_benchmarks_8threads_tls.txt || true
@@ -322,6 +390,10 @@ jobs:
     - name: Memtier 8 Threads Benchmark Dragonfly with TLS
       run: |
         memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6392 --protocol=redis --tls --cert=${PWD}/client_cert.pem --key=${PWD}/client_priv.pem --cacert=${PWD}/ca.crt -t 8 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/dragonfly_benchmarks_8threads_tls.txt || true
+
+    - name: Memtier 8 Threads Benchmark Valkey with TLS
+      run: |
+        memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6393 --protocol=redis --tls --cert=${PWD}/test.crt --key=${PWD}/test.key --cacert=${PWD}/ca.crt --tls-skip-verify -t 8 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/valkey_benchmarks_8threads_tls.txt || true
 
     - name: Convert Redis 1 Threads Benchmark to MD
       run: |
@@ -413,6 +485,36 @@ jobs:
         python scripts/parse_memtier_to_md.py ./benchmarklogs/dragonfly_benchmarks_8threads_tls.txt "Dragonfly TLS 8 Threads"
         cat ./benchmarklogs/dragonfly_benchmarks_8threads_tls.md
 
+    - name: Convert Valkey 1 Threads Benchmark to MD
+      run: |
+        python scripts/parse_memtier_to_md.py ./benchmarklogs/valkey_benchmarks_1threads.txt "Valkey 1 Thread"
+        cat ./benchmarklogs/valkey_benchmarks_1threads.md
+
+    - name: Convert Valkey 2 Threads Benchmark to MD
+      run: |
+        python scripts/parse_memtier_to_md.py ./benchmarklogs/valkey_benchmarks_2threads.txt "Valkey 2 Threads"
+        cat ./benchmarklogs/valkey_benchmarks_2threads.md
+
+    - name: Convert Valkey 8 Threads Benchmark to MD
+      run: |
+        python scripts/parse_memtier_to_md.py ./benchmarklogs/valkey_benchmarks_8threads.txt "Valkey 8 Threads"
+        cat ./benchmarklogs/valkey_benchmarks_8threads.md
+
+    - name: Convert Valkey 1 Threads Benchmark with TLS to MD
+      run: |
+        python scripts/parse_memtier_to_md.py ./benchmarklogs/valkey_benchmarks_1threads_tls.txt "Valkey TLS 1 Thread"
+        cat ./benchmarklogs/valkey_benchmarks_1threads_tls.md
+
+    - name: Convert Valkey 2 Threads Benchmark with TLS to MD
+      run: |
+        python scripts/parse_memtier_to_md.py ./benchmarklogs/valkey_benchmarks_2threads_tls.txt "Valkey TLS 2 Threads"
+        cat ./benchmarklogs/valkey_benchmarks_2threads_tls.md
+
+    - name: Convert Valkey 8 Threads Benchmark with TLS to MD
+      run: |
+        python scripts/parse_memtier_to_md.py ./benchmarklogs/valkey_benchmarks_8threads_tls.txt "Valkey TLS 8 Threads"
+        cat ./benchmarklogs/valkey_benchmarks_8threads_tls.md
+
     - name: Combine Redis Benchmark MD Table
       run: |
         python scripts/combine_markdown_results.py "./benchmarklogs/redis_benchmarks_1threads.md ./benchmarklogs/redis_benchmarks_2threads.md ./benchmarklogs/redis_benchmarks_8threads.md" redis
@@ -443,6 +545,16 @@ jobs:
         python scripts/combine_markdown_results.py "./benchmarklogs/dragonfly_benchmarks_1threads_tls.md ./benchmarklogs/dragonfly_benchmarks_2threads_tls.md ./benchmarklogs/dragonfly_benchmarks_8threads_tls.md" "dragonfly-tls"
         cat ./benchmarklogs/combined_dragonfly-tls_results.md
 
+    - name: Combine Valkey Benchmark MD Table
+      run: |
+        python scripts/combine_markdown_results.py "./benchmarklogs/valkey_benchmarks_1threads.md ./benchmarklogs/valkey_benchmarks_2threads.md ./benchmarklogs/valkey_benchmarks_8threads.md" valkey
+        cat ./benchmarklogs/combined_valkey_results.md
+
+    - name: Combine Valkey TLS Benchmark MD Table
+      run: |
+        python scripts/combine_markdown_results.py "./benchmarklogs/valkey_benchmarks_1threads_tls.md ./benchmarklogs/valkey_benchmarks_2threads_tls.md ./benchmarklogs/valkey_benchmarks_8threads_tls.md" "valkey-tls"
+        cat ./benchmarklogs/combined_valkey-tls_results.md
+
     - name: Upload Benchmark Logs
       uses: actions/upload-artifact@v3
       with:
@@ -454,6 +566,8 @@ jobs:
         docker stop redis
         docker stop keydb
         docker stop dragonfly
+        docker stop valkey
         docker stop redis-tls
         docker stop keydb-tls
         docker stop dragonfly-tls
+        docker stop valkey-tls
