@@ -134,6 +134,14 @@ jobs:
         load: true
         tags: dragonfly:latest
 
+    - name: Build Valkey Docker image
+      uses: docker/build-push-action@v2
+      with:
+        context: .
+        file: ./Dockerfile-valkey
+        load: true
+        tags: valkey:latest
+
     - name: Build Redis Docker image with TLS
       uses: docker/build-push-action@v2
       with:
@@ -157,14 +165,6 @@ jobs:
         file: ./Dockerfile-dragonfly-tls
         load: true
         tags: dragonfly-tls:latest
-
-    - name: Build Valkey Docker image
-      uses: docker/build-push-action@v2
-      with:
-        context: .
-        file: ./Dockerfile-valkey
-        load: true
-        tags: valkey:latest
 
     - name: Build Valkey Docker image with TLS
       uses: docker/build-push-action@v2
@@ -254,6 +254,12 @@ jobs:
     # - name: Check Redis TLS config
     #   run: |
     #     docker exec redis-tls ls -lAh /usr/local/etc/redis/
+
+    - name: Check Valkey logs
+      run: docker logs valkey
+
+    - name: Test Valkey Connectivity
+      run: docker exec valkey redis-cli -h 127.0.0.1 -p 6379 PING
     
     - name: Test Redis TLS Connectivity
       run: docker exec redis-tls redis-cli -h 127.0.0.1 -p 6390 --tls --insecure --cert /tls/test.crt --key /tls/test.key --cacert /tls/ca.crt PING
@@ -279,12 +285,6 @@ jobs:
     #   run: |
     #     docker exec dragonfly-tls redis-cli --help
     #     docker exec dragonfly-tls redis-cli -h 127.0.0.1 -p 6392 --cert /tls/test.crt --key /tls/test.key --cacert /tls/ca.crt --password V3ryS3cur3P@sswOrd PING
-
-    - name: Check Valkey logs
-      run: docker logs valkey
-
-    - name: Test Valkey Connectivity
-      run: docker exec valkey redis-cli -h 127.0.0.1 -p 6379 PING
 
     - name: Check Valkey TLS logs
       run: docker logs valkey-tls
@@ -412,6 +412,12 @@ jobs:
         python scripts/parse_memtier_to_md.py ./benchmarklogs/dragonfly_benchmarks_1threads.txt "Dragonfly 1 Threads"
         cat ./benchmarklogs/dragonfly_benchmarks_1threads.md
 
+    - name: Convert Valkey 1 Threads Benchmark to MD
+      continue-on-error: true
+      run: |
+        python scripts/parse_memtier_to_md.py ./benchmarklogs/valkey_benchmarks_1threads.txt "Valkey 1 Thread"
+        cat ./benchmarklogs/valkey_benchmarks_1threads.md
+
     - name: Convert Redis 2 Threads Benchmark to MD
       continue-on-error: true
       run: |
@@ -429,6 +435,12 @@ jobs:
       run: |
         python scripts/parse_memtier_to_md.py ./benchmarklogs/dragonfly_benchmarks_2threads.txt "Dragonfly 2 Thread"
         cat ./benchmarklogs/dragonfly_benchmarks_2threads.md
+
+    - name: Convert Valkey 2 Threads Benchmark to MD
+      continue-on-error: true
+      run: |
+        python scripts/parse_memtier_to_md.py ./benchmarklogs/valkey_benchmarks_2threads.txt "Valkey 2 Threads"
+        cat ./benchmarklogs/valkey_benchmarks_2threads.md
 
     - name: Convert Redis 8 Threads Benchmark to MD
       continue-on-error: true
@@ -448,6 +460,12 @@ jobs:
         python scripts/parse_memtier_to_md.py ./benchmarklogs/dragonfly_benchmarks_8threads.txt "Dragonfly 8 Threads"
         cat ./benchmarklogs/dragonfly_benchmarks_8threads.md
 
+    - name: Convert Valkey 8 Threads Benchmark to MD
+      continue-on-error: true
+      run: |
+        python scripts/parse_memtier_to_md.py ./benchmarklogs/valkey_benchmarks_8threads.txt "Valkey 8 Threads"
+        cat ./benchmarklogs/valkey_benchmarks_8threads.md
+
     - name: Convert Redis 1 Threads Benchmark with TLS to MD
       continue-on-error: true
       run: |
@@ -465,6 +483,12 @@ jobs:
       run: |
         python scripts/parse_memtier_to_md.py ./benchmarklogs/dragonfly_benchmarks_1threads_tls.txt "Dragonfly TLS 1 Thread"
         cat ./benchmarklogs/dragonfly_benchmarks_1threads_tls.md
+
+    - name: Convert Valkey 1 Threads Benchmark with TLS to MD
+      continue-on-error: true
+      run: |
+        python scripts/parse_memtier_to_md.py ./benchmarklogs/valkey_benchmarks_1threads_tls.txt "Valkey TLS 1 Thread"
+        cat ./benchmarklogs/valkey_benchmarks_1threads_tls.md
     
     - name: Convert Redis 2 Threads Benchmark with TLS to MD
       continue-on-error: true
@@ -483,6 +507,12 @@ jobs:
       run: |
         python scripts/parse_memtier_to_md.py ./benchmarklogs/dragonfly_benchmarks_2threads_tls.txt "Dragonfly TLS 2 Threads"
         cat ./benchmarklogs/dragonfly_benchmarks_2threads_tls.md
+
+    - name: Convert Valkey 2 Threads Benchmark with TLS to MD
+      continue-on-error: true
+      run: |
+        python scripts/parse_memtier_to_md.py ./benchmarklogs/valkey_benchmarks_2threads_tls.txt "Valkey TLS 2 Threads"
+        cat ./benchmarklogs/valkey_benchmarks_2threads_tls.md
     
     - name: Convert Redis 8 Threads Benchmark with TLS to MD
       continue-on-error: true
@@ -501,36 +531,6 @@ jobs:
       run: |
         python scripts/parse_memtier_to_md.py ./benchmarklogs/dragonfly_benchmarks_8threads_tls.txt "Dragonfly TLS 8 Threads"
         cat ./benchmarklogs/dragonfly_benchmarks_8threads_tls.md
-
-    - name: Convert Valkey 1 Threads Benchmark to MD
-      continue-on-error: true
-      run: |
-        python scripts/parse_memtier_to_md.py ./benchmarklogs/valkey_benchmarks_1threads.txt "Valkey 1 Thread"
-        cat ./benchmarklogs/valkey_benchmarks_1threads.md
-
-    - name: Convert Valkey 2 Threads Benchmark to MD
-      continue-on-error: true
-      run: |
-        python scripts/parse_memtier_to_md.py ./benchmarklogs/valkey_benchmarks_2threads.txt "Valkey 2 Threads"
-        cat ./benchmarklogs/valkey_benchmarks_2threads.md
-
-    - name: Convert Valkey 8 Threads Benchmark to MD
-      continue-on-error: true
-      run: |
-        python scripts/parse_memtier_to_md.py ./benchmarklogs/valkey_benchmarks_8threads.txt "Valkey 8 Threads"
-        cat ./benchmarklogs/valkey_benchmarks_8threads.md
-
-    - name: Convert Valkey 1 Threads Benchmark with TLS to MD
-      continue-on-error: true
-      run: |
-        python scripts/parse_memtier_to_md.py ./benchmarklogs/valkey_benchmarks_1threads_tls.txt "Valkey TLS 1 Thread"
-        cat ./benchmarklogs/valkey_benchmarks_1threads_tls.md
-
-    - name: Convert Valkey 2 Threads Benchmark with TLS to MD
-      continue-on-error: true
-      run: |
-        python scripts/parse_memtier_to_md.py ./benchmarklogs/valkey_benchmarks_2threads_tls.txt "Valkey TLS 2 Threads"
-        cat ./benchmarklogs/valkey_benchmarks_2threads_tls.md
 
     - name: Convert Valkey 8 Threads Benchmark with TLS to MD
       continue-on-error: true
@@ -556,6 +556,12 @@ jobs:
         python scripts/combine_markdown_results.py "./benchmarklogs/dragonfly_benchmarks_1threads.md ./benchmarklogs/dragonfly_benchmarks_2threads.md ./benchmarklogs/dragonfly_benchmarks_8threads.md" dragonfly
         cat ./benchmarklogs/combined_dragonfly_results.md
 
+    - name: Combine Valkey Benchmark MD Table
+      continue-on-error: true
+      run: |
+        python scripts/combine_markdown_results.py "./benchmarklogs/valkey_benchmarks_1threads.md ./benchmarklogs/valkey_benchmarks_2threads.md ./benchmarklogs/valkey_benchmarks_8threads.md" valkey
+        cat ./benchmarklogs/combined_valkey_results.md
+
     - name: Combine Redis TLS Benchmark MD Table
       continue-on-error: true
       run: |
@@ -573,12 +579,6 @@ jobs:
       run: |
         python scripts/combine_markdown_results.py "./benchmarklogs/dragonfly_benchmarks_1threads_tls.md ./benchmarklogs/dragonfly_benchmarks_2threads_tls.md ./benchmarklogs/dragonfly_benchmarks_8threads_tls.md" "dragonfly-tls"
         cat ./benchmarklogs/combined_dragonfly-tls_results.md
-
-    - name: Combine Valkey Benchmark MD Table
-      continue-on-error: true
-      run: |
-        python scripts/combine_markdown_results.py "./benchmarklogs/valkey_benchmarks_1threads.md ./benchmarklogs/valkey_benchmarks_2threads.md ./benchmarklogs/valkey_benchmarks_8threads.md" valkey
-        cat ./benchmarklogs/combined_valkey_results.md
 
     - name: Combine Valkey TLS Benchmark MD Table
       continue-on-error: true
