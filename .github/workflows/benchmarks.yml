@@ -555,7 +555,7 @@ jobs:
         cat ./benchmarklogs/combined_valkey-tls_results.md
 
     - name: Upload Benchmark Logs
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: benchmark_logs
         path: benchmarklogs/*
