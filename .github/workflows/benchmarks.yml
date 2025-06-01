@@ -293,6 +293,23 @@ jobs:
     - name: Test Valkey TLS Connectivity
       run: docker exec valkey-tls redis-cli -h 127.0.0.1 -p 6393 --tls --insecure --cert /tls/test.crt --key /tls/test.key --cacert /tls/ca.crt PING
 
+    - name: Check Database Versions
+      continue-on-error: true
+      run: |
+        echo "==== Database Versions ===="
+        
+        echo "=== Redis Version ==="
+        docker exec redis redis-server --version || docker exec redis redis-cli INFO server | grep redis_version | head -1
+        
+        echo "=== KeyDB Version ==="
+        docker exec keydb keydb-server --version || docker exec keydb keydb-cli INFO server | grep -E "(keydb_version|redis_version)" | head -1
+        
+        echo "=== Dragonfly Version ==="
+        docker exec dragonfly dragonfly --version || docker logs dragonfly 2>&1 | grep -i "version\|dragonfly" | head -3
+        
+        echo "=== Valkey Version ==="
+        docker exec valkey valkey-server --version || docker exec valkey redis-cli INFO server | grep -E "(valkey_version|redis_version)" | head -1      
+
     - name: Install memtier_benchmark
       run: |
         sudo apt-get update
@@ -642,6 +659,29 @@ jobs:
       continue-on-error: true
       run: |
         python scripts/opssec-charts.py combined_all_results_tls.md TLS
+
+    - name: Capture Versions for Benchmark Report
+      continue-on-error: true
+      run: |
+        mkdir -p ./benchmarklogs
+        echo "# Database Versions Used" > ./benchmarklogs/versions.md
+        echo "" >> ./benchmarklogs/versions.md
+        echo "| Database | Version |" >> ./benchmarklogs/versions.md
+        echo "|----------|---------|" >> ./benchmarklogs/versions.md
+        
+        REDIS_VER=$(docker exec redis redis-server --version 2>/dev/null | cut -d' ' -f3 || docker exec redis redis-cli INFO server | grep redis_version | cut -d: -f2 | tr -d '\r')
+        echo "| Redis | ${REDIS_VER} |" >> ./benchmarklogs/versions.md
+        
+        KEYDB_VER=$(docker exec keydb keydb-server --version 2>/dev/null | cut -d' ' -f3 || docker exec keydb keydb-cli INFO server | grep -E "(keydb_version|redis_version)" | head -1 | cut -d: -f2 | tr -d '\r')
+        echo "| KeyDB | ${KEYDB_VER} |" >> ./benchmarklogs/versions.md
+        
+        DRAGONFLY_VER=$(docker exec dragonfly dragonfly --version 2>/dev/null | cut -d' ' -f2 || docker logs dragonfly 2>&1 | grep -i "version" | head -1 | cut -d' ' -f4 || echo "unknown")
+        echo "| Dragonfly | ${DRAGONFLY_VER} |" >> ./benchmarklogs/versions.md
+        
+        VALKEY_VER=$(docker exec valkey valkey-server --version 2>/dev/null | cut -d' ' -f3 || docker exec valkey redis-cli INFO server | grep -E "(valkey_version|redis_version)" | head -1 | cut -d: -f2 | tr -d '\r')
+        echo "| Valkey | ${VALKEY_VER} |" >> ./benchmarklogs/versions.md
+        
+        cat ./benchmarklogs/versions.md
 
     - name: Upload Benchmark Logs and Charts
       uses: actions/upload-artifact@v4
