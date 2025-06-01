@@ -111,7 +111,7 @@ jobs:
         echo "tls-auth-clients no" >> valkey-tls.conf
 
     - name: Build Redis Docker image
-      uses: docker/build-push-action@v2
+      uses: docker/build-push-action@v6
       with:
         context: .
         file: ./Dockerfile-redis
@@ -119,7 +119,7 @@ jobs:
         tags: redis:latest
 
     - name: Build KeyDB Docker image
-      uses: docker/build-push-action@v2
+      uses: docker/build-push-action@v6
       with:
         context: .
         file: ./Dockerfile-keydb
@@ -127,7 +127,7 @@ jobs:
         tags: keydb:latest
 
     - name: Build Dragonfly Docker image
-      uses: docker/build-push-action@v2
+      uses: docker/build-push-action@v6
       with:
         context: .
         file: ./Dockerfile-dragonfly
@@ -135,7 +135,7 @@ jobs:
         tags: dragonfly:latest
 
     - name: Build Valkey Docker image
-      uses: docker/build-push-action@v2
+      uses: docker/build-push-action@v6
       with:
         context: .
         file: ./Dockerfile-valkey
@@ -143,7 +143,7 @@ jobs:
         tags: valkey:latest
 
     - name: Build Redis Docker image with TLS
-      uses: docker/build-push-action@v2
+      uses: docker/build-push-action@v6
       with:
         context: .
         file: ./Dockerfile-redis-tls
@@ -151,7 +151,7 @@ jobs:
         tags: redis-tls:latest
     
     - name: Build KeyDB Docker image with TLS
-      uses: docker/build-push-action@v2
+      uses: docker/build-push-action@v6
       with:
         context: .
         file: ./Dockerfile-keydb-tls
@@ -159,7 +159,7 @@ jobs:
         tags: keydb-tls:latest
     
     - name: Build Dragonfly Docker image with TLS
-      uses: docker/build-push-action@v2
+      uses: docker/build-push-action@v6
       with:
         context: .
         file: ./Dockerfile-dragonfly-tls
@@ -167,7 +167,7 @@ jobs:
         tags: dragonfly-tls:latest
 
     - name: Build Valkey Docker image with TLS
-      uses: docker/build-push-action@v2
+      uses: docker/build-push-action@v6
       with:
         context: .
         file: ./Dockerfile-valkey-tls
