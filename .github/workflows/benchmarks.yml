@@ -635,10 +635,10 @@ jobs:
       run: |
         # Create a single combined file in the desired order
         cat \
-          ./combined_redis_results.md \
-          ./combined_keydb_results.md \
-          ./combined_dragonfly_results.md \
-          ./combined_valkey_results.md \
+          ./benchmarklogs/combined_redis_results.md \
+          ./benchmarklogs/combined_keydb_results.md \
+          ./benchmarklogs/combined_dragonfly_results.md \
+          ./benchmarklogs/combined_valkey_results.md \
           > ./combined_all_results.md
 
         echo "✅ All results merged into combined_all_results.md"
@@ -648,13 +648,22 @@ jobs:
       run: |
         # Create a single combined file in the desired order
         cat \
-          ./combined_redis-tls_results.md \
-          ./combined_keydb-tls_results.md \
-          ./combined_dragonfly-tls_results.md \
-          ./combined_valkey-tls_results.md \
+          ./benchmarklogs/combined_redis-tls_results.md \
+          ./benchmarklogs/combined_keydb-tls_results.md \
+          ./benchmarklogs/combined_dragonfly-tls_results.md \
+          ./benchmarklogs/combined_valkey-tls_results.md \
           > ./combined_all_results_tls.md
 
         echo "✅ All results merged into combined_all_results_tls.md"
+
+    - name: Debug Combined Results File
+      run: |
+        echo "=== Check if combined file exists ==="
+        ls -la combined_all_results.md
+        echo "=== First 20 lines of combined file ==="
+        head -20 combined_all_results.md
+        echo "=== File size ==="
+        wc -l combined_all_results.md
 
     - name: Set up Python 3.x
       uses: actions/setup-python@v4
@@ -665,6 +674,21 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install matplotlib numpy
+
+    - name: Debug Chart Input Data
+      continue-on-error: true
+      run: |
+        echo "=== Contents of combined_all_results.md ==="
+        cat combined_all_results.md
+        
+        echo "=== Check for database names ==="
+        grep -E "(Redis|KeyDB|Dragonfly|Valkey)" combined_all_results.md || echo "No database names found"
+        
+        echo "=== Check for Ops/sec data ==="
+        grep -i "ops/sec" combined_all_results.md || echo "No ops/sec data found"
+        
+        echo "=== Check table structure ==="
+        grep "|" combined_all_results.md | head -10
 
     - name: Generate non-TLS Latency Charts
       continue-on-error: true
@@ -715,6 +739,8 @@ jobs:
         name: all_benchmark_artifacts
         path: |
           benchmarklogs/**
+          combined_all_results.md
+          combined_all_results_tls.md
           latency-nonTLS-avg.png
           latency-nonTLS-p50.png
           latency-nonTLS-p99.png
