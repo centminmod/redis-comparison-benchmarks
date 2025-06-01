@@ -1,44 +1,48 @@
 #!/usr/bin/env python3
-# pip install matplotlib numpy
+# Requires: pip install matplotlib numpy
 
 import matplotlib.pyplot as plt
 import numpy as np
 import sys
 
-# The nine “thread-operation” labels in exactly this order
+# Exactly these nine labels, in this order:
 EXPECTED_LABELS = [
     "1 Thread Sets", "1 Thread Gets", "1 Thread Totals",
     "2 Threads Sets", "2 Threads Gets", "2 Threads Totals",
     "8 Threads Sets", "8 Threads Gets", "8 Threads Totals"
 ]
 
-# The four DBs we expect, in plotting order
+# The four DBs we care about, in plotting order:
 DBS = ["Redis", "KeyDB", "Dragonfly", "Valkey"]
 
 
-def normalize_threads(tokens):
+def normalize_threads(token):
     """
-    Given tokens = e.g. ["Dragonfly", "1", "Threads"] or ["Dragonfly", "2", "Thread"],
-    return (db, normalized_threads) as in latency-charts.py.
+    Given "1 Thread", "1 Threads", "2 Thread", "8 Threads", etc.,
+    return exactly "1 Thread", "2 Threads", or "8 Threads".
     """
-    if len(tokens) < 2:
-        return None, None
-
-    db = tokens[0]
-    num = tokens[1]
-    thread_word = "Thread" if num == "1" else "Threads"
-    normalized = f"{num} {thread_word}"
-    return db, normalized
+    parts = token.split()
+    if len(parts) != 2:
+        return None
+    num, word = parts
+    if num == "1":
+        return "1 Thread"
+    elif num in ("2", "8"):
+        return f"{num} Threads"
+    else:
+        return None
 
 
 def parse_markdown_ops(filepath):
     """
-    Read the combined_all_results.md (or combined_all_results_tls.md) table,
-    return a dict of shape:
-      data[db]["ops"] = { label: float }
-    where label is one of EXPECTED_LABELS.
+    Read combined_all_results.md (or combined_all_results_tls.md). Return:
+      data[db]["ops"][label] = float(ops/sec)
+    Prints debug lines for every skipped row or stored value.
     """
-    data = { db: {"ops": {lbl: 0.0 for lbl in EXPECTED_LABELS}} for db in DBS }
+    data = {
+        db: {"ops": {lbl: 0.0 for lbl in EXPECTED_LABELS}}
+        for db in DBS
+    }
 
     print(f"[DEBUG] Opening file: {filepath}")
     with open(filepath, "r") as f:
@@ -47,77 +51,105 @@ def parse_markdown_ops(filepath):
             if not line:
                 continue
 
-            # Skip table headers or pure-separator lines:
-            if line.startswith("|") or line.lower().startswith("databases") or set(line) <= set("- "):
+            if "|" not in line:
+                print(f"  [DEBUG] Skipping: no '|' found → “{line}”")
                 continue
 
-            print(f"[DEBUG] Parsing line: “{line}”")
             parts = [p.strip() for p in line.split("|")]
-            # We expect at least 3 columns (Databases/Threads, Type, Ops/sec, …).
-            if len(parts) < 3:
-                print(f"  [DEBUG] → Skipping because parts < 3: only {len(parts)} parts")
+            if len(parts) < 5:
+                print(f"  [DEBUG] Skipping: fewer than 5 fields → {parts}")
                 continue
 
-            db_and_threads = parts[0]   # e.g. "KeyDB 2 Threads" or "Dragonfly 1 Threads"
-            op_type        = parts[1]   # "Sets", "Gets", or "Totals"
-            ops_val        = parts[2]   # e.g. "54325.12"
+            db_and_threads = parts[0]
+            op = parts[1]
+            try:
+                ops_val = parts[2]
+            except IndexError:
+                print(f"  [DEBUG] Skipping: missing Ops/sec column, parts = {parts}")
+                continue
 
             tokens = db_and_threads.split()
-            db_name, threads_norm = normalize_threads(tokens)
-            if db_name not in DBS or threads_norm is None:
-                print(f"  [DEBUG] → Unknown DB or threading token: {tokens}")
+            if len(tokens) < 3:
+                print(f"  [DEBUG] SKIPPING: cannot split db_and_threads '{db_and_threads}'")
                 continue
 
-            label = f"{threads_norm} {op_type}"
+            db = tokens[0]
+            th_token = " ".join(tokens[1:3])
+
+            if db not in DBS:
+                print(f"  [DEBUG] SKIPPING: Unknown DB '{db}'")
+                continue
+
+            th_norm = normalize_threads(th_token)
+            if th_norm is None:
+                print(f"  [DEBUG] SKIPPING: cannot normalize threads '{th_token}'")
+                continue
+
+            label = f"{th_norm} {op}"
             if label not in EXPECTED_LABELS:
-                print(f"  [DEBUG] → Label “{label}” not in EXPECTED_LABELS. Skipping.")
+                print(f"  [DEBUG] SKIPPING: label '{label}' not in EXPECTED_LABELS")
                 continue
 
             try:
                 opsf = float(ops_val)
             except ValueError:
-                print(f"  [DEBUG] → Cannot convert Ops/sec to float: ops_val = {ops_val}")
+                print(f"  [DEBUG] SKIPPING: cannot convert Ops/sec to float: '{ops_val}'")
                 continue
 
-            data[db_name]["ops"][label] = opsf
-            print(f"  [DEBUG] → Stored {db_name}.{label} = {opsf:.2f} ops/sec")
+            data[db]["ops"][label] = opsf
+            print(f"  [DEBUG] Stored → {db}.{label} = {opsf:.2f} ops/sec")
 
-    print("[DEBUG] Finished parsing file. Summary of ops/sec data:")
+    print("[DEBUG] Finished parsing. Summary of ops/sec data:")
     for db in DBS:
-        non_zero = {lbl: val for lbl, val in data[db]["ops"].items() if val != 0.0}
-        print(f"  [DEBUG] DB = {db}: {len(non_zero)}/{len(EXPECTED_LABELS)} labels have non-zero ops/sec")
-        for lbl, val in non_zero.items():
-            print(f"    [DEBUG]   {lbl} → {val:.2f}")
+        nonzero = {lbl: val for lbl, val in data[db]["ops"].items() if val != 0.0}
+        print(f"  [DEBUG] DB = {db}: {len(nonzero)}/{len(EXPECTED_LABELS)} nonzero labels")
+        if nonzero:
+            for lbl, val in nonzero.items():
+                print(f"    [DEBUG]   {lbl} → {val:.2f}")
 
     return data
 
 
 def plot_ops_chart(all_data, out_filename):
     """
-    Build a grouped‐bar chart of Ops/sec for the four DBS, each across the nine EXPECTED_LABELS.
-    Save it to out_filename (PNG).
+    Build a grouped‐bar chart for Ops/sec across 4 DBs and 9 labels,
+    and save to out_filename. Styled to match the reference image:
+    - Two‐line centered title
+    - Horizontal X‐tick labels, smaller font
+    - Light horizontal grid
+    - Legend in upper-left inside the plot
     """
-    # Build a 2D array: each row = one DB, columns = each of the nine EXPECTED_LABELS
     vals = []
     for db in DBS:
-        row = [ all_data[db]["ops"].get(lbl, 0.0) for lbl in EXPECTED_LABELS ]
+        row = [all_data[db]["ops"].get(lbl, 0.0) for lbl in EXPECTED_LABELS]
         vals.append(row)
-    arr = np.array(vals)  # shape (4, 9)
+    arr = np.array(vals)  # shape = (4, 9)
 
     x = np.arange(len(EXPECTED_LABELS))
     width = 0.2
     offsets = [-1.5 * width, -0.5 * width, 0.5 * width, 1.5 * width]
 
-    fig, ax = plt.subplots(figsize=(14, 10))
+    fig, ax = plt.subplots(figsize=(16, 11))
     for i, db in enumerate(DBS):
-        ax.bar(x + offsets[i], arr[i], width, label=db)
+        ax.bar(
+            x + offsets[i],
+            arr[i],
+            width,
+            label=db
+        )
 
+    ax.set_title(
+        "Redis vs KeyDB vs Dragonfly vs Valkey – Memtier Benchmarks\nby George Liu",
+        fontsize=18,
+        fontweight='bold',
+        loc='center'
+    )
+    ax.set_ylabel("Ops/Sec", fontsize=14, fontweight='semibold')
+    ax.grid(axis='y', linestyle='--', linewidth=0.5, alpha=0.7)
     ax.set_xticks(x)
-    ax.set_xticklabels(EXPECTED_LABELS, rotation=30, ha="right")
-    ax.set_xlabel("Type of Operation and Threads")
-    ax.set_ylabel("Ops/Sec")
-    ax.set_title("Redis vs KeyDB vs Dragonfly vs Valkey – Ops/Sec")
-    ax.legend()
+    ax.set_xticklabels(EXPECTED_LABELS, rotation=0, ha="center", fontsize=10)
+    ax.legend(fontsize=12, loc='upper left')
+    ax.tick_params(axis='y', labelsize=12)
 
     for i, db in enumerate(DBS):
         for j, height in enumerate(arr[i]):
@@ -126,10 +158,11 @@ def plot_ops_chart(all_data, out_filename):
                 xy=(x[j] + offsets[i], height),
                 xytext=(0, 3),
                 textcoords="offset points",
-                ha="center", va="bottom"
+                ha="center", va="bottom",
+                fontsize=9
             )
 
-    plt.tight_layout()
+    plt.tight_layout(rect=[0, 0, 1, 0.96])
     print(f"[DEBUG] Saving Ops/Sec plot to {out_filename}")
     plt.savefig(out_filename)
     plt.close()
@@ -140,11 +173,10 @@ if __name__ == "__main__":
         print("Usage: python opssec-charts.py <combined_md> <prefix>")
         sys.exit(1)
 
-    md_path = sys.argv[1]   # e.g. "combined_all_results.md"
-    prefix  = sys.argv[2]   # e.g. "nonTLS" or "TLS"
+    md_path = sys.argv[1]  # e.g. "combined_all_results.md"
+    prefix = sys.argv[2]   # e.g. "nonTLS" or "TLS"
 
-    print(f"[DEBUG] Running opssec-charts.py on {md_path} with prefix “{prefix}”")
+    print(f"[DEBUG] Running opssec-charts.py on '{md_path}' with prefix '{prefix}'")
     data_ops = parse_markdown_ops(md_path)
 
-    # Save to a single file, e.g. ops-nonTLS.png or ops-TLS.png
     plot_ops_chart(data_ops, f"ops-{prefix}.png")
