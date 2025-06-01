@@ -587,11 +587,72 @@ jobs:
         python scripts/combine_markdown_results.py "./benchmarklogs/valkey_benchmarks_1threads_tls.md ./benchmarklogs/valkey_benchmarks_2threads_tls.md ./benchmarklogs/valkey_benchmarks_8threads_tls.md" "valkey-tls"
         cat ./benchmarklogs/combined_valkey-tls_results.md
 
-    - name: Upload Benchmark Logs
+    - name: Combine benchmark Markdown results
+      continue-on-error: true
+      run: |
+        # Create a single combined file in the desired order
+        cat \
+          ./combined_redis_results.md \
+          ./combined_keydb_results.md \
+          ./combined_dragonfly_results.md \
+          ./combined_valkey_results.md \
+          > ./combined_all_results.md
+
+        echo "✅ All results merged into combined_all_results.md"
+
+    - name: Combine TLS benchmark Markdown results
+      continue-on-error: true
+      run: |
+        # Create a single combined file in the desired order
+        cat \
+          ./combined_redis-tls_results.md \
+          ./combined_keydb-tls_results.md \
+          ./combined_dragonfly-tls_results.md \
+          ./combined_valkey-tls_results.md \
+          > ./combined_all_results_tls.md
+
+        echo "✅ All results merged into combined_all_results_tls.md"
+
+    - name: Set up Python 3.x
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.x"
+
+    - name: Install charting dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install matplotlib numpy
+
+    - name: Generate non-TLS Latency Charts
+      run: |
+        python scripts/latency-charts.py combined_all_results.md nonTLS
+
+    - name: Generate non-TLS Ops/Sec Charts
+      run: |
+        python scripts/opssec-charts.py combined_all_results.md nonTLS
+
+    - name: Generate TLS Latency Charts
+      run: |
+        python scripts/latency-charts.py combined_all_results_tls.md TLS
+
+    - name: Generate TLS Ops/Sec Charts
+      run: |
+        python scripts/opssec-charts.py combined_all_results_tls.md TLS
+
+    - name: Upload Benchmark Logs and Charts
       uses: actions/upload-artifact@v4
       with:
-        name: benchmark_logs
-        path: benchmarklogs/*
+        name: all_benchmark_artifacts
+        path: |
+          benchmarklogs/**
+          latency-nonTLS-avg.png
+          latency-nonTLS-p50.png
+          latency-nonTLS-p99.png
+          ops-nonTLS.png
+          latency-TLS-avg.png
+          latency-TLS-p50.png
+          latency-TLS-p99.png
+          ops-TLS.png
 
     - name: Cleanup
       run: |

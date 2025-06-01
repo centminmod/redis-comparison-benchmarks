@@ -1,50 +1,113 @@
 #!/usr/bin/env python3
 # pip install matplotlib numpy
-import numpy as np
+
 import matplotlib.pyplot as plt
+import numpy as np
+import sys
+import os
 
-# Data
-labels = ['1 Thread Sets', '1 Thread Gets', '1 Thread Totals', '2 Threads Sets', '2 Threads Gets', '2 Threads Totals', '8 Threads Sets', '8 Threads Gets', '8 Threads Totals']
-
-ops_sec_data = [
-    [3814.44, 57216.58, 61031.02, 3927.15, 58907.31, 62834.47, 5961.01, 89415.13, 95376.14], # Redis
-    [5752.32, 86284.73, 92037.05, 9541.41, 143121.19, 152662.61, 11152.45, 167286.71, 178439.15], # KeyDB
-    [6379.52, 95692.75, 102072.27, 8296.79, 124451.91, 132748.71, 21324.85, 319872.80, 341197.65] # Dragonfly
+# Constants: nine “thread-operation” labels and DB ordering.
+LABELS = [
+    "1 Thread Sets", "1 Thread Gets", "1 Thread Totals",
+    "2 Threads Sets", "2 Threads Gets", "2 Threads Totals",
+    "8 Threads Sets", "8 Threads Gets", "8 Threads Totals"
 ]
+DBS = ["Redis", "KeyDB", "Dragonfly", "Valkey"]
 
-# Update chart title
 
-fig, ax = plt.subplots(figsize=(14, 10))
+def parse_markdown_ops(path):
+    """
+    Parse combined_all_results.md (or combined_all_results_tls.md) and return:
+      data[db]["ops"][label] = float(ops/sec)
+    """
+    data = {db: {"ops": {}} for db in DBS}
 
-# Plot data
-width = 0.2
-x = np.arange(len(labels))
-rects1 = ax.bar(x - width, ops_sec_data[0], width, label='Redis', color='blue')
-rects2 = ax.bar(x, ops_sec_data[1], width, label='KeyDB', color='green')
-rects3 = ax.bar(x + width, ops_sec_data[2], width, label='Dragonfly', color='red')
+    with open(path, "r") as f:
+        for raw in f:
+            line = raw.strip()
+            # Skip blank lines or header/separator rows
+            if not line or line.startswith("|") or line.lower().startswith("databases") or set(line) <= set("- "):
+                continue
 
-# Add some text for labels, title, and custom x-axis tick labels, etc.
-ax.set_xlabel('Type of Operation and Threads')
-ax.set_ylabel('Ops/Sec')
-ax.set_title('Redis vs KeyDB vs Dragonfly Memtier Benchmarks\nby George Liu')
-ax.set_xticks(x)
-ax.set_xticklabels(labels)
-ax.legend()
+            parts = [p.strip() for p in line.split("|")]
+            if len(parts) < 3:
+                continue
 
-# Attach data labels
-def attach_data_labels(rects):
-    """Attach a text label above each bar in *rects*, displaying its height, rounded to 0 decimal places."""
-    for rect in rects:
-        height = rect.get_height()
-        ax.annotate('{}'.format(int(round(height))),
-                    xy=(rect.get_x() + rect.get_width() / 2, height),
-                    xytext=(0, 3),  # 3 points vertical offset
-                    textcoords="offset points",
-                    ha='center', va='bottom')
+            db_and_threads = parts[0]   # e.g. "Redis 1 Thread"
+            op_type = parts[1]          # e.g. "Sets"/"Gets"/"Totals"
+            ops_val = parts[2]          # e.g. "86284.73"
 
-attach_data_labels(rects1)
-attach_data_labels(rects2)
-attach_data_labels(rects3)
+            tokens = db_and_threads.split()
+            if len(tokens) >= 3:
+                db = tokens[0]
+                threads = tokens[1] + " " + tokens[2]  # "1 Thread", "2 Threads", "8 Threads"
+            else:
+                continue
 
-plt.tight_layout()
-plt.show()
+            label = f"{threads} {op_type}"
+            if label not in LABELS or db not in data:
+                continue
+
+            try:
+                opsf = float(ops_val)
+            except ValueError:
+                continue
+
+            data[db]["ops"][label] = opsf
+
+    return data
+
+
+def plot_ops_chart(all_data, out_filename):
+    """
+    Plot a grouped bar chart of Ops/sec for Redis, KeyDB, Dragonfly, Valkey.
+    Save it to out_filename (PNG).
+    """
+    # Build array shape (4, 9)
+    vals = []
+    for db in DBS:
+        row = [all_data[db]["ops"].get(lab, 0.0) for lab in LABELS]
+        vals.append(row)
+    arr = np.array(vals)
+
+    x = np.arange(len(LABELS))
+    width = 0.2
+    offsets = [-1.5 * width, -0.5 * width, 0.5 * width, 1.5 * width]
+
+    fig, ax = plt.subplots(figsize=(14, 10))
+    for i, db in enumerate(DBS):
+        ax.bar(x + offsets[i], arr[i], width, label=db)
+
+    ax.set_xticks(x)
+    ax.set_xticklabels(LABELS, rotation=30, ha="right")
+    ax.set_xlabel("Type of Operation and Threads")
+    ax.set_ylabel("Ops/Sec")
+    ax.set_title("Redis vs KeyDB vs Dragonfly vs Valkey – Ops/Sec")
+    ax.legend()
+
+    for i, db in enumerate(DBS):
+        for j, height in enumerate(arr[i]):
+            ax.annotate(
+                f"{int(round(height))}",
+                xy=(x[j] + offsets[i], height),
+                xytext=(0, 3),
+                textcoords="offset points",
+                ha="center", va="bottom"
+            )
+
+    plt.tight_layout()
+    plt.savefig(out_filename)
+    plt.close()
+
+
+if __name__ == "__main__":
+    # Expect 2 arguments: Markdown path, and prefix (e.g. “nonTLS” or “TLS”)
+    if len(sys.argv) < 3:
+        print("Usage: python opssec-charts.py <combined_md> <prefix>")
+        sys.exit(1)
+
+    md_path = sys.argv[1]
+    prefix = sys.argv[2]
+
+    data_ops = parse_markdown_ops(md_path)
+    plot_ops_chart(data_ops, f"ops-{prefix}.png")

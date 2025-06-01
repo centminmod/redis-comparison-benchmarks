@@ -1,67 +1,148 @@
 #!/usr/bin/env python3
 # pip install matplotlib numpy
+
 import matplotlib.pyplot as plt
 import numpy as np
+import sys
+import os
 
-# Data for x-axis labels and bar width
-labels = ['1 Thread Sets', '1 Thread Gets', '1 Thread Totals', '2 Threads Sets', '2 Threads Gets', '2 Threads Totals', '8 Threads Sets', '8 Threads Gets', '8 Threads Totals']
-width = 0.2
-x = np.arange(len(labels))  # Defining x variable
-
-# Updated Data for latencies
-avg_latency_data = [
-    [1.68332, 1.63532, 1.63832, 3.25753, 3.08650, 3.09719, 9.20864, 9.09222, 9.09950], # Redis
-    [1.14006, 1.08299, 1.08656, 1.38931, 1.31553, 1.32014, 5.38483, 5.31853, 5.32267], # KeyDB
-    [1.36691, 1.30565, 1.30948, 1.52514, 1.50333, 1.50470, 2.48188, 2.44320, 2.44562]  # Dragonfly
+# Constants: the nine “thread-operation” labels, and the DB ordering.
+LABELS = [
+    "1 Thread Sets", "1 Thread Gets", "1 Thread Totals",
+    "2 Threads Sets", "2 Threads Gets", "2 Threads Totals",
+    "8 Threads Sets", "8 Threads Gets", "8 Threads Totals"
 ]
+DBS = ["Redis", "KeyDB", "Dragonfly", "Valkey"]
 
-p50_latency_data = [
-    [1.439, 1.415, 1.415, 1.463, 1.455, 1.455, 9.855, 9.727, 9.727], # Redis
-    [1.007, 1.007, 1.007, 1.295, 1.287, 1.287, 0.887, 0.879, 0.879], # KeyDB
-    [0.959, 0.967, 0.967, 0.743, 0.743, 0.743, 1.767, 1.735, 1.735]  # Dragonfly
-]
 
-p99_latency_data = [
-    [9.855, 3.247, 3.263, 18.559, 15.743, 15.935, 29.695, 28.927, 29.055], # Redis
-    [3.327, 1.831, 1.839, 2.191, 2.079, 2.079, 98.303, 97.791, 97.791], # KeyDB
-    [9.087, 8.767, 8.767, 12.735, 12.607, 12.607, 11.007, 10.431, 10.495]  # Dragonfly
-]
+def parse_markdown(path):
+    """
+    Parse combined_all_results.md (or combined_all_results_tls.md) and return a nested dict:
+      data[db]["avg"][label] = float(avg_latency)
+      data[db]["p50"][label] = float(p50_latency)
+      data[db]["p99"][label] = float(p99_latency)
+    """
+    data = {db: {"avg": {}, "p50": {}, "p99": {}} for db in DBS}
 
-def plot_latency_chart(data, title):
+    with open(path, "r") as f:
+        for raw in f:
+            line = raw.strip()
+            # Skip blank lines, header rows (those starting with '|'), or pure '-----' lines
+            if not line or line.startswith("|") or line.lower().startswith("databases") or set(line) <= set("- "):
+                continue
+
+            parts = [p.strip() for p in line.split("|")]
+            if len(parts) < 8:
+                continue  # malformed or not enough columns
+
+            db_and_threads = parts[0]     # e.g. "Redis 1 Thread"
+            op_type = parts[1]            # e.g. "Sets" / "Gets" / "Totals"
+            # parts[5]: Avg latency, parts[6]: p50 latency, parts[7]: p99 latency
+            avg_lat = parts[5]
+            p50_lat = parts[6]
+            p99_lat = parts[7]
+
+            tokens = db_and_threads.split()
+            if len(tokens) >= 3:
+                db = tokens[0]
+                threads = tokens[1] + " " + tokens[2]  # "1 Thread", "2 Threads", "8 Threads"
+            else:
+                continue
+
+            label = f"{threads} {op_type}"
+            if label not in LABELS or db not in data:
+                continue
+
+            try:
+                avg_val = float(avg_lat)
+                p50_val = float(p50_lat)
+                p99_val = float(p99_lat)
+            except ValueError:
+                continue  # skip rows where latency isn’t a number
+
+            data[db]["avg"][label] = avg_val
+            data[db]["p50"][label] = p50_val
+            data[db]["p99"][label] = p99_val
+
+    return data
+
+
+def plot_grouped_bars(all_data, metric_key, title_suffix, ylabel, out_filename):
+    """
+    Build a grouped‐bar chart from all_data[db][metric_key][label].
+    Save to out_filename (PNG).
+    """
+    # Build a 2D array: each row = one DB, columns = each of the nine LABELS.
+    vals = []
+    for db in DBS:
+        row = [all_data[db][metric_key].get(lab, 0.0) for lab in LABELS]
+        vals.append(row)
+    arr = np.array(vals)  # shape (4, 9)
+
+    x = np.arange(len(LABELS))
+    width = 0.2
+    offsets = [-1.5 * width, -0.5 * width, 0.5 * width, 1.5 * width]
+
     fig, ax = plt.subplots(figsize=(14, 10))
+    for i, db in enumerate(DBS):
+        ax.bar(x + offsets[i], arr[i], width, label=db)
 
-    # Plot data
-    rects1 = ax.bar(x - width, data[0], width, label='Redis', color='blue')
-    rects2 = ax.bar(x, data[1], width, label='KeyDB', color='green')
-    rects3 = ax.bar(x + width, data[2], width, label='Dragonfly', color='red')
-
-    # Labels, title and ticks
-    ax.set_xlabel('Type of Operation and Threads')
-    ax.set_ylabel('Latency (ms)')
-    ax.set_title(f'Redis vs KeyDB vs Dragonfly {title}\nby George Liu')
     ax.set_xticks(x)
-    ax.set_xticklabels(labels)
+    ax.set_xticklabels(LABELS, rotation=30, ha="right")
+    ax.set_xlabel("Type of Operation and Threads")
+    ax.set_ylabel(ylabel)
+    ax.set_title(f"Redis vs KeyDB vs Dragonfly vs Valkey – {title_suffix}")
     ax.legend()
 
-    # Attach data labels
-    def attach_vertical_data_labels(rects):
-        """Attach a text label above each bar in *rects*, displaying its height, rounded to 2 decimal places."""
-        for rect in rects:
-            height = rect.get_height()
-            ax.annotate('{}'.format(round(height, 2)),
-                        xy=(rect.get_x() + rect.get_width() / 2, height),
-                        xytext=(0, 3),  # 3 points vertical offset
-                        textcoords="offset points",
-                        ha='center', va='bottom')
-
-    attach_vertical_data_labels(rects1)
-    attach_vertical_data_labels(rects2)
-    attach_vertical_data_labels(rects3)
+    # Annotate each bar with its numeric value
+    for i, db in enumerate(DBS):
+        for j, height in enumerate(arr[i]):
+            ax.annotate(
+                f"{height:.2f}",
+                xy=(x[j] + offsets[i], height),
+                xytext=(0, 3),
+                textcoords="offset points",
+                ha="center", va="bottom"
+            )
 
     plt.tight_layout()
-    plt.show()
+    plt.savefig(out_filename)
+    plt.close()
 
-# Plotting the 3 charts
-plot_latency_chart(avg_latency_data, 'Average Latency (ms)')
-plot_latency_chart(p50_latency_data, 'p50 Latency (ms)')
-plot_latency_chart(p99_latency_data, 'p99 Latency (ms)')
+
+if __name__ == "__main__":
+    # Expect 2 arguments: 1) Markdown path, 2) prefix (e.g. "nonTLS" or "TLS")
+    if len(sys.argv) < 3:
+        print("Usage: python latency-charts.py <combined_md> <prefix>")
+        sys.exit(1)
+
+    md_path = sys.argv[1]
+    prefix = sys.argv[2]
+
+    # e.g. md_path="combined_all_results.md", prefix="nonTLS"
+    data = parse_markdown(md_path)
+
+    # Plot 3 separate charts, each saved under a distinct filename:
+    plot_grouped_bars(
+        data,
+        "avg",
+        "Average Latency (ms)",
+        "Latency (ms)",
+        f"latency-{prefix}-avg.png"
+    )
+
+    plot_grouped_bars(
+        data,
+        "p50",
+        "p50 Latency (ms)",
+        "Latency (ms)",
+        f"latency-{prefix}-p50.png"
+    )
+
+    plot_grouped_bars(
+        data,
+        "p99",
+        "p99 Latency (ms)",
+        "Latency (ms)",
+        f"latency-{prefix}-p99.png"
+    )
