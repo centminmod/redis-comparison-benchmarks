@@ -51,6 +51,25 @@ jobs:
         sudo DEBIAN_FRONTEND=noninteractive apt-get upgrade -y
         sudo DEBIAN_FRONTEND=noninteractive apt-get dist-upgrade -y
 
+    - name: Check IRQ and Network Capabilities
+      continue-on-error: true
+      run: |
+        echo "=== Network Interfaces ==="
+        ip link show || ifconfig -a
+        
+        echo "=== IRQ Information ==="
+        cat /proc/interrupts | head -20
+        
+        echo "=== CPU Topology ==="
+        lscpu
+        cat /proc/cpuinfo | grep processor
+        
+        echo "=== Test sudo access ==="
+        sudo -n echo "Sudo available" 2>/dev/null || echo "No sudo access to system settings"
+        
+        echo "=== Test ethtool access ==="
+        sudo ethtool -i eth0 2>/dev/null || echo "No ethtool access"
+
     - name: Generate Distinct CA, Server, and Client Certificates
       run: |
         # Generate CA's private key and self-signed certificate
