@@ -206,7 +206,7 @@ jobs:
 
     - name: Run Valkey container
       run: |
-        docker run -d --name valkey -p 6380:6379 --ulimit memlock=-1 valkey:latest
+        docker run -d --name valkey -p 6382:6379 --ulimit memlock=-1 valkey:latest
         sleep 20
 
     - name: Run Valkey container with TLS
