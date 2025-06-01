@@ -624,18 +624,22 @@ jobs:
         pip install matplotlib numpy
 
     - name: Generate non-TLS Latency Charts
+      continue-on-error: true
       run: |
         python scripts/latency-charts.py combined_all_results.md nonTLS
 
     - name: Generate non-TLS Ops/Sec Charts
+      continue-on-error: true
       run: |
         python scripts/opssec-charts.py combined_all_results.md nonTLS
 
     - name: Generate TLS Latency Charts
+      continue-on-error: true
       run: |
         python scripts/latency-charts.py combined_all_results_tls.md TLS
 
     - name: Generate TLS Ops/Sec Charts
+      continue-on-error: true
       run: |
         python scripts/opssec-charts.py combined_all_results_tls.md TLS
 
