@@ -5,13 +5,15 @@ MEMTIER_REDIS_TLS='y'
 MEMTIER_KEYDB_TLS='y'
 MEMTIER_DRAGONFLY_TLS='y'
 MEMTIER_VALKEY_TLS='y'
-CPUS=$(nproc)
+CLEANUP='n'  # Set to 'y' to cleanup containers after benchmarks, 'n' to keep them running
 USE_DOCKER_COMPOSE=true
+CPUS=$(nproc)
 
 set -e  # Exit on any error
 
 echo "=================================="
 echo "REDIS COMPARISON BENCHMARK SUITE"
+echo "Configuration: CLEANUP=$CLEANUP, USE_DOCKER_COMPOSE=$USE_DOCKER_COMPOSE"
 echo "=================================="
 
 # System Information
@@ -137,13 +139,67 @@ EOF
     sed -i "s|--proactor_threads=2|--proactor_threads=$CPUS|" Dockerfile-dragonfly-tls
 }
 
+# Check container status
+check_container_status() {
+    local service_name=$1
+    
+    if [ "$USE_DOCKER_COMPOSE" = true ]; then
+        # Check if service is running via docker-compose
+        if docker-compose ps -q "$service_name" | xargs docker inspect --format='{{.State.Running}}' 2>/dev/null | grep -q true; then
+            return 0  # Container is running
+        else
+            return 1  # Container is not running
+        fi
+    else
+        # Check if container is running via docker
+        if docker ps --format '{{.Names}}' | grep -q "^${service_name}$"; then
+            return 0  # Container is running
+        else
+            return 1  # Container is not running
+        fi
+    fi
+}
+
+# Check all containers status
+check_all_containers_status() {
+    echo "==== Checking Container Status ===="
+    
+    local services=("redis" "keydb" "dragonfly" "valkey" "redis-tls" "keydb-tls" "dragonfly-tls" "valkey-tls")
+    local running_count=0
+    local total_count=${#services[@]}
+    
+    for service in "${services[@]}"; do
+        if check_container_status "$service"; then
+            echo "✅ $service is running"
+            ((running_count++))
+        else
+            echo "❌ $service is not running"
+        fi
+    done
+    
+    echo "Status: $running_count/$total_count containers running"
+    
+    if [ $running_count -eq $total_count ]; then
+        echo "ℹ️  All containers are already running"
+        return 0  # All running
+    elif [ $running_count -gt 0 ]; then
+        echo "⚠️  Some containers are running, some are not"
+        return 2  # Partial
+    else
+        echo "ℹ️  No containers are running"
+        return 1  # None running
+    fi
+}
+
 # Docker management functions
 build_containers() {
     echo "==== Building Docker Images ===="
     
     if [ "$USE_DOCKER_COMPOSE" = true ]; then
+        echo "Building with Docker Compose..."
         docker-compose build --parallel
     else
+        echo "Building with Docker..."
         # Original approach
         docker build -t redis:latest -f Dockerfile-redis .
         docker build -t keydb:latest -f Dockerfile-keydb .
@@ -158,27 +214,93 @@ build_containers() {
     docker images | grep -E 'redis|keydb|dragonfly|valkey'
 }
 
+# Smart container startup
 start_containers() {
-    echo "==== Starting Containers ===="
+    echo "==== Managing Container Startup ===="
     
-    # Restart Docker service
-    systemctl restart docker
-    sleep 5
+    # Check current status
+    check_all_containers_status
+    local status=$?
+    
+    if [ $status -eq 0 ]; then
+        echo "ℹ️  All containers already running, skipping startup"
+        if [ "$CLEANUP" = [nN] ]; then
+            echo "ℹ️  CLEANUP=n: Will reuse existing containers"
+            return 0
+        else
+            echo "⚠️  CLEANUP=y: Will restart containers for fresh state"
+            stop_containers
+        fi
+    elif [ $status -eq 2 ]; then
+        echo "⚠️  Partial container state detected"
+        if [ "$CLEANUP" = [nN] ]; then
+            echo "ℹ️  CLEANUP=n: Starting missing containers only"
+        else
+            echo "⚠️  CLEANUP=y: Restarting all containers for consistency"
+            stop_containers
+        fi
+    fi
+    
+    # Restart Docker service if needed
+    if [ $status -ne 0 ] || [ "$CLEANUP" = [yY] ]; then
+        echo "Restarting Docker service..."
+        systemctl restart docker
+        sleep 5
+    fi
     
     if [ "$USE_DOCKER_COMPOSE" = true ]; then
+        echo "Starting containers with Docker Compose..."
         docker-compose up -d
         sleep 30
     else
-        # Original approach with improved error handling
-        docker run --name redis -d -p 6379:6379 --cpuset-cpus="0-3" --ulimit memlock=-1 redis:latest
-        docker run --name keydb -d -p 6380:6379 --cpuset-cpus="0-3" --ulimit memlock=-1 keydb:latest
-        docker run --name dragonfly -d -p 6381:6379 --cpuset-cpus="0-3" --ulimit memlock=-1 dragonfly:latest
-        docker run --name valkey -d -p 6382:6379 --cpuset-cpus="0-3" --ulimit memlock=-1 valkey:latest
-        docker run --name redis-tls -d -p 6390:6390 --cpuset-cpus="0-3" --ulimit memlock=-1 redis-tls:latest
-        docker run --name keydb-tls -d -p 6391:6391 --cpuset-cpus="0-3" --ulimit memlock=-1 keydb-tls:latest
-        docker run --name dragonfly-tls -d -p 6392:6392 --cpuset-cpus="0-3" --ulimit memlock=-1 dragonfly-tls:latest
-        docker run --name valkey-tls -d -p 6393:6393 --cpuset-cpus="0-3" --ulimit memlock=-1 valkey-tls:latest
+        echo "Starting containers individually..."
+        # Start containers that aren't running
+        local services=(
+            "redis:redis:6379:6379"
+            "keydb:keydb:6380:6379" 
+            "dragonfly:dragonfly:6381:6379"
+            "valkey:valkey:6382:6379"
+            "redis-tls:redis-tls:6390:6390"
+            "keydb-tls:keydb-tls:6391:6391"
+            "dragonfly-tls:dragonfly-tls:6392:6392"
+            "valkey-tls:valkey-tls:6393:6393"
+        )
+        
+        for service_info in "${services[@]}"; do
+            IFS=':' read -r container_name image_name host_port container_port <<< "$service_info"
+            
+            if ! check_container_status "$container_name"; then
+                echo "Starting $container_name..."
+                docker run --name "$container_name" -d -p "${host_port}:${container_port}" \
+                    --cpuset-cpus="0-3" --ulimit memlock=-1 "${image_name}:latest"
+            else
+                echo "✅ $container_name already running"
+            fi
+        done
         sleep 30
+    fi
+    
+    # Final status check
+    check_all_containers_status
+}
+
+# Stop containers function
+stop_containers() {
+    echo "==== Stopping Containers ===="
+    
+    if [ "$USE_DOCKER_COMPOSE" = true ]; then
+        echo "Stopping containers with Docker Compose..."
+        docker-compose down --remove-orphans
+    else
+        echo "Stopping individual containers..."
+        local services=("redis" "keydb" "dragonfly" "valkey" "redis-tls" "keydb-tls" "dragonfly-tls" "valkey-tls")
+        for service in "${services[@]}"; do
+            if check_container_status "$service"; then
+                echo "Stopping $service..."
+                docker stop "$service" 2>/dev/null || true
+                docker rm "$service" 2>/dev/null || true
+            fi
+        done
     fi
 }
 
@@ -189,7 +311,7 @@ manage_csf_firewall() {
     # Get container IPs and add to CSF
     for service in redis keydb dragonfly valkey redis-tls keydb-tls dragonfly-tls valkey-tls; do
         if docker ps --format '{{.Names}}' | grep -q "^${service}$"; then
-            CONTAINER_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $service)
+            CONTAINER_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $service 2>/dev/null)
             if [ ! -z "$CONTAINER_IP" ]; then
                 echo "Adding $service ($CONTAINER_IP) to CSF allow list"
                 csf -a $CONTAINER_IP $service || echo "Warning: Could not add $CONTAINER_IP to CSF"
@@ -201,6 +323,10 @@ manage_csf_firewall() {
 # Database connectivity tests
 test_connectivity() {
     echo "==== Testing Database Connectivity ===="
+    
+    # Wait a bit more for containers to fully start
+    echo "Waiting for databases to initialize..."
+    sleep 10
     
     # Non-TLS tests
     echo "Testing Redis..."
@@ -239,6 +365,51 @@ test_connectivity() {
         docker exec valkey-tls redis-cli -h 127.0.0.1 -p 6393 --tls --insecure \
             --cert /tls/test.crt --key /tls/test.key --cacert /tls/ca.crt PING || echo "Valkey TLS connection failed"
     fi
+}
+
+# Display container information for manual testing
+show_container_info() {
+    echo "=================================="
+    echo "CONTAINER INFORMATION FOR TESTING"
+    echo "=================================="
+    echo ""
+    echo "Container Status:"
+    docker ps --format "table {{.Names}}\t{{.Ports}}\t{{.Status}}" | grep -E "(redis|keydb|dragonfly|valkey)"
+    echo ""
+    echo "Connection Commands:"
+    echo "Non-TLS:"
+    echo "  Redis:     docker exec -it redis redis-cli -h 127.0.0.1 -p 6379"
+    echo "  KeyDB:     docker exec -it keydb redis-cli -h 127.0.0.1 -p 6379"
+    echo "  Dragonfly: docker exec -it dragonfly redis-cli -h 127.0.0.1 -p 6379"
+    echo "  Valkey:    docker exec -it valkey redis-cli -h 127.0.0.1 -p 6379"
+    echo ""
+    echo "TLS:"
+    echo "  Redis TLS:     docker exec -it redis-tls redis-cli -h 127.0.0.1 -p 6390 --tls --insecure --cert /tls/test.crt --key /tls/test.key --cacert /tls/ca.crt"
+    echo "  KeyDB TLS:     docker exec -it keydb-tls redis-cli -h 127.0.0.1 -p 6391 --tls --insecure --cert /tls/test.crt --key /tls/test.key --cacert /tls/ca.crt"
+    echo "  Dragonfly TLS: docker exec -it dragonfly-tls redis-cli -h 127.0.0.1 -p 6392 --insecure --cert /tls/test.crt --key /tls/test.key --cacert /tls/ca.crt"
+    echo "  Valkey TLS:    docker exec -it valkey-tls redis-cli -h 127.0.0.1 -p 6393 --tls --insecure --cert /tls/test.crt --key /tls/test.key --cacert /tls/ca.crt"
+    echo ""
+    echo "Host Connections:"
+    echo "  Redis:     redis-cli -h 127.0.0.1 -p 6379"
+    echo "  KeyDB:     redis-cli -h 127.0.0.1 -p 6380"
+    echo "  Dragonfly: redis-cli -h 127.0.0.1 -p 6381"
+    echo "  Valkey:    redis-cli -h 127.0.0.1 -p 6382"
+    echo ""
+    echo "Container Management:"
+    if [ "$USE_DOCKER_COMPOSE" = true ]; then
+        echo "  Stop all:   docker-compose down"
+        echo "  Start all:  docker-compose up -d"
+        echo "  Logs:       docker-compose logs [service_name]"
+        echo "  Status:     docker-compose ps"
+    else
+        echo "  Stop all:   docker stop redis keydb dragonfly valkey redis-tls keydb-tls dragonfly-tls valkey-tls"
+        echo "  Remove all: docker rm redis keydb dragonfly valkey redis-tls keydb-tls dragonfly-tls valkey-tls"
+        echo "  Logs:       docker logs [container_name]"
+    fi
+    echo ""
+    echo "Manual cleanup when done:"
+    echo "  ./redis-benchmark.sh cleanup"
+    echo "=================================="
 }
 
 # Benchmark execution (matching GitHub workflow style)
@@ -406,19 +577,47 @@ generate_charts() {
     fi
 }
 
-# Cleanup function
+# Cleanup function (now optional)
 cleanup() {
-    echo "==== Cleaning Up ===="
+    if [ "$CLEANUP" = [yY] ]; then
+        echo "==== Cleaning Up (CLEANUP=y) ===="
+        
+        if [ "$USE_DOCKER_COMPOSE" = true ]; then
+            docker-compose down --remove-orphans
+            docker-compose rm -f
+        else
+            docker stop redis keydb dragonfly valkey redis-tls keydb-tls dragonfly-tls valkey-tls 2>/dev/null || true
+            docker rm redis keydb dragonfly valkey redis-tls keydb-tls dragonfly-tls valkey-tls 2>/dev/null || true
+        fi
+        
+        docker rmi redis keydb dragonfly valkey redis-tls keydb-tls dragonfly-tls valkey-tls 2>/dev/null || true
+        
+        echo "✅ Cleanup completed"
+    else
+        echo "==== Skipping Cleanup (CLEANUP=n) ===="
+        echo "ℹ️  Containers left running for manual testing"
+        show_container_info
+    fi
+}
+
+# Manual cleanup function
+manual_cleanup() {
+    echo "==== Manual Cleanup ===="
     
     if [ "$USE_DOCKER_COMPOSE" = true ]; then
         docker-compose down --remove-orphans
         docker-compose rm -f
+        echo "Docker Compose cleanup completed"
     else
+        echo "Stopping and removing containers..."
         docker stop redis keydb dragonfly valkey redis-tls keydb-tls dragonfly-tls valkey-tls 2>/dev/null || true
         docker rm redis keydb dragonfly valkey redis-tls keydb-tls dragonfly-tls valkey-tls 2>/dev/null || true
     fi
     
+    echo "Removing images..."
     docker rmi redis keydb dragonfly valkey redis-tls keydb-tls dragonfly-tls valkey-tls 2>/dev/null || true
+    
+    echo "✅ Manual cleanup completed"
 }
 
 # Main execution
@@ -443,7 +642,48 @@ main() {
     echo "  - ./combined_all_results.md (non-TLS summary)"
     echo "  - ./combined_all_results_tls.md (TLS summary)"
     echo "  - *.png (charts, if generated)"
+    
+    if [ "$CLEANUP" = [nN] ]; then
+        echo ""
+        echo "🚀 Containers are still running for your testing!"
+        echo "Use './redis-benchmark.sh cleanup' when done"
+    fi
 }
 
-# Run main function
-main "$@"
+# Handle command line arguments
+case "${1:-}" in
+    "cleanup")
+        manual_cleanup
+        exit 0
+        ;;
+    "status")
+        check_all_containers_status
+        show_container_info
+        exit 0
+        ;;
+    "help"|"-h"|"--help")
+        echo "Usage: $0 [command]"
+        echo ""
+        echo "Commands:"
+        echo "  (none)   Run full benchmark suite"
+        echo "  cleanup  Manually cleanup containers and images"
+        echo "  status   Show container status and connection info"
+        echo "  help     Show this help message"
+        echo ""
+        echo "Configuration variables:"
+        echo "  CLEANUP=y|n           Cleanup containers after benchmarks (default: n)"
+        echo "  USE_DOCKER_COMPOSE=true|false  Use docker-compose or individual containers"
+        echo "  MEMTIER_*_TLS=y|n     Enable/disable TLS testing for each database"
+        echo ""
+        echo "Examples:"
+        echo "  $0                    # Run benchmarks, keep containers running"
+        echo "  CLEANUP=y $0          # Run benchmarks, cleanup afterwards"
+        echo "  $0 status             # Check container status"
+        echo "  $0 cleanup            # Manual cleanup"
+        exit 0
+        ;;
+    *)
+        # Run main function
+        main "$@"
+        ;;
+esac
