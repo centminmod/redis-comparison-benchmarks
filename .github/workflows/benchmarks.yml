@@ -225,42 +225,42 @@ jobs:
 
     - name: Run Redis container
       run: |
-        docker run -d --name redis -p 6379:6379 --cpuset-cpus="1-3" --ulimit memlock=-1 redis:latest
+        docker run -d --name redis -p 6379:6379 --cpuset-cpus="0-3" --ulimit memlock=-1 redis:latest
         sleep 20
 
     - name: Run KeyDB container
       run: |
-        docker run -d --name keydb -p 6380:6379 --cpuset-cpus="1-3" --ulimit memlock=-1 keydb:latest
+        docker run -d --name keydb -p 6380:6379 --cpuset-cpus="0-3" --ulimit memlock=-1 keydb:latest
         sleep 20
 
     - name: Run Dragonfly container
       run: |
-        docker run -d --name dragonfly -p 6381:6379 --cpuset-cpus="1-3" --ulimit memlock=-1 dragonfly:latest
+        docker run -d --name dragonfly -p 6381:6379 --cpuset-cpus="0-3" --ulimit memlock=-1 dragonfly:latest
         sleep 20
 
     - name: Run Redis container with TLS
       run: |
-        docker run -d --name redis-tls -p 6390:6390 --cpuset-cpus="1-3" --ulimit memlock=-1 redis-tls:latest
+        docker run -d --name redis-tls -p 6390:6390 --cpuset-cpus="0-3" --ulimit memlock=-1 redis-tls:latest
         sleep 20
     
     - name: Run KeyDB container with TLS
       run: |
-        docker run -d --name keydb-tls -p 6391:6391 --cpuset-cpus="1-3" --ulimit memlock=-1 keydb-tls:latest
+        docker run -d --name keydb-tls -p 6391:6391 --cpuset-cpus="0-3" --ulimit memlock=-1 keydb-tls:latest
         sleep 20
     
     - name: Run Dragonfly container with TLS
       run: |
-        docker run -d --name dragonfly-tls -p 6392:6392 --cpuset-cpus="1-3" --ulimit memlock=-1 dragonfly-tls:latest
+        docker run -d --name dragonfly-tls -p 6392:6392 --cpuset-cpus="0-3" --ulimit memlock=-1 dragonfly-tls:latest
         sleep 20
 
     - name: Run Valkey container
       run: |
-        docker run -d --name valkey -p 6382:6379 --cpuset-cpus="1-3" --ulimit memlock=-1 valkey:latest
+        docker run -d --name valkey -p 6382:6379 --cpuset-cpus="0-3" --ulimit memlock=-1 valkey:latest
         sleep 20
 
     - name: Run Valkey container with TLS
       run: |
-        docker run -d --name valkey-tls -p 6393:6393 --cpuset-cpus="1-3" --ulimit memlock=-1 valkey-tls:latest
+        docker run -d --name valkey-tls -p 6393:6393 --cpuset-cpus="0-3" --ulimit memlock=-1 valkey-tls:latest
         sleep 20
 
     - name: Check Redis logs
@@ -528,16 +528,16 @@ jobs:
       run: taskset -c 0 memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6382 --protocol=redis -t 1 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=1024 --key-pattern=G:G --key-minimum=1 --key-maximum=1000000 --key-median=500000 --key-stddev=166667 | tee ./benchmarklogs/valkey_benchmarks_1threads.txt || true
 
     - name: Memtier 2 Threads Benchmark Redis
-      run: memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6379 --protocol=redis -t 2 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=1024 --key-pattern=G:G --key-minimum=1 --key-maximum=1000000 --key-median=500000 --key-stddev=166667 | tee ./benchmarklogs/redis_benchmarks_2threads.txt || true
+      run: taskset -c 0,1 memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6379 --protocol=redis -t 2 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=1024 --key-pattern=G:G --key-minimum=1 --key-maximum=1000000 --key-median=500000 --key-stddev=166667 | tee ./benchmarklogs/redis_benchmarks_2threads.txt || true
 
     - name: Memtier 2 Threads Benchmark KeyDB
-      run: memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6380 --protocol=redis -t 2 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=1024 --key-pattern=G:G --key-minimum=1 --key-maximum=1000000 --key-median=500000 --key-stddev=166667 | tee ./benchmarklogs/keydb_benchmarks_2threads.txt || true
+      run: taskset -c 0,1 memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6380 --protocol=redis -t 2 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=1024 --key-pattern=G:G --key-minimum=1 --key-maximum=1000000 --key-median=500000 --key-stddev=166667 | tee ./benchmarklogs/keydb_benchmarks_2threads.txt || true
 
     - name: Memtier 2 Threads Benchmark Dragonfly
-      run: memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6381 --protocol=redis -t 2 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=1024 --key-pattern=G:G --key-minimum=1 --key-maximum=1000000 --key-median=500000 --key-stddev=166667 | tee ./benchmarklogs/dragonfly_benchmarks_2threads.txt || true
+      run: taskset -c 0,1 memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6381 --protocol=redis -t 2 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=1024 --key-pattern=G:G --key-minimum=1 --key-maximum=1000000 --key-median=500000 --key-stddev=166667 | tee ./benchmarklogs/dragonfly_benchmarks_2threads.txt || true
 
     - name: Memtier 2 Threads Benchmark Valkey
-      run: memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6382 --protocol=redis -t 2 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=1024 --key-pattern=G:G --key-minimum=1 --key-maximum=1000000 --key-median=500000 --key-stddev=166667 | tee ./benchmarklogs/valkey_benchmarks_2threads.txt || true
+      run: taskset -c 0,1 memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6382 --protocol=redis -t 2 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=1024 --key-pattern=G:G --key-minimum=1 --key-maximum=1000000 --key-median=500000 --key-stddev=166667 | tee ./benchmarklogs/valkey_benchmarks_2threads.txt || true
 
     - name: Memtier 8 Threads Benchmark Redis
       run: memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6379 --protocol=redis -t 8 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=1024 --key-pattern=G:G --key-minimum=1 --key-maximum=1000000 --key-median=500000 --key-stddev=166667 | tee ./benchmarklogs/redis_benchmarks_8threads.txt || true
@@ -585,19 +585,19 @@ jobs:
 
     - name: Memtier 2 Threads Benchmark Redis with TLS
       run: |
-        memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6390 --protocol=redis --tls --cert=${PWD}/test.crt --key=${PWD}/test.key --cacert=${PWD}/ca.crt --tls-skip-verify -t 2 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=1024 --key-pattern=G:G --key-minimum=1 --key-maximum=1000000 --key-median=500000 --key-stddev=166667 | tee ./benchmarklogs/redis_benchmarks_2threads_tls.txt || true
+        taskset -c 0,1 memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6390 --protocol=redis --tls --cert=${PWD}/test.crt --key=${PWD}/test.key --cacert=${PWD}/ca.crt --tls-skip-verify -t 2 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=1024 --key-pattern=G:G --key-minimum=1 --key-maximum=1000000 --key-median=500000 --key-stddev=166667 | tee ./benchmarklogs/redis_benchmarks_2threads_tls.txt || true
     
     - name: Memtier 2 Threads Benchmark KeyDB with TLS
       run: |
-        memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6391 --protocol=redis --tls --cert=${PWD}/test.crt --key=${PWD}/test.key --cacert=${PWD}/ca.crt --tls-skip-verify -t 2 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=1024 --key-pattern=G:G --key-minimum=1 --key-maximum=1000000 --key-median=500000 --key-stddev=166667 | tee ./benchmarklogs/keydb_benchmarks_2threads_tls.txt || true
+        taskset -c 0,1 memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6391 --protocol=redis --tls --cert=${PWD}/test.crt --key=${PWD}/test.key --cacert=${PWD}/ca.crt --tls-skip-verify -t 2 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=1024 --key-pattern=G:G --key-minimum=1 --key-maximum=1000000 --key-median=500000 --key-stddev=166667 | tee ./benchmarklogs/keydb_benchmarks_2threads_tls.txt || true
     
     - name: Memtier 2 Threads Benchmark Dragonfly with TLS
       run: |
-        memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6392 --protocol=redis --tls --cert=${PWD}/client_cert.pem --key=${PWD}/client_priv.pem --cacert=${PWD}/ca.crt --password V3ryS3cur3P@sswOrd -t 2 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=1024 --key-pattern=G:G --key-minimum=1 --key-maximum=1000000 --key-median=500000 --key-stddev=166667 | tee ./benchmarklogs/dragonfly_benchmarks_2threads_tls.txt || true
+        taskset -c 0,1 memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6392 --protocol=redis --tls --cert=${PWD}/client_cert.pem --key=${PWD}/client_priv.pem --cacert=${PWD}/ca.crt --password V3ryS3cur3P@sswOrd -t 2 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=1024 --key-pattern=G:G --key-minimum=1 --key-maximum=1000000 --key-median=500000 --key-stddev=166667 | tee ./benchmarklogs/dragonfly_benchmarks_2threads_tls.txt || true
     
     - name: Memtier 2 Threads Benchmark Valkey with TLS
       run: |
-        memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6393 --protocol=redis --tls --cert=${PWD}/test.crt --key=${PWD}/test.key --cacert=${PWD}/ca.crt --tls-skip-verify -t 2 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=1024 --key-pattern=G:G --key-minimum=1 --key-maximum=1000000 --key-median=500000 --key-stddev=166667 | tee ./benchmarklogs/valkey_benchmarks_2threads_tls.txt || true
+        taskset -c 0,1 memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6393 --protocol=redis --tls --cert=${PWD}/test.crt --key=${PWD}/test.key --cacert=${PWD}/ca.crt --tls-skip-verify -t 2 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=1024 --key-pattern=G:G --key-minimum=1 --key-maximum=1000000 --key-median=500000 --key-stddev=166667 | tee ./benchmarklogs/valkey_benchmarks_2threads_tls.txt || true
 
     - name: Memtier 8 Threads Benchmark Redis with TLS
       run: |
