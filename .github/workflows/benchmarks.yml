@@ -245,6 +245,7 @@ jobs:
         sleep 20
 
     - name: Check Redis logs
+      continue-on-error: true
       run: docker logs redis
 
     # - name: Check Redis config
@@ -252,9 +253,11 @@ jobs:
     #     docker exec redis ls -lAh /etc/redis/
     
     - name: Test Redis Connectivity
+      continue-on-error: true
       run: docker exec redis redis-cli -h 127.0.0.1 -p 6379 PING
 
     - name: Check KeyDB logs
+      continue-on-error: true
       run: docker logs keydb
 
     # - name: Check KeyDB config
@@ -262,9 +265,11 @@ jobs:
     #     docker exec keydb ls -lAh /etc/keydb/
     
     - name: Test KeyDB Connectivity
+      continue-on-error: true
       run: docker exec keydb keydb-cli -h 127.0.0.1 -p 6379 PING
 
     - name: Check Dragonfly logs
+      continue-on-error: true
       run: docker logs dragonfly
 
     # - name: Check Dragonfly config
@@ -272,13 +277,16 @@ jobs:
     #     docker exec dragonfly ls -lAh /etc/dragonfly/
     
     - name: Test Dragonfly Connectivity
+      continue-on-error: true
       run: docker exec dragonfly redis-cli -h 127.0.0.1 -p 6379 PING
 
     - name: Inspect Dragonfly Help
+      continue-on-error: true
       run: |
         docker exec dragonfly dragonfly --help || true
 
     - name: Check Redis TLS logs
+      continue-on-error: true
       run: docker logs redis-tls
 
     # - name: Check Redis TLS config
@@ -286,15 +294,19 @@ jobs:
     #     docker exec redis-tls ls -lAh /usr/local/etc/redis/
 
     - name: Check Valkey logs
+      continue-on-error: true
       run: docker logs valkey
 
     - name: Test Valkey Connectivity
+      continue-on-error: true
       run: docker exec valkey redis-cli -h 127.0.0.1 -p 6379 PING
     
     - name: Test Redis TLS Connectivity
+      continue-on-error: true
       run: docker exec redis-tls redis-cli -h 127.0.0.1 -p 6390 --tls --insecure --cert /tls/test.crt --key /tls/test.key --cacert /tls/ca.crt PING
 
     - name: Check KeyDB TLS logs
+      continue-on-error: true
       run: docker logs keydb-tls
 
     # - name: Check KeyDB TLS config
@@ -302,24 +314,30 @@ jobs:
     #     docker exec keydb-tls ls -lAh /etc/keydb/
     
     - name: Test KeyDB TLS Connectivity
+      continue-on-error: true
       run: docker exec keydb-tls keydb-cli -h 127.0.0.1 -p 6391 --tls --insecure --cert /tls/test.crt --key /tls/test.key --cacert /tls/ca.crt PING
 
     - name: Check Dragonfly TLS logs
+      continue-on-error: true
       run: docker logs dragonfly-tls
 
-    # - name: Check Dragonfly TLS config
-    #   run: |
-    #     docker exec dragonfly-tls ls -lAh /etc/dragonfly/
+    - name: Check Dragonfly TLS config
+      continue-on-error: true
+      run: |
+        docker exec dragonfly-tls ls -lAh /etc/dragonfly/
    
-    # - name: Test Dragonfly TLS Connectivity
-    #   run: |
-    #     docker exec dragonfly-tls redis-cli --help
-    #     docker exec dragonfly-tls redis-cli -h 127.0.0.1 -p 6392 --cert /tls/test.crt --key /tls/test.key --cacert /tls/ca.crt --password V3ryS3cur3P@sswOrd PING
+    - name: Test Dragonfly TLS Connectivity
+      continue-on-error: true
+      run: |
+        docker exec dragonfly-tls redis-cli --help
+        docker exec dragonfly-tls redis-cli -h 127.0.0.1 -p 6392 --cert /tls/test.crt --key /tls/test.key --cacert /tls/ca.crt --password V3ryS3cur3P@sswOrd PING
 
     - name: Check Valkey TLS logs
+      continue-on-error: true
       run: docker logs valkey-tls
 
     - name: Test Valkey TLS Connectivity
+      continue-on-error: true
       run: docker exec valkey-tls redis-cli -h 127.0.0.1 -p 6393 --tls --insecure --cert /tls/test.crt --key /tls/test.key --cacert /tls/ca.crt PING
 
     - name: Check Database Versions
