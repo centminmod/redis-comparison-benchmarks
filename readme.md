@@ -62,8 +62,8 @@ Previous test comparison results without Valkey can be read [here](readme-v1.md)
 **Optimal Thread Counts by Database:**
 - **Redis**: Peak performance at 1-2 threads, degrades with higher concurrency
 - **KeyDB**: Best performance at 2-4 threads, good multi-threading support
-- **Dragonfly**: Consistent across all thread counts, scales well to 8 threads
-- **Valkey**: Best at 1-2 threads, struggles with high concurrency
+- **Dragonfly**: Consistent across all thread counts. Suspect need VM/servers with more than 8+ CPU threads available for better performance.
+- **Valkey**: Best at 1-2 threads, struggles with high concurrency. Suspect need VM/servers with more than 8+ CPU threads available for better performance.
 
 ### Performance Recommendations
 
@@ -83,13 +83,13 @@ Previous test comparison results without Valkey can be read [here](readme-v1.md)
 - **Best for**: High-concurrency applications requiring consistent performance
 - **Sweet spot**: 4-8 threads
 - **Pros**: Excellent scaling characteristics, consistent performance across thread counts
-- **Cons**: Higher baseline latency, lower single-thread performance
+- **Cons**: Higher baseline latency, lower single-thread performance. Suspect need VM/servers with more than 8+ CPU threads available for better performance.
 
 #### Valkey
 - **Best for**: Applications prioritizing Redis compatibility over raw performance
 - **Sweet spot**: 1-2 threads
 - **Pros**: Redis fork with active development, good single-thread performance
-- **Cons**: Highest latency overall, poor scaling beyond 2 threads
+- **Cons**: Highest latency overall, poor scaling beyond 2 threads. Suspect need VM/servers with more than 8+ CPU threads available for better performance.
 
 ## Detailed Benchmark Results
 
