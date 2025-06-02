@@ -115,8 +115,8 @@ echo "docker run --name keydb-tls -d -p 6391:6391 --ulimit memlock=-1 keydb-tls:
 docker run --name keydb-tls -d -p 6391:6391 --ulimit memlock=-1 keydb-tls:latest
 echo "docker run --name dragonfly-tls -d -p 6392:6392 --ulimit memlock=-1 dragonfly-tls:latest"
 docker run --name dragonfly-tls -d -p 6392:6392 --ulimit memlock=-1 dragonfly-tls:latest
-echo "docker run --name valkey -d -p 6380:6379 --ulimit memlock=-1 valkey:latest"
-docker run --name valkey -d -p 6380:6379 --ulimit memlock=-1 valkey:latest
+echo "docker run --name valkey -d -p 6382:6379 --ulimit memlock=-1 valkey:latest"
+docker run --name valkey -d -p 6382:6379 --ulimit memlock=-1 valkey:latest
 echo "docker run --name valkey-tls -d -p 6393:6393 --ulimit memlock=-1 valkey-tls:latest"
 docker run --name valkey-tls -d -p 6393:6393 --ulimit memlock=-1 valkey-tls:latest
 sleep 20
@@ -211,6 +211,16 @@ echo "memtier_benchmark -s \"$DRAGONFLY_CONTAINER_IP\" --ratio=1:15 -p 6379 --pr
 memtier_benchmark -s "$DRAGONFLY_CONTAINER_IP" --ratio=1:15 -p 6379 --protocol=redis -t 2 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/dragonfly_benchmarks_2threads.txt
 echo "memtier_benchmark -s \"$VALKEY_CONTAINER_IP\" --ratio=1:15 -p 6379 --protocol=redis -t 2 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/valkey_benchmarks_2threads.txt"
 memtier_benchmark -s "$VALKEY_CONTAINER_IP" --ratio=1:15 -p 6379 --protocol=redis -t 2 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/valkey_benchmarks_2threads.txt
+
+echo "memtier_benchmark -s \"$REDIS_CONTAINER_IP\" --ratio=1:15 -p 6379 --protocol=redis -t 4 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/redis_benchmarks_4threads.txt"
+memtier_benchmark -s "$REDIS_CONTAINER_IP" --ratio=1:15 -p 6379 --protocol=redis -t 4 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/redis_benchmarks_4threads.txt
+echo "memtier_benchmark -s \"$KEYDB_CONTAINER_IP\" --ratio=1:15 -p 6379 --protocol=redis -t 4 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/keydb_benchmarks_4threads.txt"
+memtier_benchmark -s "$KEYDB_CONTAINER_IP" --ratio=1:15 -p 6379 --protocol=redis -t 4 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/keydb_benchmarks_4threads.txt
+echo "memtier_benchmark -s \"$DRAGONFLY_CONTAINER_IP\" --ratio=1:15 -p 6379 --protocol=redis -t 4 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/dragonfly_benchmarks_4threads.txt"
+memtier_benchmark -s "$DRAGONFLY_CONTAINER_IP" --ratio=1:15 -p 6379 --protocol=redis -t 4 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/dragonfly_benchmarks_4threads.txt
+echo "memtier_benchmark -s \"$VALKEY_CONTAINER_IP\" --ratio=1:15 -p 6379 --protocol=redis -t 4 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/valkey_benchmarks_4threads.txt"
+memtier_benchmark -s "$VALKEY_CONTAINER_IP" --ratio=1:15 -p 6379 --protocol=redis -t 4 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/valkey_benchmarks_4threads.txt
+
 echo "memtier_benchmark -s \"$REDIS_CONTAINER_IP\" --ratio=1:15 -p 6379 --protocol=redis -t 8 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/redis_benchmarks_8threads.txt"
 memtier_benchmark -s "$REDIS_CONTAINER_IP" --ratio=1:15 -p 6379 --protocol=redis -t 8 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/redis_benchmarks_8threads.txt
 echo "memtier_benchmark -s \"$KEYDB_CONTAINER_IP\" --ratio=1:15 -p 6379 --protocol=redis -t 8 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/keydb_benchmarks_8threads.txt"
@@ -253,6 +263,22 @@ if [[ "$MEMTIER_VALKEY_TLS" = [yY] ]]; then
   memtier_benchmark -s "$VALKEY_TLS_CONTAINER_IP" --ratio=1:15 -p 6393 --protocol=redis --tls --cert=${PWD}/test.crt --key=${PWD}/test.key --cacert=${PWD}/ca.crt --tls-skip-verify -t 2 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/valkey_benchmarks_2threads_tls.txt
 fi
 if [[ "$MEMTIER_REDIS_TLS" = [yY] ]]; then
+  echo "memtier_benchmark -s \"$REDIS_TLS_CONTAINER_IP\" --ratio=1:15 -p 6390 --protocol=redis --tls --cert=${PWD}/test.crt --key=${PWD}/test.key --cacert=${PWD}/ca.crt --tls-skip-verify -t 4 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/redis_benchmarks_4threads_tls.txt"
+  memtier_benchmark -s "$REDIS_TLS_CONTAINER_IP" --ratio=1:15 -p 6390 --protocol=redis --tls --cert=${PWD}/test.crt --key=${PWD}/test.key --cacert=${PWD}/ca.crt --tls-skip-verify -t 4 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/redis_benchmarks_4threads_tls.txt
+fi
+if [[ "$MEMTIER_KEYDB_TLS" = [yY] ]]; then
+  echo "memtier_benchmark -s \"$KEYDB_TLS_CONTAINER_IP\" --ratio=1:15 -p 6391 --protocol=redis --tls --cert=${PWD}/test.crt --key=${PWD}/test.key --cacert=${PWD}/ca.crt --tls-skip-verify -t 4 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/keydb_benchmarks_4threads_tls.txt"
+  memtier_benchmark -s "$KEYDB_TLS_CONTAINER_IP" --ratio=1:15 -p 6391 --protocol=redis --tls --cert=${PWD}/test.crt --key=${PWD}/test.key --cacert=${PWD}/ca.crt --tls-skip-verify -t 4 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/keydb_benchmarks_4threads_tls.txt
+fi
+if [[ "$MEMTIER_DRAGONFLY_TLS" = [yY] ]]; then
+  echo "memtier_benchmark -s \"$DRAGONFLY_TLS_CONTAINER_IP\" --ratio=1:15 -p 6392 --protocol=redis --tls --cert=${PWD}/client_cert.pem --key=${PWD}/client_priv.pem --cacert=${PWD}/ca.crt --password V3ryS3cur3P@sswOrd -t 4 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/dragonfly_benchmarks_4threads_tls.txt"
+  memtier_benchmark -s "$DRAGONFLY_TLS_CONTAINER_IP" --ratio=1:15 -p 6392 --protocol=redis --tls --cert=${PWD}/client_cert.pem --key=${PWD}/client_priv.pem --cacert=${PWD}/ca.crt --password V3ryS3cur3P@sswOrd -t 4 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/dragonfly_benchmarks_4threads_tls.txt
+fi
+if [[ "$MEMTIER_VALKEY_TLS" = [yY] ]]; then
+  echo "memtier_benchmark -s \"$VALKEY_TLS_CONTAINER_IP\" --ratio=1:15 -p 6393 --protocol=redis --tls --cert=${PWD}/test.crt --key=${PWD}/test.key --cacert=${PWD}/ca.crt --tls-skip-verify -t 4 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/valkey_benchmarks_4threads_tls.txt"
+  memtier_benchmark -s "$VALKEY_TLS_CONTAINER_IP" --ratio=1:15 -p 6393 --protocol=redis --tls --cert=${PWD}/test.crt --key=${PWD}/test.key --cacert=${PWD}/ca.crt --tls-skip-verify -t 4 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/valkey_benchmarks_4threads_tls.txt
+fi
+if [[ "$MEMTIER_REDIS_TLS" = [yY] ]]; then
   echo "memtier_benchmark -s \"$REDIS_TLS_CONTAINER_IP\" --ratio=1:15 -p 6390 --protocol=redis --tls --cert=${PWD}/test.crt --key=${PWD}/test.key --cacert=${PWD}/ca.crt --tls-skip-verify -t 8 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/redis_benchmarks_8threads_tls.txt"
   memtier_benchmark -s "$REDIS_TLS_CONTAINER_IP" --ratio=1:15 -p 6390 --protocol=redis --tls --cert=${PWD}/test.crt --key=${PWD}/test.key --cacert=${PWD}/ca.crt --tls-skip-verify -t 8 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=384 | tee ./benchmarklogs/redis_benchmarks_8threads_tls.txt
 fi
@@ -276,24 +302,36 @@ python scripts/parse_memtier_to_md.py ./benchmarklogs/keydb_benchmarks_1threads.
 cat ./benchmarklogs/keydb_benchmarks_1threads.md
 python scripts/parse_memtier_to_md.py ./benchmarklogs/dragonfly_benchmarks_1threads.txt "Dragonfly 1 Threads"
 cat ./benchmarklogs/dragonfly_benchmarks_1threads.md
+python scripts/parse_memtier_to_md.py ./benchmarklogs/valkey_benchmarks_1threads.txt "Valkey 1 Thread"
+cat ./benchmarklogs/valkey_benchmarks_1threads.md
+
 python scripts/parse_memtier_to_md.py ./benchmarklogs/redis_benchmarks_2threads.txt "Redis 2 Threads"
 cat ./benchmarklogs/redis_benchmarks_2threads.md
 python scripts/parse_memtier_to_md.py ./benchmarklogs/keydb_benchmarks_2threads.txt "KeyDB 2 Threads"
 cat ./benchmarklogs/keydb_benchmarks_2threads.md
-python scripts/parse_memtier_to_md.py ./benchmarklogs/dragonfly_benchmarks_2threads.txt "Dragonfly 2 Thread"
+python scripts/parse_memtier_to_md.py ./benchmarklogs/dragonfly_benchmarks_2threads.txt "Dragonfly 2 Threads"
 cat ./benchmarklogs/dragonfly_benchmarks_2threads.md
+python scripts/parse_memtier_to_md.py ./benchmarklogs/valkey_benchmarks_2threads.txt "Valkey 2 Threads"
+cat ./benchmarklogs/valkey_benchmarks_2threads.md
+
+python scripts/parse_memtier_to_md.py ./benchmarklogs/redis_benchmarks_4threads.txt "Redis 4 Threads"
+cat ./benchmarklogs/redis_benchmarks_4threads.md
+python scripts/parse_memtier_to_md.py ./benchmarklogs/keydb_benchmarks_4threads.txt "KeyDB 4 Threads"
+cat ./benchmarklogs/keydb_benchmarks_4threads.md
+python scripts/parse_memtier_to_md.py ./benchmarklogs/dragonfly_benchmarks_4threads.txt "Dragonfly 4 Threads"
+cat ./benchmarklogs/dragonfly_benchmarks_4threads.md
+python scripts/parse_memtier_to_md.py ./benchmarklogs/valkey_benchmarks_4threads.txt "Valkey 4 Threads"
+cat ./benchmarklogs/valkey_benchmarks_4threads.md
+
 python scripts/parse_memtier_to_md.py ./benchmarklogs/redis_benchmarks_8threads.txt "Redis 8 Threads"
 cat ./benchmarklogs/redis_benchmarks_8threads.md
 python scripts/parse_memtier_to_md.py ./benchmarklogs/keydb_benchmarks_8threads.txt "KeyDB 8 Threads"
 cat ./benchmarklogs/keydb_benchmarks_8threads.md
 python scripts/parse_memtier_to_md.py ./benchmarklogs/dragonfly_benchmarks_8threads.txt "Dragonfly 8 Threads"
 cat ./benchmarklogs/dragonfly_benchmarks_8threads.md
-python scripts/parse_memtier_to_md.py ./benchmarklogs/valkey_benchmarks_1threads.txt "Valkey 1 Thread"
-cat ./benchmarklogs/valkey_benchmarks_1threads.md
-python scripts/parse_memtier_to_md.py ./benchmarklogs/valkey_benchmarks_2threads.txt "Valkey 2 Threads"
-cat ./benchmarklogs/valkey_benchmarks_2threads.md
 python scripts/parse_memtier_to_md.py ./benchmarklogs/valkey_benchmarks_8threads.txt "Valkey 8 Threads"
 cat ./benchmarklogs/valkey_benchmarks_8threads.md
+
 if [[ "$MEMTIER_REDIS_TLS" = [yY] ]]; then
   python scripts/parse_memtier_to_md.py ./benchmarklogs/redis_benchmarks_1threads_tls.txt "Redis TLS 1 Thread"
   cat ./benchmarklogs/redis_benchmarks_1threads_tls.md
@@ -318,6 +356,20 @@ if [[ "$MEMTIER_DRAGONFLY_TLS" = [yY] ]]; then
   python scripts/parse_memtier_to_md.py ./benchmarklogs/dragonfly_benchmarks_2threads_tls.txt "Dragonfly TLS 2 Threads"
   cat ./benchmarklogs/dragonfly_benchmarks_2threads_tls.md
 fi
+
+if [[ "$MEMTIER_REDIS_TLS" = [yY] ]]; then
+  python scripts/parse_memtier_to_md.py ./benchmarklogs/redis_benchmarks_4threads_tls.txt "Redis TLS 4 Threads"
+  cat ./benchmarklogs/redis_benchmarks_4threads_tls.md
+fi
+if [[ "$MEMTIER_KEYDB_TLS" = [yY] ]]; then
+  python scripts/parse_memtier_to_md.py ./benchmarklogs/keydb_benchmarks_4threads_tls.txt "KeyDB TLS 4 Threads"
+  cat ./benchmarklogs/keydb_benchmarks_4threads_tls.md
+fi
+if [[ "$MEMTIER_DRAGONFLY_TLS" = [yY] ]]; then
+  python scripts/parse_memtier_to_md.py ./benchmarklogs/dragonfly_benchmarks_4threads_tls.txt "Dragonfly TLS 4 Threads"
+  cat ./benchmarklogs/dragonfly_benchmarks_4threads_tls.md
+fi
+
 if [[ "$MEMTIER_REDIS_TLS" = [yY] ]]; then
   python scripts/parse_memtier_to_md.py ./benchmarklogs/redis_benchmarks_8threads_tls.txt "Redis TLS 8 Threads"
   cat ./benchmarklogs/redis_benchmarks_8threads_tls.md
@@ -335,6 +387,8 @@ if [[ "$MEMTIER_VALKEY_TLS" = [yY] ]]; then
   cat ./benchmarklogs/valkey_benchmarks_1threads_tls.md
   python scripts/parse_memtier_to_md.py ./benchmarklogs/valkey_benchmarks_2threads_tls.txt "Valkey TLS 2 Threads"
   cat ./benchmarklogs/valkey_benchmarks_2threads_tls.md
+  python scripts/parse_memtier_to_md.py ./benchmarklogs/valkey_benchmarks_4threads_tls.txt "Valkey TLS 4 Threads"
+  cat ./benchmarklogs/valkey_benchmarks_4threads_tls.md
   python scripts/parse_memtier_to_md.py ./benchmarklogs/valkey_benchmarks_8threads_tls.txt "Valkey TLS 8 Threads"
   cat ./benchmarklogs/valkey_benchmarks_8threads_tls.md
 fi
@@ -344,37 +398,38 @@ python scripts/combine_markdown_results.py "./benchmarklogs/redis_benchmarks_1th
 cat ./benchmarklogs/combined_redis_results.md
 
 # Combine KeyDB Benchmark MD Table
-python scripts/combine_markdown_results.py "./benchmarklogs/keydb_benchmarks_1threads.md ./benchmarklogs/keydb_benchmarks_2threads.md ./benchmarklogs/keydb_benchmarks_8threads.md" keydb
+python scripts/combine_markdown_results.py "./benchmarklogs/keydb_benchmarks_1threads.md ./benchmarklogs/keydb_benchmarks_2threads.md ./benchmarklogs/keydb_benchmarks_4threads.md ./benchmarklogs/keydb_benchmarks_8threads.md" keydb
 cat ./benchmarklogs/combined_keydb_results.md
 
 # Combine Dragonfly Benchmark MD Table
-python scripts/combine_markdown_results.py "./benchmarklogs/dragonfly_benchmarks_1threads.md ./benchmarklogs/dragonfly_benchmarks_2threads.md ./benchmarklogs/dragonfly_benchmarks_8threads.md" dragonfly
+python scripts/combine_markdown_results.py "./benchmarklogs/dragonfly_benchmarks_1threads.md ./benchmarklogs/dragonfly_benchmarks_2threads.md ./benchmarklogs/dragonfly_benchmarks_4threads.md ./benchmarklogs/dragonfly_benchmarks_8threads.md" dragonfly
 cat ./benchmarklogs/combined_dragonfly_results.md
 
 # Combine Valkey Benchmark MD Table
-python scripts/combine_markdown_results.py "./benchmarklogs/valkey_benchmarks_1threads.md ./benchmarklogs/valkey_benchmarks_2threads.md ./benchmarklogs/valkey_benchmarks_8threads.md" valkey
+python scripts/combine_markdown_results.py "./benchmarklogs/valkey_benchmarks_1threads.md ./benchmarklogs/valkey_benchmarks_2threads.md ./benchmarklogs/valkey_benchmarks_4threads.md ./benchmarklogs/valkey_benchmarks_8threads.md" valkey
 cat ./benchmarklogs/combined_valkey_results.md
 
 if [[ "$MEMTIER_REDIS_TLS" = [yY] ]]; then
   # Combine Redis TLS Benchmark MD Table
-  python scripts/combine_markdown_results.py "./benchmarklogs/redis_benchmarks_1threads_tls.md ./benchmarklogs/redis_benchmarks_2threads_tls.md ./benchmarklogs/redis_benchmarks_8threads_tls.md" "redis-tls"
+  python scripts/combine_markdown_results.py "./benchmarklogs/redis_benchmarks_1threads_tls.md ./benchmarklogs/redis_benchmarks_2threads_tls.md ./benchmarklogs/redis_benchmarks_4threads_tls.md ./benchmarklogs/redis_benchmarks_8threads_tls.md" "redis-tls"
   cat ./benchmarklogs/combined_redis-tls_results.md
 fi
 
 if [[ "$MEMTIER_KEYDB_TLS" = [yY] ]]; then
   # Combine KeyDB TLS Benchmark MD Table
-  python scripts/combine_markdown_results.py "./benchmarklogs/keydb_benchmarks_1threads_tls.md ./benchmarklogs/keydb_benchmarks_2threads_tls.md ./benchmarklogs/keydb_benchmarks_8threads_tls.md" "keydb-tls"
+  python scripts/combine_markdown_results.py "./benchmarklogs/keydb_benchmarks_1threads_tls.md ./benchmarklogs/keydb_benchmarks_2threads_tls.md ./benchmarklogs/keydb_benchmarks_4threads_tls.md ./benchmarklogs/keydb_benchmarks_8threads_tls.md" "keydb-tls"
   cat ./benchmarklogs/combined_keydb-tls_results.md
 fi
 
 if [[ "$MEMTIER_DRAGONFLY_TLS" = [yY] ]]; then
   # Combine Dragonfly TLS Benchmark MD Table
-  python scripts/combine_markdown_results.py "./benchmarklogs/dragonfly_benchmarks_1threads_tls.md ./benchmarklogs/dragonfly_benchmarks_2threads_tls.md ./benchmarklogs/dragonfly_benchmarks_8threads_tls.md" "dragonfly-tls"
+  python scripts/combine_markdown_results.py "./benchmarklogs/dragonfly_benchmarks_1threads_tls.md ./benchmarklogs/dragonfly_benchmarks_2threads_tls.md ./benchmarklogs/dragonfly_benchmarks_4threads_tls.md ./benchmarklogs/dragonfly_benchmarks_8threads_tls.md" "dragonfly-tls"
   cat ./benchmarklogs/combined_dragonfly-tls_results.md
 fi
+
 if [[ "$MEMTIER_VALKEY_TLS" = [yY] ]]; then
   # Combine Valkey TLS Benchmark MD Table
-  python scripts/combine_markdown_results.py "./benchmarklogs/valkey_benchmarks_1threads_tls.md ./benchmarklogs/valkey_benchmarks_2threads_tls.md ./benchmarklogs/valkey_benchmarks_8threads_tls.md" "valkey-tls"
+  python scripts/combine_markdown_results.py "./benchmarklogs/valkey_benchmarks_1threads_tls.md ./benchmarklogs/valkey_benchmarks_2threads_tls.md ./benchmarklogs/valkey_benchmarks_4threads_tls.md ./benchmarklogs/valkey_benchmarks_8threads_tls.md" "valkey-tls"
   cat ./benchmarklogs/combined_valkey-tls_results.md
 fi
 
