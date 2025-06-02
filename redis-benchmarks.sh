@@ -269,13 +269,18 @@ start_containers() {
     fi
     
     # Restart Docker service if needed
+    echo "DEBUG: Status is $status"
+    echo "DEBUG: About to check if we should restart docker"
     if [ $status -ne 0 ] || [ "$CLEANUP" = [yY] ]; then
+        echo "DEBUG: Entering docker restart section"
         echo "Restarting Docker service..."
-        systemctl restart docker
+        echo "systemctl restart docker"
         sleep 5
     fi
-    
+
+    echo "DEBUG: About to start containers"
     if [ "$USE_DOCKER_COMPOSE" = true ]; then
+        echo "DEBUG: Using docker-compose"
         echo "Starting containers with Docker Compose using: $COMPOSE_CMD"
         $COMPOSE_CMD up -d
         sleep 30
