@@ -11,9 +11,25 @@ CPUS=$(nproc)
 
 set -e  # Exit on any error
 
+# Add after the configuration section
+get_docker_compose_cmd() {
+    if command -v docker-compose &> /dev/null; then
+        echo "docker-compose"
+    elif docker compose version &> /dev/null 2>&1; then
+        echo "docker compose"
+    else
+        echo "ERROR: Neither docker-compose nor docker compose found" >&2
+        exit 1
+    fi
+}
+
+# Set the compose command globally
+COMPOSE_CMD=$(get_docker_compose_cmd)
+
 echo "=================================="
 echo "REDIS COMPARISON BENCHMARK SUITE"
 echo "Configuration: CLEANUP=$CLEANUP, USE_DOCKER_COMPOSE=$USE_DOCKER_COMPOSE"
+echo "Docker Compose Command: $COMPOSE_CMD"
 echo "=================================="
 
 # System Information
@@ -144,8 +160,8 @@ check_container_status() {
     local service_name=$1
     
     if [ "$USE_DOCKER_COMPOSE" = true ]; then
-        # Check if service is running via docker-compose
-        if docker-compose ps -q "$service_name" | xargs docker inspect --format='{{.State.Running}}' 2>/dev/null | grep -q true; then
+        # Check if service is running via docker compose
+        if $COMPOSE_CMD ps -q "$service_name" 2>/dev/null | xargs docker inspect --format='{{.State.Running}}' 2>/dev/null | grep -q true; then
             return 0  # Container is running
         else
             return 1  # Container is not running
@@ -196,8 +212,8 @@ build_containers() {
     echo "==== Building Docker Images ===="
     
     if [ "$USE_DOCKER_COMPOSE" = true ]; then
-        echo "Building with Docker Compose..."
-        docker-compose build --parallel
+        echo "Building with Docker Compose using: $COMPOSE_CMD"
+        $COMPOSE_CMD build --parallel
     else
         echo "Building with Docker..."
         # Original approach
@@ -249,8 +265,8 @@ start_containers() {
     fi
     
     if [ "$USE_DOCKER_COMPOSE" = true ]; then
-        echo "Starting containers with Docker Compose..."
-        docker-compose up -d
+        echo "Starting containers with Docker Compose using: $COMPOSE_CMD"
+        $COMPOSE_CMD up -d
         sleep 30
     else
         echo "Starting containers individually..."
@@ -289,8 +305,8 @@ stop_containers() {
     echo "==== Stopping Containers ===="
     
     if [ "$USE_DOCKER_COMPOSE" = true ]; then
-        echo "Stopping containers with Docker Compose..."
-        docker-compose down --remove-orphans
+        echo "Stopping containers with Docker Compose using: $COMPOSE_CMD"
+        $COMPOSE_CMD down --remove-orphans
     else
         echo "Stopping individual containers..."
         local services=("redis" "keydb" "dragonfly" "valkey" "redis-tls" "keydb-tls" "dragonfly-tls" "valkey-tls")
@@ -397,10 +413,10 @@ show_container_info() {
     echo ""
     echo "Container Management:"
     if [ "$USE_DOCKER_COMPOSE" = true ]; then
-        echo "  Stop all:   docker-compose down"
-        echo "  Start all:  docker-compose up -d"
-        echo "  Logs:       docker-compose logs [service_name]"
-        echo "  Status:     docker-compose ps"
+        echo "  Stop all:   $COMPOSE_CMD down"
+        echo "  Start all:  $COMPOSE_CMD up -d"
+        echo "  Logs:       $COMPOSE_CMD logs [service_name]"
+        echo "  Status:     $COMPOSE_CMD ps"
     else
         echo "  Stop all:   docker stop redis keydb dragonfly valkey redis-tls keydb-tls dragonfly-tls valkey-tls"
         echo "  Remove all: docker rm redis keydb dragonfly valkey redis-tls keydb-tls dragonfly-tls valkey-tls"
@@ -583,8 +599,8 @@ cleanup() {
         echo "==== Cleaning Up (CLEANUP=y) ===="
         
         if [ "$USE_DOCKER_COMPOSE" = true ]; then
-            docker-compose down --remove-orphans
-            docker-compose rm -f
+            $COMPOSE_CMD down --remove-orphans
+            $COMPOSE_CMD rm -f
         else
             docker stop redis keydb dragonfly valkey redis-tls keydb-tls dragonfly-tls valkey-tls 2>/dev/null || true
             docker rm redis keydb dragonfly valkey redis-tls keydb-tls dragonfly-tls valkey-tls 2>/dev/null || true
@@ -605,8 +621,8 @@ manual_cleanup() {
     echo "==== Manual Cleanup ===="
     
     if [ "$USE_DOCKER_COMPOSE" = true ]; then
-        docker-compose down --remove-orphans
-        docker-compose rm -f
+        $COMPOSE_CMD down --remove-orphans
+        $COMPOSE_CMD rm -f
         echo "Docker Compose cleanup completed"
     else
         echo "Stopping and removing containers..."
@@ -680,6 +696,8 @@ case "${1:-}" in
         echo "  CLEANUP=y $0          # Run benchmarks, cleanup afterwards"
         echo "  $0 status             # Check container status"
         echo "  $0 cleanup            # Manual cleanup"
+        echo ""
+        echo "Docker Compose Command: $COMPOSE_CMD"
         exit 0
         ;;
     *)
