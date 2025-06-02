@@ -99,7 +99,7 @@ jobs:
 
     - name: Update KeyDB Configuration for non-TLS
       run: |
-        echo "server-threads 4" >> keydb.conf
+        echo "server-threads 2" >> keydb.conf
         echo "io-threads-do-reads yes" >> keydb.conf
         echo "save \"\"" >> keydb.conf
         echo "appendonly no" >> keydb.conf
@@ -111,7 +111,7 @@ jobs:
 
     - name: Update Valkey Configuration for non-TLS
       run: |
-        echo "io-threads 4" >> valkey.conf
+        echo "io-threads 2" >> valkey.conf
         echo "io-threads-do-reads yes" >> valkey.conf
         echo "save \"\"" >> valkey.conf
         echo "appendonly no" >> valkey.conf
@@ -129,7 +129,7 @@ jobs:
     
     - name: Update KeyDB Configuration for TLS
       run: |
-        echo "io-threads 4" >> keydb-tls.conf
+        echo "io-threads 2" >> keydb-tls.conf
         echo "io-threads-do-reads yes" >> keydb-tls.conf
         echo "tls-port 6391" >> keydb-tls.conf
         echo "tls-cert-file /tls/test.crt" >> keydb-tls.conf
@@ -149,7 +149,7 @@ jobs:
 
     - name: Update Valkey Configuration for TLS
       run: |
-        echo "io-threads 4" >> valkey-tls.conf
+        echo "io-threads 2" >> valkey-tls.conf
         echo "io-threads-do-reads yes" >> valkey-tls.conf
         echo "tls-port 6393" >> valkey-tls.conf
         echo "tls-cert-file /tls/test.crt" >> valkey-tls.conf
@@ -387,6 +387,7 @@ jobs:
         echo "=== REDIS CONFIGURATION ==="
         echo "--- IO Threads ---"
         docker exec redis redis-cli CONFIG GET "*io-threads*" || echo "Failed to get Redis IO thread config"
+        docker exec redis redis-cli INFO | grep ^io || echo "no ^io"
         echo "--- Memory Settings ---"
         docker exec redis redis-cli CONFIG GET "maxmemory*" || echo "Failed to get Redis memory config"
         echo "--- Save/Persistence ---"
@@ -404,6 +405,7 @@ jobs:
         echo "--- IO Threads ---"
         docker exec keydb keydb-cli CONFIG GET "*io-threads*" || echo "Failed to get KeyDB IO thread config"
         docker exec keydb keydb-cli CONFIG GET "*server-threads*" || echo "Failed to get KeyDB IO server thread config"
+        docker exec keydb redis-cli INFO | grep ^io || echo "no ^io"
         echo "--- KeyDB Specific ---"
         docker exec keydb keydb-cli CONFIG GET "*multimaster*" || echo "No multimaster config"
         docker exec keydb keydb-cli CONFIG GET "*active-replica*" || echo "No active-replica config"
@@ -419,6 +421,8 @@ jobs:
         echo "=== DRAGONFLY CONFIGURATION ==="
         echo "--- Dragonfly Help (Performance Options) ---"
         docker exec dragonfly dragonfly --help | grep -E "(thread|memory|cache|performance)" || echo "Failed to get Dragonfly help"
+        echo "--- IO Threads ---"
+        docker exec dragonfly redis-cli INFO | grep ^io || echo "no ^io"
         echo "--- Dragonfly Logs (Config Info) ---"
         docker logs dragonfly 2>&1 | grep -E "(thread|memory|port|bind)" | head -10 || echo "No config info in logs"
         echo "--- Dragonfly Process Info ---"
@@ -430,6 +434,7 @@ jobs:
         echo "=== VALKEY CONFIGURATION ==="
         echo "--- IO Threads ---"
         docker exec valkey redis-cli CONFIG GET "*io-threads*" || echo "Failed to get Valkey IO thread config"
+        docker exec valkey redis-cli INFO | grep ^io || echo "no ^io"
         echo "--- Valkey Specific Features ---"
         docker exec valkey redis-cli CONFIG GET "*async*" || echo "No async config found"
         docker exec valkey redis-cli MODULE LIST || echo "No modules loaded"
