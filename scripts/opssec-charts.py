@@ -34,6 +34,35 @@ def normalize_threads(token):
         return None
 
 
+def parse_db_and_threads(db_and_threads):
+    """
+    Parse database name and thread info from strings like:
+    - "Redis 1 Thread"
+    - "Redis TLS 1 Thread" 
+    - "Dragonfly 2 Thread"
+    - "KeyDB TLS 4 Threads"
+    
+    Returns (db_name, thread_token) or (None, None) if parsing fails
+    """
+    tokens = db_and_threads.split()
+    if len(tokens) < 3:
+        return None, None
+    
+    # Handle TLS case: "Redis TLS 1 Thread" -> db="Redis", threads="1 Thread"
+    if len(tokens) >= 4 and tokens[1] == "TLS":
+        db = tokens[0]
+        th_token = " ".join(tokens[2:4])  # "1 Thread"
+        return db, th_token
+    
+    # Handle non-TLS case: "Redis 1 Thread" -> db="Redis", threads="1 Thread" 
+    elif len(tokens) >= 3:
+        db = tokens[0]
+        th_token = " ".join(tokens[1:3])  # "1 Thread"
+        return db, th_token
+    
+    return None, None
+
+
 def parse_markdown_ops(filepath):
     """
     Read combined_all_results.md (or combined_all_results_tls.md). Return:
@@ -69,13 +98,10 @@ def parse_markdown_ops(filepath):
                 print(f"  [DEBUG] Skipping: missing Ops/sec column, parts = {parts}")
                 continue
 
-            tokens = db_and_threads.split()
-            if len(tokens) < 3:
-                print(f"  [DEBUG] SKIPPING: cannot split db_and_threads '{db_and_threads}'")
+            db, th_token = parse_db_and_threads(db_and_threads)
+            if db is None or th_token is None:
+                print(f"  [DEBUG] SKIPPING: cannot parse db_and_threads '{db_and_threads}'")
                 continue
-
-            db = tokens[0]
-            th_token = " ".join(tokens[1:3])
 
             if db not in DBS:
                 print(f"  [DEBUG] SKIPPING: Unknown DB '{db}'")
