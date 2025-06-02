@@ -9,6 +9,16 @@ CLEANUP='n'  # Set to 'y' to cleanup containers after benchmarks, 'n' to keep th
 USE_DOCKER_COMPOSE=true
 CPUS=$(nproc)
 
+# Port Configuration
+REDIS_HOST_PORT=6377        # Changed from 6379 to avoid conflict
+KEYDB_HOST_PORT=6380
+DRAGONFLY_HOST_PORT=6381
+VALKEY_HOST_PORT=6382
+REDIS_TLS_HOST_PORT=6390
+KEYDB_TLS_HOST_PORT=6391
+DRAGONFLY_TLS_HOST_PORT=6392
+VALKEY_TLS_HOST_PORT=6393
+
 set -e  # Exit on any error
 
 # Add after the configuration section
@@ -30,6 +40,7 @@ echo "=================================="
 echo "REDIS COMPARISON BENCHMARK SUITE"
 echo "Configuration: CLEANUP=$CLEANUP, USE_DOCKER_COMPOSE=$USE_DOCKER_COMPOSE"
 echo "Docker Compose Command: $COMPOSE_CMD"
+echo "Port Configuration: Redis=${REDIS_HOST_PORT}, KeyDB=${KEYDB_HOST_PORT}, Dragonfly=${DRAGONFLY_HOST_PORT}, Valkey=${VALKEY_HOST_PORT}"
 echo "=================================="
 
 # System Information
@@ -272,14 +283,14 @@ start_containers() {
         echo "Starting containers individually..."
         # Start containers that aren't running
         local services=(
-            "redis:redis:6379:6379"
-            "keydb:keydb:6380:6379" 
-            "dragonfly:dragonfly:6381:6379"
-            "valkey:valkey:6382:6379"
-            "redis-tls:redis-tls:6390:6390"
-            "keydb-tls:keydb-tls:6391:6391"
-            "dragonfly-tls:dragonfly-tls:6392:6392"
-            "valkey-tls:valkey-tls:6393:6393"
+            "redis:redis:${REDIS_HOST_PORT}:6379"
+            "keydb:keydb:${KEYDB_HOST_PORT}:6379" 
+            "dragonfly:dragonfly:${DRAGONFLY_HOST_PORT}:6379"
+            "valkey:valkey:${VALKEY_HOST_PORT}:6379"
+            "redis-tls:redis-tls:${REDIS_TLS_HOST_PORT}:6390"
+            "keydb-tls:keydb-tls:${KEYDB_TLS_HOST_PORT}:6391"
+            "dragonfly-tls:dragonfly-tls:${DRAGONFLY_TLS_HOST_PORT}:6392"
+            "valkey-tls:valkey-tls:${VALKEY_TLS_HOST_PORT}:6393"
         )
         
         for service_info in "${services[@]}"; do
@@ -406,10 +417,10 @@ show_container_info() {
     echo "  Valkey TLS:    docker exec -it valkey-tls redis-cli -h 127.0.0.1 -p 6393 --tls --insecure --cert /tls/test.crt --key /tls/test.key --cacert /tls/ca.crt"
     echo ""
     echo "Host Connections:"
-    echo "  Redis:     redis-cli -h 127.0.0.1 -p 6379"
-    echo "  KeyDB:     redis-cli -h 127.0.0.1 -p 6380"
-    echo "  Dragonfly: redis-cli -h 127.0.0.1 -p 6381"
-    echo "  Valkey:    redis-cli -h 127.0.0.1 -p 6382"
+    echo "  Redis:     redis-cli -h 127.0.0.1 -p $REDIS_HOST_PORT"
+    echo "  KeyDB:     redis-cli -h 127.0.0.1 -p $KEYDB_HOST_PORT"
+    echo "  Dragonfly: redis-cli -h 127.0.0.1 -p $DRAGONFLY_HOST_PORT"
+    echo "  Valkey:    redis-cli -h 127.0.0.1 -p $VALKEY_HOST_PORT"
     echo ""
     echo "Container Management:"
     if [ "$USE_DOCKER_COMPOSE" = true ]; then
@@ -469,19 +480,19 @@ run_benchmarks() {
         cpu_affinity=${cpu_affinities[$threads]}
         
         # Redis
-        run_memtier_benchmark "127.0.0.1" "6379" "$threads" \
+        run_memtier_benchmark "127.0.0.1" "$REDIS_HOST_PORT" "$threads" \
             "./benchmarklogs/redis_benchmarks_${threads}threads.txt" "" "$cpu_affinity"
         
         # KeyDB
-        run_memtier_benchmark "127.0.0.1" "6380" "$threads" \
+        run_memtier_benchmark "127.0.0.1" "$KEYDB_HOST_PORT" "$threads" \
             "./benchmarklogs/keydb_benchmarks_${threads}threads.txt" "" "$cpu_affinity"
         
         # Dragonfly
-        run_memtier_benchmark "127.0.0.1" "6381" "$threads" \
+        run_memtier_benchmark "127.0.0.1" "$DRAGONFLY_HOST_PORT" "$threads" \
             "./benchmarklogs/dragonfly_benchmarks_${threads}threads.txt" "" "$cpu_affinity"
         
         # Valkey
-        run_memtier_benchmark "127.0.0.1" "6382" "$threads" \
+        run_memtier_benchmark "127.0.0.1" "$VALKEY_HOST_PORT" "$threads" \
             "./benchmarklogs/valkey_benchmarks_${threads}threads.txt" "" "$cpu_affinity"
     done
     
@@ -493,28 +504,28 @@ run_benchmarks() {
             cpu_affinity=${cpu_affinities[$threads]}
             
             if [[ "$MEMTIER_REDIS_TLS" = [yY] ]]; then
-                run_memtier_benchmark "127.0.0.1" "6390" "$threads" \
+                run_memtier_benchmark "127.0.0.1" "$REDIS_TLS_HOST_PORT" "$threads" \
                     "./benchmarklogs/redis_benchmarks_${threads}threads_tls.txt" \
                     "--tls --cert=${PWD}/test.crt --key=${PWD}/test.key --cacert=${PWD}/ca.crt --tls-skip-verify" \
                     "$cpu_affinity"
             fi
             
             if [[ "$MEMTIER_KEYDB_TLS" = [yY] ]]; then
-                run_memtier_benchmark "127.0.0.1" "6391" "$threads" \
+                run_memtier_benchmark "127.0.0.1" "$KEYDB_TLS_HOST_PORT" "$threads" \
                     "./benchmarklogs/keydb_benchmarks_${threads}threads_tls.txt" \
                     "--tls --cert=${PWD}/test.crt --key=${PWD}/test.key --cacert=${PWD}/ca.crt --tls-skip-verify" \
                     "$cpu_affinity"
             fi
             
             if [[ "$MEMTIER_DRAGONFLY_TLS" = [yY] ]]; then
-                run_memtier_benchmark "127.0.0.1" "6392" "$threads" \
+                run_memtier_benchmark "127.0.0.1" "$DRAGONFLY_TLS_HOST_PORT" "$threads" \
                     "./benchmarklogs/dragonfly_benchmarks_${threads}threads_tls.txt" \
                     "--tls --cert=${PWD}/client_cert.pem --key=${PWD}/client_priv.pem --cacert=${PWD}/ca.crt" \
                     "$cpu_affinity"
             fi
             
             if [[ "$MEMTIER_VALKEY_TLS" = [yY] ]]; then
-                run_memtier_benchmark "127.0.0.1" "6393" "$threads" \
+                run_memtier_benchmark "127.0.0.1" "$VALKEY_TLS_HOST_PORT" "$threads" \
                     "./benchmarklogs/valkey_benchmarks_${threads}threads_tls.txt" \
                     "--tls --cert=${PWD}/test.crt --key=${PWD}/test.key --cacert=${PWD}/ca.crt --tls-skip-verify" \
                     "$cpu_affinity"
@@ -829,16 +840,16 @@ quick_benchmark() {
         echo "Running $threads thread benchmarks..."
         
         # Non-TLS quick benchmarks
-        run_memtier_benchmark "127.0.0.1" "6379" "$threads" \
+        run_memtier_benchmark "127.0.0.1" "$REDIS_HOST_PORT" "$threads" \
             "./benchmarklogs/redis_quick_${threads}threads.txt" "" "$cpu_affinity"
         
-        run_memtier_benchmark "127.0.0.1" "6380" "$threads" \
+        run_memtier_benchmark "127.0.0.1" "$KEYDB_HOST_PORT" "$threads" \
             "./benchmarklogs/keydb_quick_${threads}threads.txt" "" "$cpu_affinity"
         
-        run_memtier_benchmark "127.0.0.1" "6381" "$threads" \
+        run_memtier_benchmark "127.0.0.1" "$DRAGONFLY_HOST_PORT" "$threads" \
             "./benchmarklogs/dragonfly_quick_${threads}threads.txt" "" "$cpu_affinity"
         
-        run_memtier_benchmark "127.0.0.1" "6382" "$threads" \
+        run_memtier_benchmark "127.0.0.1" "$VALKEY_HOST_PORT" "$threads" \
             "./benchmarklogs/valkey_quick_${threads}threads.txt" "" "$cpu_affinity"
     done
     
@@ -846,7 +857,6 @@ quick_benchmark() {
 }
 
 # Handle command line arguments
-# Handle command line arguments (replace the existing case statement)
 case "${1:-}" in
     "start")
         standalone_start
@@ -908,6 +918,10 @@ case "${1:-}" in
         echo "  CLEANUP=y|n                    Cleanup containers after benchmarks (default: n)"
         echo "  USE_DOCKER_COMPOSE=true|false Use docker-compose or individual containers"
         echo "  MEMTIER_*_TLS=y|n             Enable/disable TLS testing for each database"
+        echo ""
+        echo "Port Configuration:"
+        echo "  Redis: $REDIS_HOST_PORT, KeyDB: $KEYDB_HOST_PORT, Dragonfly: $DRAGONFLY_HOST_PORT, Valkey: $VALKEY_HOST_PORT"
+        echo "  TLS - Redis: $REDIS_TLS_HOST_PORT, KeyDB: $KEYDB_TLS_HOST_PORT, Dragonfly: $DRAGONFLY_TLS_HOST_PORT, Valkey: $VALKEY_TLS_HOST_PORT"
         echo ""
         echo "Examples:"
         echo "  $0                    # Run full benchmarks, keep containers running"
