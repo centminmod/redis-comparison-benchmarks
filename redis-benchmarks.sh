@@ -194,16 +194,22 @@ check_all_containers_status() {
     local services=("redis" "keydb" "dragonfly" "valkey" "redis-tls" "keydb-tls" "dragonfly-tls" "valkey-tls")
     local running_count=0
     local total_count=${#services[@]}
+
+    echo "DEBUG: Starting loop with ${total_count} services"
     
     for service in "${services[@]}"; do
+        echo "DEBUG: Checking service: $service"
         if check_container_status "$service"; then
             echo "✅ $service is running"
             ((running_count++))
+            echo "DEBUG: Running count now: $running_count"
         else
             echo "❌ $service is not running"
         fi
+        echo "DEBUG: Finished checking $service"
     done
-    
+
+    echo "DEBUG: Loop completed"
     echo "Status: $running_count/$total_count containers running"
     
     if [ $running_count -eq $total_count ]; then
@@ -388,7 +394,7 @@ test_connectivity() {
     
     if [[ "$MEMTIER_DRAGONFLY_TLS" = [yY] ]]; then
         echo "Testing Dragonfly TLS..."
-        docker exec dragonfly-tls redis-cli -h 127.0.0.1 -p 6392 --insecure \
+        docker exec dragonfly-tls redis-cli -h 127.0.0.1 -p 6392 --tls \
             --cert /tls/test.crt --key /tls/test.key --cacert /tls/ca.crt PING || echo "Dragonfly TLS connection failed"
     fi
     
@@ -695,27 +701,140 @@ standalone_start() {
     
     # Build containers if images don't exist
     echo "Checking if images exist..."
-    local missing_images=false
-    local required_images=("redis:latest" "keydb:latest" "dragonfly:latest" "valkey:latest" "redis-tls:latest" "keydb-tls:latest" "dragonfly-tls:latest" "valkey-tls:latest")
     
+    if [ "$USE_DOCKER_COMPOSE" = true ]; then
+        # Define image mappings for Docker Compose
+        declare -A image_mappings=(
+            ["redis:latest"]="redis-comparison-benchmarks-redis:latest"
+            ["keydb:latest"]="redis-comparison-benchmarks-keydb:latest"
+            ["dragonfly:latest"]="redis-comparison-benchmarks-dragonfly:latest"
+            ["valkey:latest"]="redis-comparison-benchmarks-valkey:latest"
+            ["redis-tls:latest"]="redis-comparison-benchmarks-redis-tls:latest"
+            ["keydb-tls:latest"]="redis-comparison-benchmarks-keydb-tls:latest"
+            ["dragonfly-tls:latest"]="redis-comparison-benchmarks-dragonfly-tls:latest"
+            ["valkey-tls:latest"]="redis-comparison-benchmarks-valkey-tls:latest"
+        )
+        
+        local required_images=("redis:latest" "keydb:latest" "dragonfly:latest" "valkey:latest" "redis-tls:latest" "keydb-tls:latest" "dragonfly-tls:latest" "valkey-tls:latest")
+    else
+        local required_images=("redis:latest" "keydb:latest" "dragonfly:latest" "valkey:latest" "redis-tls:latest" "keydb-tls:latest" "dragonfly-tls:latest" "valkey-tls:latest")
+    fi
+    
+    # Collect missing images
+    local missing_images=()
+    echo "Checking for required image names..."
     for image in "${required_images[@]}"; do
-        if ! docker images --format "{{.Repository}}:{{.Tag}}" | grep -q "^${image}$"; then
-            echo "❌ Missing image: $image"
-            missing_images=true
-        else
+        if docker images --format "{{.Repository}}:{{.Tag}}" | grep -q "^${image}$"; then
             echo "✅ Found image: $image"
+        else
+            echo "❌ Missing image: $image"
+            missing_images+=("$image")
         fi
     done
     
-    if [ "$missing_images" = true ]; then
-        echo "Building missing images..."
-        build_containers
-    else
-        echo "All required images exist"
+    # If using Docker Compose and have missing images, try to tag them all at once
+    if [ "$USE_DOCKER_COMPOSE" = true ] && [ ${#missing_images[@]} -gt 0 ]; then
+        echo ""
+        echo "Tagging Docker Compose generated images..."
+        local tagged_count=0
+        
+        for missing_image in "${missing_images[@]}"; do
+            local compose_image="${image_mappings[$missing_image]}"
+            
+            if [ -n "$compose_image" ] && docker images --format "{{.Repository}}:{{.Tag}}" | grep -q "^${compose_image}$"; then
+                echo "🏷️  Tagging $compose_image → $missing_image"
+                if docker tag "$compose_image" "$missing_image"; then
+                    echo "✅ Successfully tagged $missing_image"
+                    tagged_count=$((tagged_count + 1))  # Changed this line
+                else
+                    echo "❌ Failed to tag $missing_image"
+                fi
+            else
+                echo "❌ Compose image not found: $compose_image"
+            fi
+        done
+        
+        echo ""
+        echo "✅ Tagged $tagged_count/${#missing_images[@]} images"
+        
+        # Update missing images list after tagging
+        missing_images=()
+        for image in "${required_images[@]}"; do
+            if ! docker images --format "{{.Repository}}:{{.Tag}}" | grep -q "^${image}$"; then
+                missing_images+=("$image")
+            fi
+        done
     fi
     
-    # Start containers
-    start_containers
+    # Build missing images if still needed
+    if [ ${#missing_images[@]} -gt 0 ]; then
+        echo ""
+        echo "Still missing ${#missing_images[@]} images, building them..."
+        echo "Missing: ${missing_images[*]}"
+        build_containers
+        
+        # Tag newly built images if using Docker Compose
+        if [ "$USE_DOCKER_COMPOSE" = true ]; then
+            echo "Tagging newly built images..."
+            for missing_image in "${missing_images[@]}"; do
+                local compose_image="${image_mappings[$missing_image]}"
+                if [ -n "$compose_image" ] && docker images --format "{{.Repository}}:{{.Tag}}" | grep -q "^${compose_image}$"; then
+                    docker tag "$compose_image" "$missing_image" || echo "Warning: Failed to tag $missing_image"
+                fi
+            done
+        fi
+    fi
+    
+    echo ""
+    echo "✅ All images ready - proceeding to start containers"
+    
+    # Force start containers regardless of current state
+    echo ""
+    echo "🚀 Starting all containers with Docker Compose..."
+    
+    # Stop any existing containers first
+    echo "Stopping any existing containers..."
+    $COMPOSE_CMD down --remove-orphans 2>/dev/null || true
+    
+    # Start all containers
+    echo "Starting containers..."
+    if $COMPOSE_CMD up -d; then
+        echo "✅ Docker Compose startup completed"
+    else
+        echo "❌ Docker Compose startup failed"
+        echo "Checking logs..."
+        $COMPOSE_CMD logs --tail=20
+        return 1
+    fi
+    
+    echo "Waiting for containers to initialize..."
+    sleep 15
+    
+    echo ""
+    echo "Container status:"
+    $COMPOSE_CMD ps
+    
+    # Check if any containers are actually running
+    local running_containers=$($COMPOSE_CMD ps -q | wc -l)
+    if [ "$running_containers" -eq 0 ]; then
+        echo ""
+        echo "❌ No containers are running! Debugging..."
+        echo ""
+        echo "Docker Compose services status:"
+        $COMPOSE_CMD ps -a
+        echo ""
+        echo "Recent logs:"
+        $COMPOSE_CMD logs --tail=50
+        echo ""
+        echo "Available images:"
+        docker images | grep -E 'redis|keydb|dragonfly|valkey'
+        return 1
+    else
+        echo ""
+        echo "✅ $running_containers containers are running"
+    fi
+    
+    echo ""
     manage_csf_firewall
     test_connectivity
     show_container_info
@@ -780,9 +899,9 @@ show_logs() {
     if [ ! -z "$service" ]; then
         echo "Showing logs for: $service"
         if [ "$USE_DOCKER_COMPOSE" = true ]; then
-            $COMPOSE_CMD logs -f "$service"
+            $COMPOSE_CMD logs --tail=50 "$service"  # Removed -f flag
         else
-            docker logs -f "$service"
+            docker logs --tail=50 "$service"        # Removed -f flag
         fi
     else
         echo "Available containers:"
@@ -797,6 +916,7 @@ show_logs() {
         echo ""
         echo "Usage: $0 logs [service_name]"
         echo "Example: $0 logs redis"
+        echo "For live logs: docker-compose logs -f [service_name]"
     fi
 }
 
