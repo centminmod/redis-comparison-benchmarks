@@ -629,6 +629,7 @@ cleanup() {
         fi
         
         docker rmi redis keydb dragonfly valkey redis-tls keydb-tls dragonfly-tls valkey-tls 2>/dev/null || true
+        docker system prune -f
         
         echo "✅ Cleanup completed"
     else
@@ -638,24 +639,54 @@ cleanup() {
     fi
 }
 
-# Manual cleanup function
+# Enhanced manual cleanup function
 manual_cleanup() {
-    echo "==== Manual Cleanup ===="
+    echo "==== Enhanced Manual Cleanup ===="
     
     if [ "$USE_DOCKER_COMPOSE" = true ]; then
-        $COMPOSE_CMD down --remove-orphans
+        echo "Stopping Docker Compose services..."
+        $COMPOSE_CMD down --remove-orphans --volumes
         $COMPOSE_CMD rm -f
+        
+        echo "Removing Docker Compose images..."
+        # Remove both tagged and compose-generated images
+        docker rmi redis keydb dragonfly valkey redis-tls keydb-tls dragonfly-tls valkey-tls 2>/dev/null || true
+        docker rmi redis-comparison-benchmarks-redis:latest 2>/dev/null || true
+        docker rmi redis-comparison-benchmarks-keydb:latest 2>/dev/null || true
+        docker rmi redis-comparison-benchmarks-dragonfly:latest 2>/dev/null || true
+        docker rmi redis-comparison-benchmarks-valkey:latest 2>/dev/null || true
+        docker rmi redis-comparison-benchmarks-redis-tls:latest 2>/dev/null || true
+        docker rmi redis-comparison-benchmarks-keydb-tls:latest 2>/dev/null || true
+        docker rmi redis-comparison-benchmarks-dragonfly-tls:latest 2>/dev/null || true
+        docker rmi redis-comparison-benchmarks-valkey-tls:latest 2>/dev/null || true
+        
         echo "Docker Compose cleanup completed"
     else
         echo "Stopping and removing containers..."
         docker stop redis keydb dragonfly valkey redis-tls keydb-tls dragonfly-tls valkey-tls 2>/dev/null || true
         docker rm redis keydb dragonfly valkey redis-tls keydb-tls dragonfly-tls valkey-tls 2>/dev/null || true
+        
+        echo "Removing images..."
+        docker rmi redis keydb dragonfly valkey redis-tls keydb-tls dragonfly-tls valkey-tls 2>/dev/null || true
     fi
     
-    echo "Removing images..."
-    docker rmi redis keydb dragonfly valkey redis-tls keydb-tls dragonfly-tls valkey-tls 2>/dev/null || true
+    echo "Cleaning build cache..."
+    docker builder prune -f
     
-    echo "✅ Manual cleanup completed"
+    # echo "Removing unused networks..."
+    # docker network prune -f
+    
+    echo "Final cleanup - removing any dangling images..."
+    docker image prune -f
+    
+    echo "✅ Enhanced cleanup completed"
+    echo ""
+    echo "Verification:"
+    echo "Remaining images:"
+    docker images | grep -E 'redis|keydb|dragonfly|valkey' || echo "  No benchmark images found ✅"
+    echo ""
+    echo "Docker system space reclaimed:"
+    docker system df
 }
 
 # Main execution
