@@ -172,11 +172,17 @@ check_container_status() {
     
     if [ "$USE_DOCKER_COMPOSE" = true ]; then
         # Check if service is running via docker compose
-        if $COMPOSE_CMD ps -q "$service_name" 2>/dev/null | xargs docker inspect --format='{{.State.Running}}' 2>/dev/null | grep -q true; then
-            return 0  # Container is running
-        else
-            return 1  # Container is not running
+        local container_id
+        container_id=$($COMPOSE_CMD ps -q "$service_name" 2>/dev/null)
+        
+        if [ -n "$container_id" ]; then
+            local running_state
+            running_state=$(docker inspect --format='{{.State.Running}}' "$container_id" 2>/dev/null)
+            if [ "$running_state" = "true" ]; then
+                return 0  # Container is running
+            fi
         fi
+        return 1  # Container is not running or not found
     else
         # Check if container is running via docker
         if docker ps --format '{{.Names}}' | grep -q "^${service_name}$"; then
@@ -199,6 +205,8 @@ check_all_containers_status() {
     
     for service in "${services[@]}"; do
         echo "DEBUG: Checking service: $service"
+        # Temporarily disable exit on error for this check
+        set +e
         if check_container_status "$service"; then
             echo "✅ $service is running"
             ((running_count++))
@@ -206,6 +214,8 @@ check_all_containers_status() {
         else
             echo "❌ $service is not running"
         fi
+        # Re-enable exit on error
+        set -e
         echo "DEBUG: Finished checking $service"
     done
 
