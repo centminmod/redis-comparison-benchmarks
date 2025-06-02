@@ -135,7 +135,7 @@ Flags:               fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cm
 ```
 
 ### **🎯 Final Verdict**
-**Y6-core/12-thread server performs optimally with 4 threads and cpuset 0-11**, delivering:
+**6-core/12-thread server performs optimally with 4 threads and cpuset 0-11**, delivering:
 - **KeyDB**: 179,802 ops/sec (champion)
 - **Redis**: 171,018 ops/sec (reliable runner-up)
 - **Both exceed**: 170K ops/sec sustained performance
