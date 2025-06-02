@@ -2,6 +2,13 @@
 
 Below tests were done on dedicated server with Docker based installs of databases.
 
+## Versions Tested
+
+* Redis 8.0.2
+* KeyDB 6.3.4
+* Dragonfly 1.30.3
+* Valkey 8.1.1
+
 ## Test System
 
 * Intel Xeon E-2276G
