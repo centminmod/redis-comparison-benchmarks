@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import sys
 
-# Exactly these nine labels, in this order:
+# Updated to include 4 threads
 EXPECTED_LABELS = [
     "1 Thread Sets", "1 Thread Gets", "1 Thread Totals",
     "2 Threads Sets", "2 Threads Gets", "2 Threads Totals",
@@ -19,8 +19,8 @@ DBS = ["Redis", "KeyDB", "Dragonfly", "Valkey"]
 
 def normalize_threads(token):
     """
-    Given a token like "1 Thread", "1 Threads", "2 Thread", "8 Threads", etc.,
-    return exactly "1 Thread", "2 Threads", or "8 Threads", so that label = "<threads> <op>"
+    Given a token like "1 Thread", "1 Threads", "2 Thread", "4 Threads", "8 Threads", etc.,
+    return exactly "1 Thread", "2 Threads", "4 Threads", or "8 Threads", so that label = "<threads> <op>"
     matches one of EXPECTED_LABELS.
     """
     parts = token.split()
@@ -40,7 +40,7 @@ def parse_markdown(filepath):
     Read combined_all_results.md (or combined_all_results_tls.md) line by line.
     Return a nested dict:
        data[db]["avg"][label], data[db]["p50"][label], data[db]["p99"][label]
-    Initialized to 0.0 for every of the nine EXPECTED_LABELS.
+    Initialized to 0.0 for every of the twelve EXPECTED_LABELS.
     Print debug lines for every skip/store.
     """
     data = {
@@ -60,7 +60,7 @@ def parse_markdown(filepath):
                 continue
 
             if "|" not in line:
-                print(f"  [DEBUG] Skipping: no '|' found → “{line}”")
+                print(f"  [DEBUG] Skipping: no '|' found → "{line}"")
                 continue
 
             parts = [p.strip() for p in line.split("|")]
@@ -68,7 +68,7 @@ def parse_markdown(filepath):
                 print(f"  [DEBUG] Skipping: fewer than 8 fields → {parts}")
                 continue
 
-            db_and_threads = parts[0]  # e.g. "Redis 1 Thread" or "Dragonfly 1 Threads"
+            db_and_threads = parts[0]  # e.g. "Redis 1 Thread" or "Dragonfly 4 Threads"
             op = parts[1]             # "Sets", "Gets", or "Totals"
             try:
                 avg_lat = parts[5]
@@ -129,23 +129,24 @@ def parse_markdown(filepath):
 def plot_grouped_bars(all_data, metric_key, title_suffix, ylabel, out_filename):
     """
     Build a grouped‐bar chart from all_data[db][metric_key][label]
-    and save it to out_filename. Styled to mimic the reference image:
-    - Two‐line centered title
-    - Horizontal X‐tick labels, smaller font
-    - Light horizontal grid
-    - Legend in upper‐left inside the plot
+    and save it to out_filename. Optimized for 12 data points:
+    - Larger figure size for better spacing
+    - Smaller font sizes for data labels
+    - Rotated x-axis labels for better readability
+    - Adjusted bar width and spacing
     """
     vals = []
     for db in DBS:
         row = [all_data[db][metric_key].get(lbl, 0.0) for lbl in EXPECTED_LABELS]
         vals.append(row)
-    arr = np.array(vals)  # shape = (4, 9)
+    arr = np.array(vals)  # shape = (4, 12)
 
     x = np.arange(len(EXPECTED_LABELS))
-    width = 0.2
+    width = 0.18  # Reduced from 0.2 to give more space
     offsets = [-1.5 * width, -0.5 * width, 0.5 * width, 1.5 * width]
 
-    fig, ax = plt.subplots(figsize=(16, 11))
+    # Increased figure size for better spacing with 12 data points
+    fig, ax = plt.subplots(figsize=(20, 12))
     for i, db in enumerate(DBS):
         ax.bar(
             x + offsets[i],
@@ -163,10 +164,12 @@ def plot_grouped_bars(all_data, metric_key, title_suffix, ylabel, out_filename):
     ax.set_ylabel(ylabel, fontsize=14, fontweight='semibold')
     ax.grid(axis='y', linestyle='--', linewidth=0.5, alpha=0.7)
     ax.set_xticks(x)
-    ax.set_xticklabels(EXPECTED_LABELS, rotation=0, ha="center", fontsize=10)
+    # Rotate x-axis labels for better readability with 12 labels
+    ax.set_xticklabels(EXPECTED_LABELS, rotation=45, ha="right", fontsize=9)
     ax.legend(fontsize=12, loc='upper left')
     ax.tick_params(axis='y', labelsize=12)
 
+    # Smaller font size for data value annotations
     for i, db in enumerate(DBS):
         for j, height in enumerate(arr[i]):
             ax.annotate(
@@ -175,12 +178,12 @@ def plot_grouped_bars(all_data, metric_key, title_suffix, ylabel, out_filename):
                 xytext=(0, 3),
                 textcoords="offset points",
                 ha="center", va="bottom",
-                fontsize=9
+                fontsize=7  # Reduced from 9 to 7
             )
 
-    plt.tight_layout(rect=[0, 0, 1, 0.96])
+    plt.tight_layout(rect=[0, 0, 1, 0.94])  # Adjusted for rotated labels
     print(f"[DEBUG] Saving plot to {out_filename}")
-    plt.savefig(out_filename)
+    plt.savefig(out_filename, dpi=300, bbox_inches='tight')  # Higher DPI for better quality
     plt.close()
 
 
