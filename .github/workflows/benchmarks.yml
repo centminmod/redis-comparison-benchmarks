@@ -3,16 +3,6 @@ name: Benchmark Redis vs KeyDB vs Dragonfly vs Valkey
 on:
   workflow_dispatch:
     branches: [master]
-  push:
-    branches:
-      - master
-    paths-ignore:
-      - '.gitignore'
-      - 'readme.txt'
-      - 'readme.md'
-      - 'readme-v1.md'
-      - '.github/workflows/benchmarks-v2.yml'
-      - '.github/dependabot.yml'
 
 jobs:
   benchmark:
