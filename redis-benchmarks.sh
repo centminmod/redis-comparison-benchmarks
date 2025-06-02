@@ -1034,7 +1034,7 @@ quick_benchmark() {
         [2]="0,1"
     )
     
-    for threads in 1 2 4; do
+    for threads in 1 2 4 6 8; do
         cpu_affinity=${cpu_affinities[$threads]}
         echo "Running $threads thread benchmarks..."
         
