@@ -92,14 +92,17 @@ jobs:
 
     - name: Update Redis Configuration for non-TLS
       run: |
-        echo "io-threads 4" >> redis.conf
+        echo "io-threads 3" >> redis.conf
         echo "io-threads-do-reads yes" >> redis.conf
-        echo "io-threads 4" >> keydb.conf
+
+    - name: Update KeyDB Configuration for non-TLS
+      run: |
+        echo "server-threads 3" >> keydb.conf
         echo "io-threads-do-reads yes" >> keydb.conf
 
     - name: Update Redis Configuration for TLS
       run: |
-        echo "io-threads 4" >> redis-tls.conf
+        echo "io-threads 3" >> redis-tls.conf
         echo "io-threads-do-reads yes" >> redis-tls.conf
         echo "tls-port 6390" >> redis-tls.conf
         echo "tls-cert-file /tls/test.crt" >> redis-tls.conf
@@ -108,7 +111,7 @@ jobs:
     
     - name: Update KeyDB Configuration for TLS
       run: |
-        echo "io-threads 4" >> keydb-tls.conf
+        echo "io-threads 3" >> keydb-tls.conf
         echo "io-threads-do-reads yes" >> keydb-tls.conf
         echo "tls-port 6391" >> keydb-tls.conf
         echo "tls-cert-file /tls/test.crt" >> keydb-tls.conf
@@ -124,12 +127,12 @@ jobs:
 
     - name: Update Valkey Configuration for non-TLS
       run: |
-        echo "io-threads 4" >> valkey.conf
+        echo "io-threads 3" >> valkey.conf
         echo "io-threads-do-reads yes" >> valkey.conf
 
     - name: Update Valkey Configuration for TLS
       run: |
-        echo "io-threads 4" >> valkey-tls.conf
+        echo "io-threads 3" >> valkey-tls.conf
         echo "io-threads-do-reads yes" >> valkey-tls.conf
         echo "tls-port 6393" >> valkey-tls.conf
         echo "tls-cert-file /tls/test.crt" >> valkey-tls.conf
@@ -363,6 +366,7 @@ jobs:
         echo "=== KEYDB CONFIGURATION ==="
         echo "--- IO Threads ---"
         docker exec keydb keydb-cli CONFIG GET "*io-threads*" || echo "Failed to get KeyDB IO thread config"
+        docker exec keydb keydb-cli CONFIG GET "*server-threads*" || echo "Failed to get KeyDB IO server thread config"
         echo "--- KeyDB Specific ---"
         docker exec keydb keydb-cli CONFIG GET "*multimaster*" || echo "No multimaster config"
         docker exec keydb keydb-cli CONFIG GET "*active-replica*" || echo "No active-replica config"
