@@ -92,17 +92,26 @@ jobs:
 
     - name: Update Redis Configuration for non-TLS
       run: |
-        echo "io-threads 3" >> redis.conf
+        echo "io-threads 2" >> redis.conf
         echo "io-threads-do-reads yes" >> redis.conf
 
     - name: Update KeyDB Configuration for non-TLS
       run: |
-        echo "server-threads 3" >> keydb.conf
+        echo "server-threads 2" >> keydb.conf
         echo "io-threads-do-reads yes" >> keydb.conf
+
+    - name: Update Dragonfly Configuration for non-TLS
+      run: |
+        echo "--proactor_threads=2" >> dragonfly-tls.conf
+
+    - name: Update Valkey Configuration for non-TLS
+      run: |
+        echo "io-threads 2" >> valkey.conf
+        echo "io-threads-do-reads yes" >> valkey.conf
 
     - name: Update Redis Configuration for TLS
       run: |
-        echo "io-threads 3" >> redis-tls.conf
+        echo "io-threads 2" >> redis-tls.conf
         echo "io-threads-do-reads yes" >> redis-tls.conf
         echo "tls-port 6390" >> redis-tls.conf
         echo "tls-cert-file /tls/test.crt" >> redis-tls.conf
@@ -111,7 +120,7 @@ jobs:
     
     - name: Update KeyDB Configuration for TLS
       run: |
-        echo "io-threads 3" >> keydb-tls.conf
+        echo "io-threads 4" >> keydb-tls.conf
         echo "io-threads-do-reads yes" >> keydb-tls.conf
         echo "tls-port 6391" >> keydb-tls.conf
         echo "tls-cert-file /tls/test.crt" >> keydb-tls.conf
@@ -120,19 +129,15 @@ jobs:
     
     - name: Update Dragonfly Configuration for TLS
       run: |
-        echo "tls-port 6392" >> dragonfly-tls.conf
-        echo "tls-cert-file /tls/test.crt" >> dragonfly-tls.conf
-        echo "tls-key-file /tls/test.key" >> dragonfly-tls.conf
-        echo "tls-ca-cert-file /tls/ca.crt" >> dragonfly-tls.conf
-
-    - name: Update Valkey Configuration for non-TLS
-      run: |
-        echo "io-threads 3" >> valkey.conf
-        echo "io-threads-do-reads yes" >> valkey.conf
+        echo "--proactor_threads=2" >> dragonfly-tls.conf
+        echo "--port=6392" >> dragonfly-tls.conf
+        echo "--tls_cert_file=/tls/test.crt" >> dragonfly-tls.conf
+        echo "--tls_key_file=/tls/test.key" >> dragonfly-tls.conf
+        echo "--tls_ca_cert_file=/tls/ca.crt" >> dragonfly-tls.conf
 
     - name: Update Valkey Configuration for TLS
       run: |
-        echo "io-threads 3" >> valkey-tls.conf
+        echo "io-threads 2" >> valkey-tls.conf
         echo "io-threads-do-reads yes" >> valkey-tls.conf
         echo "tls-port 6393" >> valkey-tls.conf
         echo "tls-cert-file /tls/test.crt" >> valkey-tls.conf
