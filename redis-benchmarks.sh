@@ -489,27 +489,35 @@ show_container_info() {
 }
 
 # Benchmark execution (matching GitHub workflow style)
-run_memtier_benchmark() {
-    local host=$1
-    local port=$2
-    local threads=$3
-    local output_file=$4
-    local tls_opts=$5
-    local cpu_affinity=$6
-    
-    echo "Running benchmark: $output_file"
-    
-    local cmd="memtier_benchmark -s $host --ratio=1:15 -p $port --protocol=redis \
-        -t $threads --distinct-client-seed --hide-histogram --requests=2000 \
-        --clients=100 --pipeline=1 --data-size=384 \
-        --key-pattern=G:G --key-minimum=1 --key-maximum=1000000 \
-        --key-median=500000 --key-stddev=166667 $tls_opts"
-    
-    if [ ! -z "$cpu_affinity" ]; then
-        cmd="taskset -c $cpu_affinity $cmd"
-    fi
-    
-    eval "$cmd | tee $output_file" || echo "Benchmark failed: $output_file"
+rrun_memtier_benchmark() {
+  local host=$1
+  local port=$2
+  local threads=$3
+  local output_file=$4
+  local tls_opts=$5
+  local cpu_affinity=$6
+
+  echo "==== Flushing DB on $host:$port ===="
+  # If TLS opts are empty, use plain redis-cli; otherwise supply the same TLS flags
+  if [ -z "$tls_opts" ]; then
+    redis-cli -h "$host" -p "$port" FLUSHALL
+  else
+    # memtier's --tls-skip-verify translates to redis-cli's --insecure
+    redis-cli -h "$host" -p "$port" $tls_opts FLUSHALL
+  fi
+
+  echo "==== Running benchmark: $output_file ===="
+  local cmd="memtier_benchmark -s $host --ratio=1:15 -p $port --protocol=redis \
+    -t $threads --distinct-client-seed --hide-histogram --requests=2000 \
+    --clients=100 --pipeline=1 --data-size=384 \
+    --key-pattern=G:G --key-minimum=1 --key-maximum=1000000 \
+    --key-median=500000 --key-stddev=166667 $tls_opts"
+
+  if [ -n "$cpu_affinity" ]; then
+    cmd="taskset -c $cpu_affinity $cmd"
+  fi
+
+  eval "$cmd | tee $output_file" || echo "Benchmark failed: $output_file"
 }
 
 # Main benchmark execution
@@ -1036,20 +1044,20 @@ quick_benchmark() {
     
     for threads in 1 2 4 6 8; do
         cpu_affinity=${cpu_affinities[$threads]}
-        echo "Running $threads thread benchmarks..."
+        echo "Running $threads thread benchmarks cpu_affinity=${cpu_affinity}..."
         
         # Non-TLS quick benchmarks
-        run_memtier_benchmark "127.0.0.1" "$REDIS_HOST_PORT" "$threads" \
-            "./benchmarklogs/redis_quick_${threads}threads.txt" "" "$cpu_affinity"
+        echo "run_memtier_benchmark \"127.0.0.1\" \"$REDIS_HOST_PORT\" \"$threads\" \"./benchmarklogs/redis_quick_${threads}threads.txt\" \"\" \"$cpu_affinity\""
+        run_memtier_benchmark "127.0.0.1" "$REDIS_HOST_PORT" "$threads" "./benchmarklogs/redis_quick_${threads}threads.txt" "" "$cpu_affinity"
         
-        run_memtier_benchmark "127.0.0.1" "$KEYDB_HOST_PORT" "$threads" \
-            "./benchmarklogs/keydb_quick_${threads}threads.txt" "" "$cpu_affinity"
+        echo "run_memtier_benchmark \"127.0.0.1\" \"$KEYDB_HOST_PORT\" \"$threads\" \"./benchmarklogs/keydb_quick_${threads}threads.txt\" \"\" \"$cpu_affinity\""
+        run_memtier_benchmark "127.0.0.1" "$KEYDB_HOST_PORT" "$threads" "./benchmarklogs/keydb_quick_${threads}threads.txt" "" "$cpu_affinity"
         
-        run_memtier_benchmark "127.0.0.1" "$DRAGONFLY_HOST_PORT" "$threads" \
-            "./benchmarklogs/dragonfly_quick_${threads}threads.txt" "" "$cpu_affinity"
+        echo "run_memtier_benchmark \"127.0.0.1\" \"$DRAGONFLY_HOST_PORT\" \"$threads\" \"./benchmarklogs/dragonfly_quick_${threads}threads.txt\" \"\" \"$cpu_affinity\""
+        run_memtier_benchmark "127.0.0.1" "$DRAGONFLY_HOST_PORT" "$threads" "./benchmarklogs/dragonfly_quick_${threads}threads.txt" "" "$cpu_affinity"
         
-        run_memtier_benchmark "127.0.0.1" "$VALKEY_HOST_PORT" "$threads" \
-            "./benchmarklogs/valkey_quick_${threads}threads.txt" "" "$cpu_affinity"
+        echo "run_memtier_benchmark \"127.0.0.1\" \"$VALKEY_HOST_PORT\" \"$threads\" \"./benchmarklogs/valkey_quick_${threads}threads.txt\" \"\" \"$cpu_affinity\""
+        run_memtier_benchmark "127.0.0.1" "$VALKEY_HOST_PORT" "$threads" "./benchmarklogs/valkey_quick_${threads}threads.txt" "" "$cpu_affinity"
     done
     
     echo "✅ Quick benchmark completed. Results in ./benchmarklogs/"
