@@ -666,8 +666,204 @@ main() {
     fi
 }
 
+# Standalone start function
+standalone_start() {
+    echo "==== Standalone Container Start ===="
+    
+    # Check if we need to set up environment first
+    if [ ! -f "docker-compose.yml" ] && [ "$USE_DOCKER_COMPOSE" = true ]; then
+        echo "⚠️  No docker-compose.yml found, setting up environment first..."
+        setup_environment
+        update_configurations
+    fi
+    
+    # Build containers if images don't exist
+    echo "Checking if images exist..."
+    local missing_images=false
+    local required_images=("redis:latest" "keydb:latest" "dragonfly:latest" "valkey:latest" "redis-tls:latest" "keydb-tls:latest" "dragonfly-tls:latest" "valkey-tls:latest")
+    
+    for image in "${required_images[@]}"; do
+        if ! docker images --format "{{.Repository}}:{{.Tag}}" | grep -q "^${image}$"; then
+            echo "❌ Missing image: $image"
+            missing_images=true
+        else
+            echo "✅ Found image: $image"
+        fi
+    done
+    
+    if [ "$missing_images" = true ]; then
+        echo "Building missing images..."
+        build_containers
+    else
+        echo "All required images exist"
+    fi
+    
+    # Start containers
+    start_containers
+    manage_csf_firewall
+    test_connectivity
+    show_container_info
+}
+
+# Standalone stop function
+standalone_stop() {
+    echo "==== Standalone Container Stop ===="
+    
+    # Check current status first
+    check_all_containers_status
+    local status=$?
+    
+    if [ $status -eq 1 ]; then
+        echo "ℹ️  No containers are running"
+        return 0
+    fi
+    
+    stop_containers
+    
+    # Verify all containers are stopped
+    echo "Verifying containers are stopped..."
+    check_all_containers_status
+}
+
+# Standalone restart function
+standalone_restart() {
+    echo "==== Standalone Container Restart ===="
+    
+    echo "Step 1: Stopping containers..."
+    standalone_stop
+    
+    echo ""
+    echo "Step 2: Starting containers..."
+    standalone_start
+}
+
+# Enhanced build-only function
+standalone_build() {
+    echo "==== Standalone Container Build ===="
+    
+    # Set up environment if needed
+    if [ ! -f "docker-compose.yml" ] && [ "$USE_DOCKER_COMPOSE" = true ]; then
+        echo "Setting up environment for build..."
+        setup_environment
+        update_configurations
+    fi
+    
+    build_containers
+    
+    echo ""
+    echo "✅ Build completed. Available images:"
+    docker images | grep -E 'redis|keydb|dragonfly|valkey' | head -10
+}
+
+# Enhanced logs function
+show_logs() {
+    local service=${1:-""}
+    
+    echo "==== Container Logs ===="
+    
+    if [ ! -z "$service" ]; then
+        echo "Showing logs for: $service"
+        if [ "$USE_DOCKER_COMPOSE" = true ]; then
+            $COMPOSE_CMD logs -f "$service"
+        else
+            docker logs -f "$service"
+        fi
+    else
+        echo "Available containers:"
+        local services=("redis" "keydb" "dragonfly" "valkey" "redis-tls" "keydb-tls" "dragonfly-tls" "valkey-tls")
+        for service in "${services[@]}"; do
+            if check_container_status "$service"; then
+                echo "  ✅ $service (running)"
+            else
+                echo "  ❌ $service (not running)"
+            fi
+        done
+        echo ""
+        echo "Usage: $0 logs [service_name]"
+        echo "Example: $0 logs redis"
+    fi
+}
+
+# Container shell access function
+container_shell() {
+    local service=${1:-""}
+    
+    if [ -z "$service" ]; then
+        echo "Usage: $0 shell [service_name]"
+        echo "Available services: redis keydb dragonfly valkey redis-tls keydb-tls dragonfly-tls valkey-tls"
+        return 1
+    fi
+    
+    if check_container_status "$service"; then
+        echo "Connecting to $service container..."
+        docker exec -it "$service" /bin/bash || docker exec -it "$service" /bin/sh
+    else
+        echo "❌ Container $service is not running"
+        echo "Start it first with: $0 start"
+    fi
+}
+
+# Quick benchmark function (subset of full benchmarks)
+quick_benchmark() {
+    echo "==== Quick Benchmark (1 & 2 threads only) ===="
+    
+    # Check if containers are running
+    check_all_containers_status
+    local status=$?
+    
+    if [ $status -eq 1 ]; then
+        echo "❌ No containers running. Start them first with: $0 start"
+        return 1
+    fi
+    
+    mkdir -p benchmarklogs
+    
+    # Run quick benchmarks (1 and 2 threads only)
+    declare -A cpu_affinities=(
+        [1]="0"
+        [2]="0,1"
+    )
+    
+    for threads in 1 2; do
+        cpu_affinity=${cpu_affinities[$threads]}
+        echo "Running $threads thread benchmarks..."
+        
+        # Non-TLS quick benchmarks
+        run_memtier_benchmark "127.0.0.1" "6379" "$threads" \
+            "./benchmarklogs/redis_quick_${threads}threads.txt" "" "$cpu_affinity"
+        
+        run_memtier_benchmark "127.0.0.1" "6380" "$threads" \
+            "./benchmarklogs/keydb_quick_${threads}threads.txt" "" "$cpu_affinity"
+        
+        run_memtier_benchmark "127.0.0.1" "6381" "$threads" \
+            "./benchmarklogs/dragonfly_quick_${threads}threads.txt" "" "$cpu_affinity"
+        
+        run_memtier_benchmark "127.0.0.1" "6382" "$threads" \
+            "./benchmarklogs/valkey_quick_${threads}threads.txt" "" "$cpu_affinity"
+    done
+    
+    echo "✅ Quick benchmark completed. Results in ./benchmarklogs/"
+}
+
 # Handle command line arguments
+# Handle command line arguments (replace the existing case statement)
 case "${1:-}" in
+    "start")
+        standalone_start
+        exit 0
+        ;;
+    "stop")
+        standalone_stop
+        exit 0
+        ;;
+    "restart")
+        standalone_restart
+        exit 0
+        ;;
+    "build")
+        standalone_build
+        exit 0
+        ;;
     "cleanup")
         manual_cleanup
         exit 0
@@ -677,25 +873,52 @@ case "${1:-}" in
         show_container_info
         exit 0
         ;;
+    "logs")
+        show_logs "${2:-}"
+        exit 0
+        ;;
+    "shell")
+        container_shell "${2:-}"
+        exit 0
+        ;;
+    "quick")
+        quick_benchmark
+        exit 0
+        ;;
     "help"|"-h"|"--help")
-        echo "Usage: $0 [command]"
+        echo "Usage: $0 [command] [options]"
         echo ""
         echo "Commands:"
-        echo "  (none)   Run full benchmark suite"
-        echo "  cleanup  Manually cleanup containers and images"
-        echo "  status   Show container status and connection info"
-        echo "  help     Show this help message"
+        echo "  (none)     Run full benchmark suite"
+        echo "  start      Start all containers (builds if needed)"
+        echo "  stop       Stop all containers"
+        echo "  restart    Restart all containers"
+        echo "  build      Build all container images"
+        echo "  status     Show container status and connection info"
+        echo "  logs       Show logs for all containers"
+        echo "  logs <svc> Show logs for specific service"
+        echo "  shell <svc> Open shell in specific container"
+        echo "  quick      Run quick benchmark (1-2 threads only)"
+        echo "  cleanup    Manually cleanup containers and images"
+        echo "  help       Show this help message"
+        echo ""
+        echo "Services: redis, keydb, dragonfly, valkey, redis-tls, keydb-tls, dragonfly-tls, valkey-tls"
         echo ""
         echo "Configuration variables:"
-        echo "  CLEANUP=y|n           Cleanup containers after benchmarks (default: n)"
-        echo "  USE_DOCKER_COMPOSE=true|false  Use docker-compose or individual containers"
-        echo "  MEMTIER_*_TLS=y|n     Enable/disable TLS testing for each database"
+        echo "  CLEANUP=y|n                    Cleanup containers after benchmarks (default: n)"
+        echo "  USE_DOCKER_COMPOSE=true|false Use docker-compose or individual containers"
+        echo "  MEMTIER_*_TLS=y|n             Enable/disable TLS testing for each database"
         echo ""
         echo "Examples:"
-        echo "  $0                    # Run benchmarks, keep containers running"
-        echo "  CLEANUP=y $0          # Run benchmarks, cleanup afterwards"
+        echo "  $0                    # Run full benchmarks, keep containers running"
+        echo "  $0 start              # Just start containers for testing"
         echo "  $0 status             # Check container status"
-        echo "  $0 cleanup            # Manual cleanup"
+        echo "  $0 logs redis         # Show Redis container logs"
+        echo "  $0 shell keydb        # Open shell in KeyDB container"
+        echo "  $0 quick              # Run quick benchmark"
+        echo "  $0 restart            # Restart all containers"
+        echo "  $0 stop               # Stop all containers"
+        echo "  CLEANUP=y $0          # Run benchmarks, cleanup afterwards"
         echo ""
         echo "Docker Compose Command: $COMPOSE_CMD"
         exit 0
