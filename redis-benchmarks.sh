@@ -19,6 +19,32 @@ KEYDB_TLS_HOST_PORT=6391
 DRAGONFLY_TLS_HOST_PORT=6392
 VALKEY_TLS_HOST_PORT=6393
 
+update_docker_compose_cpuset() {
+    echo "==== Updating Docker Compose CPU Sets ===="
+    
+    local total_cores=$CPUS
+    local physical_cores=$((CPUS / 2))  # Assuming hyperthreading
+    
+    echo "Detected: $total_cores logical cores, $physical_cores physical cores"
+    
+    # Strategy 1: Use all physical cores (recommended)
+    # local cpuset_all="0-$((physical_cores - 1))"
+    
+    # Strategy 2: Use all logical cores (for maximum performance)
+    local cpuset_all="0-$((total_cores - 1))"
+    
+    echo "Setting cpuset to: $cpuset_all"
+    
+    # Update docker-compose.yml
+    if [ -f "docker-compose.yml" ]; then
+        # Replace all cpuset lines
+        sed -i "s/cpuset: \"[^\"]*\"/cpuset: \"$cpuset_all\"/g" docker-compose.yml
+        echo "✅ Updated docker-compose.yml cpuset to: $cpuset_all"
+    else
+        echo "⚠️  docker-compose.yml not found"
+    fi
+}
+
 set -e  # Exit on any error
 
 # Add after the configuration section
@@ -94,6 +120,8 @@ setup_environment() {
 # Update configurations
 update_configurations() {
     echo "==== Updating Configurations ===="
+
+    update_docker_compose_cpuset
     
     # Non-TLS configurations
     cat >> redis.conf << EOF
@@ -739,6 +767,11 @@ standalone_start() {
         setup_environment
         update_configurations
     fi
+    # Always ensure cpuset is correct for current hardware
+    if [ "$USE_DOCKER_COMPOSE" = true ] && [ -f "docker-compose.yml" ]; then
+        echo "🔧 Ensuring cpuset matches current hardware..."
+        update_docker_compose_cpuset
+    fi
     
     # Build containers if images don't exist
     echo "Checking if images exist..."
@@ -1001,7 +1034,7 @@ quick_benchmark() {
         [2]="0,1"
     )
     
-    for threads in 1 2; do
+    for threads in 1 2 4; do
         cpu_affinity=${cpu_affinities[$threads]}
         echo "Running $threads thread benchmarks..."
         
