@@ -81,21 +81,38 @@ def parse_markdown_ops(filepath):
             if not line:
                 continue
 
+            # Skip markdown header separators and empty lines
+            if not line or line.startswith("| ---") or "----" in line:
+                continue
+
             if "|" not in line:
                 print(f"  [DEBUG] Skipping: no '|' found -> {line}")
                 continue
 
             parts = [p.strip() for p in line.split("|")]
+            # Filter out empty parts
+            parts = [p for p in parts if p]
+            
             if len(parts) < 5:
                 print(f"  [DEBUG] Skipping: fewer than 5 fields -> {parts}")
                 continue
 
             db_and_threads = parts[0]
             op = parts[1]
+            
+            # Skip if this is a header row
+            if op == "Type" or "Databases" in db_and_threads:
+                continue
+                
             try:
                 ops_val = parts[2]
             except IndexError:
                 print(f"  [DEBUG] Skipping: missing Ops/sec column, parts = {parts}")
+                continue
+
+            # Skip rows with "---" values
+            if ops_val == "---":
+                print(f"  [DEBUG] Skipping: found '---' value in ops/sec column")
                 continue
 
             db, th_token = parse_db_and_threads(db_and_threads)
@@ -119,8 +136,8 @@ def parse_markdown_ops(filepath):
 
             try:
                 opsf = float(ops_val)
-            except ValueError:
-                print(f"  [DEBUG] SKIPPING: cannot convert Ops/sec to float: '{ops_val}'")
+            except ValueError as e:
+                print(f"  [DEBUG] SKIPPING: cannot convert Ops/sec to float: '{ops_val}', error={e}")
                 continue
 
             data[db]["ops"][label] = opsf
@@ -180,17 +197,18 @@ def plot_ops_chart(all_data, out_filename):
     ax.legend(fontsize=12, loc='upper left')
     ax.tick_params(axis='y', labelsize=12)
 
-    # Smaller font size for data value annotations
+    # Only add annotations for non-zero values
     for i, db in enumerate(DBS):
         for j, height in enumerate(arr[i]):
-            ax.annotate(
-                f"{int(round(height))}",
-                xy=(x[j] + offsets[i], height),
-                xytext=(0, 3),
-                textcoords="offset points",
-                ha="center", va="bottom",
-                fontsize=7  # Reduced from 9 to 7
-            )
+            if height > 0:  # Only annotate non-zero bars
+                ax.annotate(
+                    f"{int(round(height))}",
+                    xy=(x[j] + offsets[i], height),
+                    xytext=(0, 3),
+                    textcoords="offset points",
+                    ha="center", va="bottom",
+                    fontsize=7  # Reduced from 9 to 7
+                )
 
     plt.tight_layout(rect=[0, 0, 1, 0.94])  # Adjusted for rotated labels
     print(f"[DEBUG] Saving Ops/Sec plot to {out_filename}")

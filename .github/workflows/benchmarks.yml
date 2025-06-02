@@ -946,22 +946,22 @@ jobs:
     - name: Generate non-TLS Latency Charts
       continue-on-error: true
       run: |
-        python scripts/latency-charts.py combined_all_results.md nonTLS
+        python scripts/latency-charts.py combined_all_results.md nonTLS 2>&1 | tee ./benchmarklogs/latency-charts-nonTLS.log
 
     - name: Generate non-TLS Ops/Sec Charts
       continue-on-error: true
       run: |
-        python scripts/opssec-charts.py combined_all_results.md nonTLS
+        python scripts/opssec-charts.py combined_all_results.md nonTLS 2>&1 | tee ./benchmarklogs/opssec-charts-nonTLS.log
 
     - name: Generate TLS Latency Charts
       continue-on-error: true
       run: |
-        python scripts/latency-charts.py combined_all_results_tls.md TLS
+        python scripts/latency-charts.py combined_all_results_tls.md TLS 2>&1 | tee ./benchmarklogs/latency-charts-TLS.log
 
     - name: Generate TLS Ops/Sec Charts
       continue-on-error: true
       run: |
-        python scripts/opssec-charts.py combined_all_results_tls.md TLS
+        python scripts/opssec-charts.py combined_all_results_tls.md TLS 2>&1 | tee ./benchmarklogs/opssec-charts-TLS.log
 
     - name: Capture Versions for Benchmark Report
       continue-on-error: true

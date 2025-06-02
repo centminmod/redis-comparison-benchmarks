@@ -88,23 +88,40 @@ def parse_markdown(filepath):
             if not line:
                 continue
 
+            # Skip markdown header separators and empty lines
+            if not line or line.startswith("| ---") or "----" in line:
+                continue
+
             if "|" not in line:
                 print(f"  [DEBUG] Skipping: no '|' found -> {line}")
                 continue
 
             parts = [p.strip() for p in line.split("|")]
+            # Filter out empty parts
+            parts = [p for p in parts if p]
+            
             if len(parts) < 8:
                 print(f"  [DEBUG] Skipping: fewer than 8 fields -> {parts}")
                 continue
 
             db_and_threads = parts[0]  # e.g. "Redis 1 Thread" or "Redis TLS 1 Thread"
             op = parts[1]             # "Sets", "Gets", or "Totals"
+            
+            # Skip if this is a header row
+            if op == "Type" or "Databases" in db_and_threads:
+                continue
+                
             try:
                 avg_lat = parts[5]
                 p50_lat = parts[6]
                 p99_lat = parts[7]
             except IndexError:
                 print(f"  [DEBUG] Skipping: missing latency columns -> {parts}")
+                continue
+
+            # Skip rows with "---" values
+            if avg_lat == "---" or p50_lat == "---" or p99_lat == "---":
+                print(f"  [DEBUG] Skipping: found '---' values in latency columns")
                 continue
 
             db, th_token = parse_db_and_threads(db_and_threads)
@@ -130,8 +147,8 @@ def parse_markdown(filepath):
                 avg_val = float(avg_lat)
                 p50_val = float(p50_lat)
                 p99_val = float(p99_lat)
-            except ValueError:
-                print(f"  [DEBUG] SKIPPING: cannot convert latencies to float: avg={avg_lat}, p50={p50_lat}, p99={p99_lat}")
+            except ValueError as e:
+                print(f"  [DEBUG] SKIPPING: cannot convert latencies to float: avg={avg_lat}, p50={p50_lat}, p99={p99_lat}, error={e}")
                 continue
 
             data[db]["avg"][label] = avg_val
@@ -195,17 +212,18 @@ def plot_grouped_bars(all_data, metric_key, title_suffix, ylabel, out_filename):
     ax.legend(fontsize=12, loc='upper left')
     ax.tick_params(axis='y', labelsize=12)
 
-    # Smaller font size for data value annotations
+    # Only add annotations for non-zero values
     for i, db in enumerate(DBS):
         for j, height in enumerate(arr[i]):
-            ax.annotate(
-                f"{height:.2f}",
-                xy=(x[j] + offsets[i], height),
-                xytext=(0, 3),
-                textcoords="offset points",
-                ha="center", va="bottom",
-                fontsize=7  # Reduced from 9 to 7
-            )
+            if height > 0:  # Only annotate non-zero bars
+                ax.annotate(
+                    f"{height:.2f}",
+                    xy=(x[j] + offsets[i], height),
+                    xytext=(0, 3),
+                    textcoords="offset points",
+                    ha="center", va="bottom",
+                    fontsize=7  # Reduced from 9 to 7
+                )
 
     plt.tight_layout(rect=[0, 0, 1, 0.94])  # Adjusted for rotated labels
     print(f"[DEBUG] Saving plot to {out_filename}")
