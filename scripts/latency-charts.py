@@ -60,12 +60,12 @@ def parse_markdown(filepath):
                 continue
 
             if "|" not in line:
-                print(f"  [DEBUG] Skipping: no '|' found → "{line}"")
+                print(f"  [DEBUG] Skipping: no '|' found -> {line}")
                 continue
 
             parts = [p.strip() for p in line.split("|")]
             if len(parts) < 8:
-                print(f"  [DEBUG] Skipping: fewer than 8 fields → {parts}")
+                print(f"  [DEBUG] Skipping: fewer than 8 fields -> {parts}")
                 continue
 
             db_and_threads = parts[0]  # e.g. "Redis 1 Thread" or "Dragonfly 4 Threads"
@@ -75,7 +75,7 @@ def parse_markdown(filepath):
                 p50_lat = parts[6]
                 p99_lat = parts[7]
             except IndexError:
-                print(f"  [DEBUG] Skipping: missing latency columns → {parts}")
+                print(f"  [DEBUG] Skipping: missing latency columns -> {parts}")
                 continue
 
             tokens = db_and_threads.split()
@@ -111,7 +111,7 @@ def parse_markdown(filepath):
             data[db]["avg"][label] = avg_val
             data[db]["p50"][label] = p50_val
             data[db]["p99"][label] = p99_val
-            print(f"  [DEBUG] Stored → {db}.{label} = avg {avg_val:.5f}, p50 {p50_val:.5f}, p99 {p99_val:.5f}")
+            print(f"  [DEBUG] Stored -> {db}.{label} = avg {avg_val:.5f}, p50 {p50_val:.5f}, p99 {p99_val:.5f}")
 
     print("[DEBUG] Finished parsing. Summary of data loaded:")
     for db in DBS:
@@ -121,7 +121,7 @@ def parse_markdown(filepath):
             print(f"    [DEBUG]   {metric}: {len(nonzero)}/{len(EXPECTED_LABELS)} nonzero labels")
             if nonzero:
                 for lbl, val in nonzero.items():
-                    print(f"    [DEBUG]     {lbl} → {val:.5f}")
+                    print(f"    [DEBUG]     {lbl} -> {val:.5f}")
 
     return data
 

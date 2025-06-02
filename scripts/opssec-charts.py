@@ -53,12 +53,12 @@ def parse_markdown_ops(filepath):
                 continue
 
             if "|" not in line:
-                print(f"  [DEBUG] Skipping: no '|' found → "{line}"")
+                print(f"  [DEBUG] Skipping: no '|' found -> {line}")
                 continue
 
             parts = [p.strip() for p in line.split("|")]
             if len(parts) < 5:
-                print(f"  [DEBUG] Skipping: fewer than 5 fields → {parts}")
+                print(f"  [DEBUG] Skipping: fewer than 5 fields -> {parts}")
                 continue
 
             db_and_threads = parts[0]
@@ -98,7 +98,7 @@ def parse_markdown_ops(filepath):
                 continue
 
             data[db]["ops"][label] = opsf
-            print(f"  [DEBUG] Stored → {db}.{label} = {opsf:.2f} ops/sec")
+            print(f"  [DEBUG] Stored -> {db}.{label} = {opsf:.2f} ops/sec")
 
     print("[DEBUG] Finished parsing. Summary of ops/sec data:")
     for db in DBS:
@@ -106,7 +106,7 @@ def parse_markdown_ops(filepath):
         print(f"  [DEBUG] DB = {db}: {len(nonzero)}/{len(EXPECTED_LABELS)} nonzero labels")
         if nonzero:
             for lbl, val in nonzero.items():
-                print(f"    [DEBUG]   {lbl} → {val:.2f}")
+                print(f"    [DEBUG]   {lbl} -> {val:.2f}")
 
     return data
 
