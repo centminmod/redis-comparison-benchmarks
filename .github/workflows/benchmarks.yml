@@ -10,6 +10,7 @@ on:
       - '.gitignore'
       - 'readme.txt'
       - 'readme.md'
+      - 'readme-v1.md'
       - '.github/workflows/dependabot.yml'
 
 jobs:
