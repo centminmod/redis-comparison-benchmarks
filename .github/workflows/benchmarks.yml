@@ -11,7 +11,8 @@ on:
       - 'readme.txt'
       - 'readme.md'
       - 'readme-v1.md'
-      - '.github/workflows/dependabot.yml'
+      - '.github/workflows/benchmarks-v2.yml'
+      - '.github/dependabot.yml'
 
 jobs:
   benchmark:
