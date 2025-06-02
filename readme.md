@@ -31,6 +31,12 @@ Previous test comparison results without Valkey can be read [here](readme-v1.md)
 - **Dragonfly**: \~59,616 ops/sec (significant improvement)
 - **Valkey**: \~50,067 ops/sec (moderate scaling)
 
+**Medium Concurrency (4 Threads):**
+- **Redis**: \~63,373 ops/sec (maintains peak performance)
+- **KeyDB**: \~59,679 ops/sec (slight performance drop)
+- **Dragonfly**: \~65,196 ops/sec (achieves highest throughput)
+- **Valkey**: \~50,642 ops/sec (consistent with 2-thread performance)
+
 **High Concurrency (8 Threads):**
 - **Redis**: \~60,019 ops/sec (performance degrades)
 - **KeyDB**: \~53,205 ops/sec (notable performance drop)
