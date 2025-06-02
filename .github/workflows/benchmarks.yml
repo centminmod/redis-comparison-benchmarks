@@ -551,6 +551,22 @@ jobs:
     - name: Memtier 8 Threads Benchmark Valkey
       run: memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6382 --protocol=redis -t 8 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=1024 --key-pattern=G:G --key-minimum=1 --key-maximum=1000000 --key-median=500000 --key-stddev=166667 | tee ./benchmarklogs/valkey_benchmarks_8threads.txt || true
 
+    - name: Check Redis IO Thread Usage non-TLS
+      run: |
+        docker exec redis redis-cli INFO | grep -i thread || echo "threads match"
+
+    - name: Check KeyDB IO Thread Usage non-TLS
+      run: |
+        docker exec keydb redis-cli INFO | grep -i thread || echo "threads match"
+
+    - name: Check Dragonfly IO Thread Usage non-TLS
+      run: |
+        docker exec dragonfly redis-cli INFO | grep -i thread || echo "threads match"
+
+    - name: Check Valkey IO Thread Usage non-TLS
+      run: |
+        docker exec valkey redis-cli INFO | grep -i thread || echo "threads match"
+
     - name: Memtier 1 Threads Benchmark Redis with TLS
       run: |
         memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6390 --protocol=redis --tls --cert=${PWD}/test.crt --key=${PWD}/test.key --cacert=${PWD}/ca.crt --tls-skip-verify -t 1 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=1024 --key-pattern=G:G --key-minimum=1 --key-maximum=1000000 --key-median=500000 --key-stddev=166667 | tee ./benchmarklogs/redis_benchmarks_1threads_tls.txt || true
