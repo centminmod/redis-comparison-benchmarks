@@ -539,6 +539,18 @@ jobs:
     - name: Memtier 2 Threads Benchmark Valkey
       run: taskset -c 0,1 memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6382 --protocol=redis -t 2 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=1024 --key-pattern=G:G --key-minimum=1 --key-maximum=1000000 --key-median=500000 --key-stddev=166667 | tee ./benchmarklogs/valkey_benchmarks_2threads.txt || true
 
+    - name: Memtier 4 Threads Benchmark Redis
+      run: taskset -c 0,1,2,3 memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6379 --protocol=redis -t 4 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=1024 --key-pattern=G:G --key-minimum=1 --key-maximum=1000000 --key-median=500000 --key-stddev=166667 | tee ./benchmarklogs/redis_benchmarks_4threads.txt || true
+
+    - name: Memtier 4 Threads Benchmark KeyDB
+      run: taskset -c 0,1,2,3 memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6380 --protocol=redis -t 4 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=1024 --key-pattern=G:G --key-minimum=1 --key-maximum=1000000 --key-median=500000 --key-stddev=166667 | tee ./benchmarklogs/keydb_benchmarks_4threads.txt || true
+
+    - name: Memtier 4 Threads Benchmark Dragonfly
+      run: taskset -c 0,1,2,3 memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6381 --protocol=redis -t 4 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=1024 --key-pattern=G:G --key-minimum=1 --key-maximum=1000000 --key-median=500000 --key-stddev=166667 | tee ./benchmarklogs/dragonfly_benchmarks_4threads.txt || true
+
+    - name: Memtier 4 Threads Benchmark Valkey
+      run: taskset -c 0,1,2,3 memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6382 --protocol=redis -t 4 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=1024 --key-pattern=G:G --key-minimum=1 --key-maximum=1000000 --key-median=500000 --key-stddev=166667 | tee ./benchmarklogs/valkey_benchmarks_4threads.txt || true
+
     - name: Memtier 8 Threads Benchmark Redis
       run: memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6379 --protocol=redis -t 8 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=1024 --key-pattern=G:G --key-minimum=1 --key-maximum=1000000 --key-median=500000 --key-stddev=166667 | tee ./benchmarklogs/redis_benchmarks_8threads.txt || true
 
@@ -598,6 +610,22 @@ jobs:
     - name: Memtier 2 Threads Benchmark Valkey with TLS
       run: |
         taskset -c 0,1 memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6393 --protocol=redis --tls --cert=${PWD}/test.crt --key=${PWD}/test.key --cacert=${PWD}/ca.crt --tls-skip-verify -t 2 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=1024 --key-pattern=G:G --key-minimum=1 --key-maximum=1000000 --key-median=500000 --key-stddev=166667 | tee ./benchmarklogs/valkey_benchmarks_2threads_tls.txt || true
+
+    - name: Memtier 4 Threads Benchmark Redis with TLS
+      run: |
+        taskset -c 0,1,2,3 memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6390 --protocol=redis --tls --cert=${PWD}/test.crt --key=${PWD}/test.key --cacert=${PWD}/ca.crt --tls-skip-verify -t 4 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=1024 --key-pattern=G:G --key-minimum=1 --key-maximum=1000000 --key-median=500000 --key-stddev=166667 | tee ./benchmarklogs/redis_benchmarks_4threads_tls.txt || true
+    
+    - name: Memtier 4 Threads Benchmark KeyDB with TLS
+      run: |
+        taskset -c 0,1,2,3 memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6391 --protocol=redis --tls --cert=${PWD}/test.crt --key=${PWD}/test.key --cacert=${PWD}/ca.crt --tls-skip-verify -t 4 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=1024 --key-pattern=G:G --key-minimum=1 --key-maximum=1000000 --key-median=500000 --key-stddev=166667 | tee ./benchmarklogs/keydb_benchmarks_4threads_tls.txt || true
+    
+    - name: Memtier 4 Threads Benchmark Dragonfly with TLS
+      run: |
+        taskset -c 0,1,2,3 memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6392 --protocol=redis --tls --cert=${PWD}/client_cert.pem --key=${PWD}/client_priv.pem --cacert=${PWD}/ca.crt --password V3ryS3cur3P@sswOrd -t 4 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=1024 --key-pattern=G:G --key-minimum=1 --key-maximum=1000000 --key-median=500000 --key-stddev=166667 | tee ./benchmarklogs/dragonfly_benchmarks_4threads_tls.txt || true
+    
+    - name: Memtier 4 Threads Benchmark Valkey with TLS
+      run: |
+        taskset -c 0,1,2,3 memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6393 --protocol=redis --tls --cert=${PWD}/test.crt --key=${PWD}/test.key --cacert=${PWD}/ca.crt --tls-skip-verify -t 4 --distinct-client-seed --hide-histogram --requests=2000 --clients=100 --pipeline=1 --data-size=1024 --key-pattern=G:G --key-minimum=1 --key-maximum=1000000 --key-median=500000 --key-stddev=166667 | tee ./benchmarklogs/valkey_benchmarks_4threads_tls.txt || true
 
     - name: Memtier 8 Threads Benchmark Redis with TLS
       run: |
@@ -662,6 +690,30 @@ jobs:
       run: |
         python scripts/parse_memtier_to_md.py ./benchmarklogs/valkey_benchmarks_2threads.txt "Valkey 2 Threads"
         cat ./benchmarklogs/valkey_benchmarks_2threads.md
+
+    - name: Convert Redis 4 Threads Benchmark to MD
+      continue-on-error: true
+      run: |
+        python scripts/parse_memtier_to_md.py ./benchmarklogs/redis_benchmarks_4threads.txt "Redis 4 Threads"
+        cat ./benchmarklogs/redis_benchmarks_4threads.md
+
+    - name: Convert KeyDB 4 Threads Benchmark to MD
+      continue-on-error: true
+      run: |
+        python scripts/parse_memtier_to_md.py ./benchmarklogs/keydb_benchmarks_4threads.txt "KeyDB 4 Threads"
+        cat ./benchmarklogs/keydb_benchmarks_4threads.md
+
+    - name: Convert Dragonfly 4 Threads Benchmark to MD
+      continue-on-error: true
+      run: |
+        python scripts/parse_memtier_to_md.py ./benchmarklogs/dragonfly_benchmarks_4threads.txt "Dragonfly 4 Threads"
+        cat ./benchmarklogs/dragonfly_benchmarks_4threads.md
+
+    - name: Convert Valkey 4 Threads Benchmark to MD
+      continue-on-error: true
+      run: |
+        python scripts/parse_memtier_to_md.py ./benchmarklogs/valkey_benchmarks_4threads.txt "Valkey 4 Threads"
+        cat ./benchmarklogs/valkey_benchmarks_4threads.md
 
     - name: Convert Redis 8 Threads Benchmark to MD
       continue-on-error: true
@@ -734,6 +786,30 @@ jobs:
       run: |
         python scripts/parse_memtier_to_md.py ./benchmarklogs/valkey_benchmarks_2threads_tls.txt "Valkey TLS 2 Threads"
         cat ./benchmarklogs/valkey_benchmarks_2threads_tls.md
+
+    - name: Convert Redis 4 Threads Benchmark with TLS to MD
+      continue-on-error: true
+      run: |
+        python scripts/parse_memtier_to_md.py ./benchmarklogs/redis_benchmarks_4threads_tls.txt "Redis TLS 4 Threads"
+        cat ./benchmarklogs/redis_benchmarks_4threads_tls.md
+    
+    - name: Convert KeyDB 4 Threads Benchmark with TLS to MD
+      continue-on-error: true
+      run: |
+        python scripts/parse_memtier_to_md.py ./benchmarklogs/keydb_benchmarks_4threads_tls.txt "KeyDB TLS 4 Threads"
+        cat ./benchmarklogs/keydb_benchmarks_4threads_tls.md
+    
+    - name: Convert Dragonfly 4 Threads Benchmark with TLS to MD
+      continue-on-error: true
+      run: |
+        python scripts/parse_memtier_to_md.py ./benchmarklogs/dragonfly_benchmarks_4threads_tls.txt "Dragonfly TLS 4 Threads"
+        cat ./benchmarklogs/dragonfly_benchmarks_4threads_tls.md
+
+    - name: Convert Valkey 4 Threads Benchmark with TLS to MD
+      continue-on-error: true
+      run: |
+        python scripts/parse_memtier_to_md.py ./benchmarklogs/valkey_benchmarks_4threads_tls.txt "Valkey TLS 4 Threads"
+        cat ./benchmarklogs/valkey_benchmarks_4threads_tls.md
     
     - name: Convert Redis 8 Threads Benchmark with TLS to MD
       continue-on-error: true
@@ -762,49 +838,49 @@ jobs:
     - name: Combine Redis Benchmark MD Table
       continue-on-error: true
       run: |
-        python scripts/combine_markdown_results.py "./benchmarklogs/redis_benchmarks_1threads.md ./benchmarklogs/redis_benchmarks_2threads.md ./benchmarklogs/redis_benchmarks_8threads.md" redis
+        python scripts/combine_markdown_results.py "./benchmarklogs/redis_benchmarks_1threads.md ./benchmarklogs/redis_benchmarks_2threads.md ./benchmarklogs/redis_benchmarks_4threads.md ./benchmarklogs/redis_benchmarks_8threads.md" redis
         cat ./benchmarklogs/combined_redis_results.md
 
     - name: Combine KeyDB Benchmark MD Table
       continue-on-error: true
       run: |
-        python scripts/combine_markdown_results.py "./benchmarklogs/keydb_benchmarks_1threads.md ./benchmarklogs/keydb_benchmarks_2threads.md ./benchmarklogs/keydb_benchmarks_8threads.md" keydb
+        python scripts/combine_markdown_results.py "./benchmarklogs/keydb_benchmarks_1threads.md ./benchmarklogs/keydb_benchmarks_2threads.md ./benchmarklogs/keydb_benchmarks_4threads.md ./benchmarklogs/keydb_benchmarks_8threads.md" keydb
         cat ./benchmarklogs/combined_keydb_results.md
 
     - name: Combine Dragonfly Benchmark MD Table
       continue-on-error: true
       run: |
-        python scripts/combine_markdown_results.py "./benchmarklogs/dragonfly_benchmarks_1threads.md ./benchmarklogs/dragonfly_benchmarks_2threads.md ./benchmarklogs/dragonfly_benchmarks_8threads.md" dragonfly
+        python scripts/combine_markdown_results.py "./benchmarklogs/dragonfly_benchmarks_1threads.md ./benchmarklogs/dragonfly_benchmarks_2threads.md ./benchmarklogs/dragonfly_benchmarks_4threads.md ./benchmarklogs/dragonfly_benchmarks_8threads.md" dragonfly
         cat ./benchmarklogs/combined_dragonfly_results.md
 
     - name: Combine Valkey Benchmark MD Table
       continue-on-error: true
       run: |
-        python scripts/combine_markdown_results.py "./benchmarklogs/valkey_benchmarks_1threads.md ./benchmarklogs/valkey_benchmarks_2threads.md ./benchmarklogs/valkey_benchmarks_8threads.md" valkey
+        python scripts/combine_markdown_results.py "./benchmarklogs/valkey_benchmarks_1threads.md ./benchmarklogs/valkey_benchmarks_2threads.md ./benchmarklogs/valkey_benchmarks_4threads.md ./benchmarklogs/valkey_benchmarks_8threads.md" valkey
         cat ./benchmarklogs/combined_valkey_results.md
 
     - name: Combine Redis TLS Benchmark MD Table
       continue-on-error: true
       run: |
-        python scripts/combine_markdown_results.py "./benchmarklogs/redis_benchmarks_1threads_tls.md ./benchmarklogs/redis_benchmarks_2threads_tls.md ./benchmarklogs/redis_benchmarks_8threads_tls.md" "redis-tls"
+        python scripts/combine_markdown_results.py "./benchmarklogs/redis_benchmarks_1threads_tls.md ./benchmarklogs/redis_benchmarks_2threads_tls.md ./benchmarklogs/redis_benchmarks_4threads_tls.md ./benchmarklogs/redis_benchmarks_8threads_tls.md" "redis-tls"
         cat ./benchmarklogs/combined_redis-tls_results.md
 
     - name: Combine KeyDB TLS Benchmark MD Table
       continue-on-error: true
       run: |
-        python scripts/combine_markdown_results.py "./benchmarklogs/keydb_benchmarks_1threads_tls.md ./benchmarklogs/keydb_benchmarks_2threads_tls.md ./benchmarklogs/keydb_benchmarks_8threads_tls.md" "keydb-tls"
+        python scripts/combine_markdown_results.py "./benchmarklogs/keydb_benchmarks_1threads_tls.md ./benchmarklogs/keydb_benchmarks_2threads_tls.md ./benchmarklogs/keydb_benchmarks_4threads_tls.md ./benchmarklogs/keydb_benchmarks_8threads_tls.md" "keydb-tls"
         cat ./benchmarklogs/combined_keydb-tls_results.md
 
     - name: Combine Dragonfly TLS Benchmark MD Table
       continue-on-error: true
       run: |
-        python scripts/combine_markdown_results.py "./benchmarklogs/dragonfly_benchmarks_1threads_tls.md ./benchmarklogs/dragonfly_benchmarks_2threads_tls.md ./benchmarklogs/dragonfly_benchmarks_8threads_tls.md" "dragonfly-tls"
+        python scripts/combine_markdown_results.py "./benchmarklogs/dragonfly_benchmarks_1threads_tls.md ./benchmarklogs/dragonfly_benchmarks_2threads_tls.md ./benchmarklogs/dragonfly_benchmarks_4threads_tls.md ./benchmarklogs/dragonfly_benchmarks_8threads_tls.md" "dragonfly-tls"
         cat ./benchmarklogs/combined_dragonfly-tls_results.md
 
     - name: Combine Valkey TLS Benchmark MD Table
       continue-on-error: true
       run: |
-        python scripts/combine_markdown_results.py "./benchmarklogs/valkey_benchmarks_1threads_tls.md ./benchmarklogs/valkey_benchmarks_2threads_tls.md ./benchmarklogs/valkey_benchmarks_8threads_tls.md" "valkey-tls"
+        python scripts/combine_markdown_results.py "./benchmarklogs/valkey_benchmarks_1threads_tls.md ./benchmarklogs/valkey_benchmarks_2threads_tls.md ./benchmarklogs/valkey_benchmarks_4threads_tls.md ./benchmarklogs/valkey_benchmarks_8threads_tls.md" "valkey-tls"
         cat ./benchmarklogs/combined_valkey-tls_results.md
 
     - name: Combine benchmark Markdown results

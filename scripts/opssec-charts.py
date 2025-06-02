@@ -9,6 +9,7 @@ import sys
 EXPECTED_LABELS = [
     "1 Thread Sets", "1 Thread Gets", "1 Thread Totals",
     "2 Threads Sets", "2 Threads Gets", "2 Threads Totals",
+    "4 Threads Sets", "4 Threads Gets", "4 Threads Totals",
     "8 Threads Sets", "8 Threads Gets", "8 Threads Totals"
 ]
 
@@ -27,7 +28,7 @@ def normalize_threads(token):
     num, word = parts
     if num == "1":
         return "1 Thread"
-    elif num in ("2", "8"):
+    elif num in ("2", "4", "8"):
         return f"{num} Threads"
     else:
         return None
