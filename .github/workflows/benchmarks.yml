@@ -94,20 +94,24 @@ jobs:
       run: |
         echo "io-threads 2" >> redis.conf
         echo "io-threads-do-reads yes" >> redis.conf
+        echo "save \"\"" >> redis.conf
 
     - name: Update KeyDB Configuration for non-TLS
       run: |
         echo "server-threads 4" >> keydb.conf
         echo "io-threads-do-reads yes" >> keydb.conf
+        echo "save \"\"" >> keydb.conf
 
     - name: Update Dragonfly Configuration for non-TLS
       run: |
         echo "--proactor_threads=4" >> dragonfly-tls.conf
+        echo "--dbfilename=''" >> dragonfly-tls.conf
 
     - name: Update Valkey Configuration for non-TLS
       run: |
         echo "io-threads 4" >> valkey.conf
         echo "io-threads-do-reads yes" >> valkey.conf
+        echo "save \"\"" >> valkey.conf
 
     - name: Update Redis Configuration for TLS
       run: |
@@ -117,6 +121,7 @@ jobs:
         echo "tls-cert-file /tls/test.crt" >> redis-tls.conf
         echo "tls-key-file /tls/test.key" >> redis-tls.conf
         echo "tls-ca-cert-file /tls/ca.crt" >> redis-tls.conf
+        echo "save \"\"" >> redis-tls.conf
     
     - name: Update KeyDB Configuration for TLS
       run: |
@@ -126,6 +131,7 @@ jobs:
         echo "tls-cert-file /tls/test.crt" >> keydb-tls.conf
         echo "tls-key-file /tls/test.key" >> keydb-tls.conf
         echo "tls-ca-cert-file /tls/ca.crt" >> keydb-tls.conf
+        echo "save \"\"" >> keydb-tls.conf
     
     - name: Update Dragonfly Configuration for TLS
       run: |
@@ -134,6 +140,7 @@ jobs:
         echo "--tls_cert_file=/tls/test.crt" >> dragonfly-tls.conf
         echo "--tls_key_file=/tls/test.key" >> dragonfly-tls.conf
         echo "--tls_ca_cert_file=/tls/ca.crt" >> dragonfly-tls.conf
+        echo "--dbfilename=''" >> dragonfly-tls.conf
 
     - name: Update Valkey Configuration for TLS
       run: |
@@ -144,6 +151,7 @@ jobs:
         echo "tls-key-file /tls/test.key" >> valkey-tls.conf
         echo "tls-ca-cert-file /tls/ca.crt" >> valkey-tls.conf
         echo "tls-auth-clients no" >> valkey-tls.conf
+        echo "save \"\"" >> valkey-tls.conf
 
     - name: Build Redis Docker image
       uses: docker/build-push-action@v6
