@@ -985,6 +985,9 @@ jobs:
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
         
+        # Fetch latest changes
+        git fetch origin
+        
         # Create results directory structure
         mkdir -p results/benchmarks-v2
         
@@ -1027,8 +1030,16 @@ jobs:
           - Run: ${{ github.run_number }}
           - SHA: ${{ github.sha }}"
           
-          # Push changes
-          git push
+          # Try to push, if it fails due to new commits, pull and retry
+          if ! git push origin HEAD; then
+            echo "Push failed, pulling latest changes and retrying..."
+            
+            # Pull with rebase to keep our commit on top
+            git pull --rebase origin ${{ github.ref_name }}
+            
+            # Try push again
+            git push origin HEAD
+          fi
           
           echo "✅ Benchmark results committed and pushed to results/benchmarks-v2/"
         fi
