@@ -22,7 +22,7 @@ on:
       data_size:
         description: 'Data size in bytes'
         required: false
-        default: '1024'
+        default: '16'
         type: string
       key_minimum:
         description: 'Minimum key value'
