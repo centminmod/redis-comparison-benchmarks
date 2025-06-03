@@ -4,6 +4,9 @@ on:
   workflow_dispatch:
     branches: [master]
 
+permissions:
+  contents: write
+
 jobs:
   benchmark:
     runs-on: ubuntu-latest
@@ -987,7 +990,7 @@ jobs:
         
         # Fetch latest changes
         git fetch origin
-        
+
         # Create results directory structure
         mkdir -p results/benchmarks-v2
         
