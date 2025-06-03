@@ -42,7 +42,7 @@ on:
       redis_io_threads:
         description: 'Redis IO threads count'
         required: false
-        default: '2'
+        default: '4'
         type: string
       keydb_server_threads:
         description: 'KeyDB server threads count'
@@ -62,7 +62,7 @@ on:
       valkey_io_threads:
         description: 'Valkey IO threads count'
         required: false
-        default: '2'
+        default: '4'
 
 permissions:
   contents: write
@@ -160,7 +160,7 @@ jobs:
 
     - name: Update Redis Configuration for non-TLS
       run: |
-        echo "io-threads ${{ inputs.redis_io_threads || '2' }}" >> redis.conf
+        echo "io-threads ${{ inputs.redis_io_threads || '4' }}" >> redis.conf
         echo "io-threads-do-reads yes" >> redis.conf
         echo "save \"\"" >> redis.conf
         echo "appendonly no" >> redis.conf
@@ -181,14 +181,14 @@ jobs:
 
     - name: Update Valkey Configuration for non-TLS
       run: |
-        echo "io-threads ${{ inputs.valkey_io_threads || '2' }}" >> valkey.conf
+        echo "io-threads ${{ inputs.valkey_io_threads || '4' }}" >> valkey.conf
         echo "io-threads-do-reads yes" >> valkey.conf
         echo "save \"\"" >> valkey.conf
         echo "appendonly no" >> valkey.conf
 
     - name: Update Redis Configuration for TLS
       run: |
-        echo "io-threads ${{ inputs.redis_io_threads || '2' }}" >> redis-tls.conf
+        echo "io-threads ${{ inputs.redis_io_threads || '4' }}" >> redis-tls.conf
         echo "io-threads-do-reads yes" >> redis-tls.conf
         echo "tls-port 6390" >> redis-tls.conf
         echo "tls-cert-file /tls/test.crt" >> redis-tls.conf
@@ -221,7 +221,7 @@ jobs:
 
     - name: Update Valkey Configuration for TLS
       run: |
-        echo "io-threads ${{ inputs.valkey_io_threads || '2' }}" >> valkey-tls.conf
+        echo "io-threads ${{ inputs.valkey_io_threads || '4' }}" >> valkey-tls.conf
         echo "io-threads-do-reads yes" >> valkey-tls.conf
         echo "tls-port 6393" >> valkey-tls.conf
         echo "tls-cert-file /tls/test.crt" >> valkey-tls.conf
