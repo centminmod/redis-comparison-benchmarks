@@ -579,11 +579,27 @@ jobs:
     - name: Intrinsic latency from inside each container
       continue-on-error: true
       run: |
+        echo "=== Intrinsic Latency Tests ===" | tee ./benchmarklogs/intrinsic_latency.log
+        echo "Test Duration: ${INTRINSIC_LATENCY} seconds" | tee -a ./benchmarklogs/intrinsic_latency.log
+        echo "Timestamp: $(date -u)" | tee -a ./benchmarklogs/intrinsic_latency.log
+        echo "" | tee -a ./benchmarklogs/intrinsic_latency.log
+        
         for container in redis keydb dragonfly valkey redis-tls keydb-tls dragonfly-tls valkey-tls; do
-          echo
-          echo ">>> Container‐side intrinsic latency inside: $container"
-          docker exec "$container" redis-cli --intrinsic-latency $INTRINSIC_LATENCY
+          echo "" | tee -a ./benchmarklogs/intrinsic_latency.log
+          echo ">>> Container-side intrinsic latency inside: $container" | tee -a ./benchmarklogs/intrinsic_latency.log
+          echo "Command: docker exec $container redis-cli --intrinsic-latency ${INTRINSIC_LATENCY}" | tee -a ./benchmarklogs/intrinsic_latency.log
+          echo "---" | tee -a ./benchmarklogs/intrinsic_latency.log
+          
+          # Run the intrinsic latency test and capture output
+          if docker exec "$container" redis-cli --intrinsic-latency ${INTRINSIC_LATENCY} 2>&1 | tee -a ./benchmarklogs/intrinsic_latency.log; then
+            echo "✅ $container intrinsic latency test completed" | tee -a ./benchmarklogs/intrinsic_latency.log
+          else
+            echo "❌ $container intrinsic latency test failed" | tee -a ./benchmarklogs/intrinsic_latency.log
+          fi
+          echo "" | tee -a ./benchmarklogs/intrinsic_latency.log
         done
+        
+        echo "=== Intrinsic Latency Tests Complete ===" | tee -a ./benchmarklogs/intrinsic_latency.log
 
     - name: Install memtier_benchmark
       run: |
