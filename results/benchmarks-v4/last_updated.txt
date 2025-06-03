@@ -1,9 +1,9 @@
-Last updated: Tue Jun  3 16:27:08 UTC 2025
-Workflow run: 2
-Commit SHA: b1fbf61a9fc178938fe7aa9e7d3418cb32a4d6aa
+Last updated: Tue Jun  3 17:13:55 UTC 2025
+Workflow run: 3
+Commit SHA: 164f6f54a9be3fdca6590171d7b40ac5dc6460a0
 Benchmark Config:
-  Requests: 500
+  Requests: 5000
   Clients: 25
   Pipeline: 1
-  Data Size: 8
+  Data Size: 16
   Key Range: 1-1000000
