@@ -42,12 +42,12 @@ on:
       redis_io_threads:
         description: 'Redis IO threads count'
         required: false
-        default: '4'
+        default: '2'
         type: string
       keydb_server_threads:
         description: 'KeyDB server threads count'
         required: false
-        default: '4'
+        default: '2'
         type: string
       # dragonfly_proactor_threads:
       #   description: 'Dragonfly proactor threads count'
@@ -165,7 +165,7 @@ jobs:
       run: |
         echo "#server-thread-affinity true" >> keydb.conf
         echo "min-clients-per-thread 50" >> keydb.conf
-        echo "server-threads ${{ inputs.keydb_server_threads || '4' }}" >> keydb.conf
+        echo "server-threads ${{ inputs.keydb_server_threads || '2' }}" >> keydb.conf
         echo "io-threads-do-reads yes" >> keydb.conf
         echo "save \"\"" >> keydb.conf
         echo "appendonly no" >> keydb.conf
@@ -197,7 +197,7 @@ jobs:
       run: |
         echo "#server-thread-affinity true" >> keydb-tls.conf
         echo "min-clients-per-thread 50" >> keydb-tls.conf
-        echo "server-threads ${{ inputs.keydb_server_threads || '4' }}" >> keydb-tls.conf
+        echo "server-threads ${{ inputs.keydb_server_threads || '2' }}" >> keydb-tls.conf
         echo "io-threads-do-reads yes" >> keydb-tls.conf
         echo "tls-port 6391" >> keydb-tls.conf
         echo "tls-cert-file /tls/test.crt" >> keydb-tls.conf
@@ -561,7 +561,7 @@ jobs:
         echo "INTRINSIC_LATENCY=${{ inputs.intrinsic_latency || '10' }}" >> $GITHUB_ENV
         echo "==== Database Thread Configuration ===="
         echo "Redis IO Threads: ${{ inputs.redis_io_threads || '2' }}"
-        echo "KeyDB Server Threads: ${{ inputs.keydb_server_threads || '4' }}"
+        echo "KeyDB Server Threads: ${{ inputs.keydb_server_threads || '2' }}"
         echo "KeyDB Min Clients Per Thread: ${{ inputs.keydb_min_clients_per_thread || '50' }}"
         echo "Dragonfly Proactor Threads: 4"
         echo "Valkey IO Threads: ${{ inputs.valkey_io_threads || '2' }}"
@@ -1158,7 +1158,7 @@ jobs:
         echo "  Intrinsinc Latency: ${{ inputs.intrinsic_latency || '10' }}" >> results/benchmarks-v4/last_updated.txt
         echo "Server Configs:" >> results/benchmarks-v4/last_updated.txt
         echo "Redis IO Threads: ${{ inputs.redis_io_threads || '2' }}" >> results/benchmarks-v4/last_updated.txt
-        echo "KeyDB Server Threads: ${{ inputs.keydb_server_threads || '4' }}" >> results/benchmarks-v4/last_updated.txt
+        echo "KeyDB Server Threads: ${{ inputs.keydb_server_threads || '2' }}" >> results/benchmarks-v4/last_updated.txt
         echo "KeyDB Min Clients Per Thread: ${{ inputs.keydb_min_clients_per_thread || '50' }}" >> results/benchmarks-v4/last_updated.txt
         echo "Dragonfly Proactor Threads: 4" >> results/benchmarks-v4/last_updated.txt
         echo "Valkey IO Threads: ${{ inputs.valkey_io_threads || '2' }}" >> results/benchmarks-v4/last_updated.txt
