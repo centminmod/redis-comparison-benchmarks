@@ -1,4 +1,4 @@
-name: Benchmark Redis vs KeyDB vs Dragonfly (nopass) vs Valkey
+name: v2 Benchmark Redis vs KeyDB vs Dragonfly vs Valkey
 
 on:
   workflow_dispatch:
