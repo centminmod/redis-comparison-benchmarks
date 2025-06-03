@@ -7,12 +7,12 @@ on:
       requests:
         description: 'Number of requests per thread'
         required: false
-        default: '5000'
+        default: '2000'
         type: string
       clients:
         description: 'Number of clients per thread'
         required: false
-        default: '25'
+        default: '100'
         type: string
       pipeline:
         description: 'Pipeline depth'
@@ -22,7 +22,7 @@ on:
       data_size:
         description: 'Data size in bytes'
         required: false
-        default: '16'
+        default: '1024'
         type: string
       key_minimum:
         description: 'Minimum key value'
