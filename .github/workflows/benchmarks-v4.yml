@@ -137,7 +137,9 @@ jobs:
 
     - name: Update KeyDB Configuration for non-TLS
       run: |
-        echo "server-threads 2" >> keydb.conf
+        echo "#server-thread-affinity true" >> keydb.conf
+        echo "min-clients-per-thread 50" >> keydb.conf
+        echo "server-threads 4" >> keydb.conf
         echo "io-threads-do-reads yes" >> keydb.conf
         echo "save \"\"" >> keydb.conf
         echo "appendonly no" >> keydb.conf
@@ -167,7 +169,9 @@ jobs:
     
     - name: Update KeyDB Configuration for TLS
       run: |
-        echo "io-threads 2" >> keydb-tls.conf
+        echo "#server-thread-affinity true" >> keydb.conf
+        echo "min-clients-per-thread 50" >> keydb.conf
+        echo "io-threads 4" >> keydb-tls.conf
         echo "io-threads-do-reads yes" >> keydb-tls.conf
         echo "tls-port 6391" >> keydb-tls.conf
         echo "tls-cert-file /tls/test.crt" >> keydb-tls.conf
