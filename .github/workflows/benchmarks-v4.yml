@@ -545,6 +545,9 @@ jobs:
         echo "CONFIGURATION ANALYSIS COMPLETE"
         echo "=================================="
 
+    - name: Create Benchmark Logs Directory
+      run: mkdir -p ./benchmarklogs
+
     - name: Set Benchmark Parameters
       run: |
         echo "REQUESTS=${{ inputs.requests || '2000' }}" >> $GITHUB_ENV
@@ -615,9 +618,6 @@ jobs:
     - name: Inspect memtier_benchmark Help
       run: |
         memtier_benchmark --help || true
-
-    - name: Create Benchmark Logs Directory
-      run: mkdir -p ./benchmarklogs
 
     - name: Memtier 1 Threads Benchmark Redis
       run: taskset -c 0 memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6379 --protocol=redis -t 1 --distinct-client-seed --hide-histogram --requests=$REQUESTS --clients=$CLIENTS --pipeline=$PIPELINE --data-size=$DATA_SIZE --key-pattern=G:G --key-minimum=$KEY_MINIMUM --key-maximum=$KEY_MAXIMUM --key-median=$KEY_MEDIAN --key-stddev=$KEY_STDDEV | tee ./benchmarklogs/redis_benchmarks_1threads.txt || true
