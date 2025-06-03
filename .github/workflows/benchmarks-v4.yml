@@ -529,7 +529,7 @@ jobs:
     #       port="${ports[$i]}"
     #       container="${containers[$i]}"
     #       echo ">>> Client‐side intrinsic latency for container \"$container\" @ 127.0.0.1:$port"
-    #       redis-cli -h 127.0.0.1 -p "$port" --intrinsic-latency 5
+    #       redis-cli -h 127.0.0.1 -p "$port" --intrinsic-latency 10
     #     done
 
     - name: Intrinsic latency from inside each container
@@ -538,7 +538,7 @@ jobs:
         for container in redis keydb dragonfly valkey redis-tls keydb-tls dragonfly-tls valkey-tls; do
           echo
           echo ">>> Container‐side intrinsic latency inside: $container"
-          docker exec "$container" redis-cli --intrinsic-latency 5
+          docker exec "$container" redis-cli --intrinsic-latency 10
         done
 
     - name: Install memtier_benchmark
