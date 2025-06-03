@@ -464,8 +464,8 @@ jobs:
         echo ""
         echo "--- KeyDB Specific ---"
         docker exec keydb keydb-cli CONFIG GET "*multimaster*" || echo "No multimaster config"
-        docker exec keydb keydb-cli CO
-        echo ""NFIG GET "*active-replica*" || echo "No active-replica config"
+        docker exec keydb keydb-cli CONFIG GET "*active-replica*" || echo "No active-replica config"
+        echo ""
         echo "--- Memory Settings ---"
         docker exec keydb keydb-cli CONFIG GET "maxmemory*" || echo "Failed to get KeyDB memory config"
         echo "--- Save/Persistence ---"
@@ -746,8 +746,8 @@ jobs:
         echo ""
         echo "--- KeyDB Specific ---"
         docker exec keydb keydb-cli CONFIG GET "*multimaster*" || echo "No multimaster config"
-        docker exec keydb keydb-cli CO
-        echo ""NFIG GET "*active-replica*" || echo "No active-replica config"
+        docker exec keydb keydb-cli CONFIG GET "*active-replica*" || echo "No active-replica config"
+        echo ""
         echo "--- Memory Settings ---"
         docker exec keydb keydb-cli CONFIG GET "maxmemory*" || echo "Failed to get KeyDB memory config"
         echo "--- Save/Persistence ---"
