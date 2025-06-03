@@ -489,7 +489,7 @@ show_container_info() {
 }
 
 # Benchmark execution (matching GitHub workflow style)
-rrun_memtier_benchmark() {
+run_memtier_benchmark() {
   local host=$1
   local port=$2
   local threads=$3
