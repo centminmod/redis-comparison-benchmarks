@@ -853,7 +853,7 @@ jobs:
         cat ./benchmarklogs/keydb_benchmarks_8threads_tls.md
     
     - name: Convert Dragonfly 8 Threads Benchmark with TLS to MD
-      continue
+      continue-on-error: true
       run: |
         python scripts/parse_memtier_to_md.py ./benchmarklogs/dragonfly_benchmarks_8threads_tls.txt "Dragonfly TLS 8 Threads"
         cat ./benchmarklogs/dragonfly_benchmarks_8threads_tls.md 
