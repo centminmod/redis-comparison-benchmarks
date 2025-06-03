@@ -973,7 +973,7 @@ jobs:
         KEYDB_VER=$(docker exec keydb keydb-server --version 2>/dev/null | cut -d' ' -f3 || docker exec keydb keydb-cli INFO server | grep -E "(keydb_version|redis_version)" | head -1 | cut -d: -f2 | tr -d '\r')
         echo "| KeyDB | ${KEYDB_VER} |" >> ./benchmarklogs/versions.md
         
-        DRAGONFLY_VER=$(docker exec dragonfly dragonfly --version 2>/dev/null | cut -d' ' -f2 || docker logs dragonfly 2>&1 | grep -i "version" | head -1 | cut -d' ' -f4 || echo "unknown")
+        DRAGONFLY_VER=$(docker exec dragonfly dragonfly --version 2>/dev/null | cut -d' ' -f2 | head -n1 || docker logs dragonfly 2>&1 | grep -i "version" | head -1 | cut -d' ' -f4 || echo "unknown")
         echo "| Dragonfly | ${DRAGONFLY_VER} |" >> ./benchmarklogs/versions.md
         
         VALKEY_VER=$(docker exec valkey valkey-server --version 2>/dev/null | cut -d' ' -f3 || docker exec valkey redis-cli INFO server | grep -E "(valkey_version|redis_version)" | head -1 | cut -d: -f2 | tr -d '\r')
