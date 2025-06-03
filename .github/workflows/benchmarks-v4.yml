@@ -536,6 +536,7 @@ jobs:
       continue-on-error: true
       run: |
         for container in redis keydb dragonfly valkey redis-tls keydb-tls dragonfly-tls valkey-tls; do
+          echo
           echo ">>> Container‐side intrinsic latency inside: $container"
           docker exec "$container" redis-cli --intrinsic-latency 5
         done
