@@ -978,6 +978,59 @@ jobs:
         
         cat ./benchmarklogs/versions.md
 
+    - name: Commit Benchmark Results to Repository
+      continue-on-error: true
+      run: |
+        # Configure git
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        
+        # Create results directory structure
+        mkdir -p results/benchmarks-v2
+        
+        # Copy files to results directory
+        cp ./benchmarklogs/versions.md results/benchmarks-v2/
+        cp combined_all_results.md results/benchmarks-v2/
+        cp combined_all_results_tls.md results/benchmarks-v2/
+        
+        # Copy chart files (only if they exist)
+        [ -f latency-nonTLS-avg.png ] && cp latency-nonTLS-avg.png results/benchmarks-v2/
+        [ -f latency-nonTLS-p50.png ] && cp latency-nonTLS-p50.png results/benchmarks-v2/
+        [ -f latency-nonTLS-p99.png ] && cp latency-nonTLS-p99.png results/benchmarks-v2/
+        [ -f latency-TLS-avg.png ] && cp latency-TLS-avg.png results/benchmarks-v2/
+        [ -f latency-TLS-p50.png ] && cp latency-TLS-p50.png results/benchmarks-v2/
+        [ -f latency-TLS-p99.png ] && cp latency-TLS-p99.png results/benchmarks-v2/
+        [ -f ops-nonTLS.png ] && cp ops-nonTLS.png results/benchmarks-v2/
+        [ -f ops-TLS.png ] && cp ops-TLS.png results/benchmarks-v2/
+        
+        # Add a timestamp file
+        echo "Last updated: $(date -u)" > results/benchmarks-v2/last_updated.txt
+        echo "Workflow run: ${{ github.run_number }}" >> results/benchmarks-v2/last_updated.txt
+        echo "Commit SHA: ${{ github.sha }}" >> results/benchmarks-v2/last_updated.txt
+        
+        # Stage all changes
+        git add results/benchmarks-v2/
+        
+        # Check if there are changes to commit
+        if git diff --staged --quiet; then
+          echo "No changes to commit"
+        else
+          # Commit changes
+          git commit -m "Update benchmark results from workflow run #${{ github.run_number }}
+          
+          - Updated benchmark results for Redis, KeyDB, Dragonfly, and Valkey
+          - Generated charts for latency and ops/sec metrics
+          - Both TLS and non-TLS configurations tested
+          - Workflow: ${{ github.workflow }}
+          - Run: ${{ github.run_number }}
+          - SHA: ${{ github.sha }}"
+          
+          # Push changes
+          git push
+          
+          echo "✅ Benchmark results committed and pushed to results/benchmarks-v2/"
+        fi
+
     - name: Upload Benchmark Logs and Charts
       uses: actions/upload-artifact@v4
       with:
