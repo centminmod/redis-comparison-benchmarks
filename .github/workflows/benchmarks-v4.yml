@@ -57,7 +57,7 @@ on:
       valkey_io_threads:
         description: 'Valkey IO threads count'
         required: false
-        default: '4'
+        default: '1'
         type: string
 
 permissions:
@@ -1125,6 +1125,7 @@ jobs:
         mkdir -p results/benchmarks-v4
         
         # Copy files to results directory
+        cp ./benchmarklogs/intrinsic_latency.log results/benchmarks-v4/
         cp ./benchmarklogs/versions.md results/benchmarks-v4/
         cp ./benchmarklogs/benchmark_config.md results/benchmarks-v4/
         sed -i '/| ---------------------------------------------------------------------------------------------------------------------------- |/d' combined_all_results.md
@@ -1143,7 +1144,7 @@ jobs:
         [ -f latency-TLS-p99.png ] && cp latency-TLS-p99.png results/benchmarks-v4/
         [ -f ops-nonTLS.png ] && cp ops-nonTLS.png results/benchmarks-v4/
         [ -f ops-TLS.png ] && cp ops-TLS.png results/benchmarks-v4/
-        
+
         # Add a timestamp file
         echo "Last updated: $(date -u)" > results/benchmarks-v4/last_updated.txt
         echo "Workflow run: ${{ github.run_number }}" >> results/benchmarks-v4/last_updated.txt
@@ -1155,6 +1156,12 @@ jobs:
         echo "  Data Size: ${{ inputs.data_size || '1024' }}" >> results/benchmarks-v4/last_updated.txt
         echo "  Key Range: ${{ inputs.key_minimum || '1' }}-${{ inputs.key_maximum || '1000000' }}" >> results/benchmarks-v4/last_updated.txt
         echo "  Intrinsinc Latency: ${{ inputs.intrinsic_latency || '10' }}" >> results/benchmarks-v4/last_updated.txt
+        echo "Server Configs:" >> results/benchmarks-v4/last_updated.txt
+        echo "Redis IO Threads: ${{ inputs.redis_io_threads || '2' }}" >> results/benchmarks-v4/last_updated.txt
+        echo "KeyDB Server Threads: ${{ inputs.keydb_server_threads || '4' }}" >> results/benchmarks-v4/last_updated.txt
+        echo "KeyDB Min Clients Per Thread: ${{ inputs.keydb_min_clients_per_thread || '50' }}" >> results/benchmarks-v4/last_updated.txt
+        echo "Dragonfly Proactor Threads: 4" >> results/benchmarks-v4/last_updated.txt
+        echo "Valkey IO Threads: ${{ inputs.valkey_io_threads || '2' }}" >> results/benchmarks-v4/last_updated.txt
         
         # Stage all changes
         git add results/benchmarks-v4/
