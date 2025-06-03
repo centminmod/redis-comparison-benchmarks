@@ -34,6 +34,11 @@ on:
         required: false
         default: '1000000'
         type: string
+      intrinsic_latency:
+        description: 'intrinsic latency value'
+        required: false
+        default: '10'
+        type: string
 
 permissions:
   contents: write
@@ -82,6 +87,7 @@ jobs:
         echo "Key Maximum: ${{ inputs.key_maximum || '1000000' }}"
         echo "Key Median: $(( (${{ inputs.key_maximum || '1000000' }} + ${{ inputs.key_minimum || '1' }}) / 2 ))"
         echo "Key Stddev: $(( (${{ inputs.key_maximum || '1000000' }} - ${{ inputs.key_minimum || '1' }}) / 6 ))"
+        echo "Intrinsic Latency: ${{ inputs.intrinsic_latency || '10' }}"
 
     - name: Update System
       run: |
@@ -519,6 +525,18 @@ jobs:
         echo "CONFIGURATION ANALYSIS COMPLETE"
         echo "=================================="
 
+    - name: Set Benchmark Parameters
+      run: |
+        echo "REQUESTS=${{ inputs.requests || '2000' }}" >> $GITHUB_ENV
+        echo "CLIENTS=${{ inputs.clients || '100' }}" >> $GITHUB_ENV
+        echo "PIPELINE=${{ inputs.pipeline || '1' }}" >> $GITHUB_ENV
+        echo "DATA_SIZE=${{ inputs.data_size || '1024' }}" >> $GITHUB_ENV
+        echo "KEY_MINIMUM=${{ inputs.key_minimum || '1' }}" >> $GITHUB_ENV
+        echo "KEY_MAXIMUM=${{ inputs.key_maximum || '1000000' }}" >> $GITHUB_ENV
+        echo "KEY_MEDIAN=$(( (${{ inputs.key_maximum || '1000000' }} + ${{ inputs.key_minimum || '1' }}) / 2 ))" >> $GITHUB_ENV
+        echo "KEY_STDDEV=$(( (${{ inputs.key_maximum || '1000000' }} - ${{ inputs.key_minimum || '1' }}) / 6 ))" >> $GITHUB_ENV
+        echo "INTRINSIC_LATENCY=${{ inputs.intrinsic_latency || '10' }}" >> $GITHUB_ENV
+
     # - name: Intrinsic latency from client (localhost ports, with container names)
     #   continue-on-error: true
     #   run: |
@@ -529,7 +547,7 @@ jobs:
     #       port="${ports[$i]}"
     #       container="${containers[$i]}"
     #       echo ">>> Client‐side intrinsic latency for container \"$container\" @ 127.0.0.1:$port"
-    #       redis-cli -h 127.0.0.1 -p "$port" --intrinsic-latency 10
+    #       redis-cli -h 127.0.0.1 -p "$port" --intrinsic-latency $INTRINSIC_LATENCY
     #     done
 
     - name: Intrinsic latency from inside each container
@@ -538,7 +556,7 @@ jobs:
         for container in redis keydb dragonfly valkey redis-tls keydb-tls dragonfly-tls valkey-tls; do
           echo
           echo ">>> Container‐side intrinsic latency inside: $container"
-          docker exec "$container" redis-cli --intrinsic-latency 10
+          docker exec "$container" redis-cli --intrinsic-latency $INTRINSIC_LATENCY
         done
 
     - name: Install memtier_benchmark
@@ -558,17 +576,6 @@ jobs:
 
     - name: Create Benchmark Logs Directory
       run: mkdir -p ./benchmarklogs
-
-    - name: Set Benchmark Parameters
-      run: |
-        echo "REQUESTS=${{ inputs.requests || '2000' }}" >> $GITHUB_ENV
-        echo "CLIENTS=${{ inputs.clients || '100' }}" >> $GITHUB_ENV
-        echo "PIPELINE=${{ inputs.pipeline || '1' }}" >> $GITHUB_ENV
-        echo "DATA_SIZE=${{ inputs.data_size || '1024' }}" >> $GITHUB_ENV
-        echo "KEY_MINIMUM=${{ inputs.key_minimum || '1' }}" >> $GITHUB_ENV
-        echo "KEY_MAXIMUM=${{ inputs.key_maximum || '1000000' }}" >> $GITHUB_ENV
-        echo "KEY_MEDIAN=$(( (${{ inputs.key_maximum || '1000000' }} + ${{ inputs.key_minimum || '1' }}) / 2 ))" >> $GITHUB_ENV
-        echo "KEY_STDDEV=$(( (${{ inputs.key_maximum || '1000000' }} - ${{ inputs.key_minimum || '1' }}) / 6 ))" >> $GITHUB_ENV
 
     - name: Memtier 1 Threads Benchmark Redis
       run: taskset -c 0 memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6379 --protocol=redis -t 1 --distinct-client-seed --hide-histogram --requests=$REQUESTS --clients=$CLIENTS --pipeline=$PIPELINE --data-size=$DATA_SIZE --key-pattern=G:G --key-minimum=$KEY_MINIMUM --key-maximum=$KEY_MAXIMUM --key-median=$KEY_MEDIAN --key-stddev=$KEY_STDDEV | tee ./benchmarklogs/redis_benchmarks_1threads.txt || true
@@ -1055,6 +1062,7 @@ jobs:
         echo "| Key Maximum | ${{ inputs.key_maximum || '1000000' }} |" >> ./benchmarklogs/benchmark_config.md
         echo "| Ratio | 1:15 (Read:Write) |" >> ./benchmarklogs/benchmark_config.md
         echo "| Key Pattern | G:G (Gaussian) |" >> ./benchmarklogs/benchmark_config.md
+        echo "| Intrinsic Latency | ${{ inputs.intrinsic_latency || '10' }} |" >> ./benchmarklogs/benchmark_config.md
         echo "" >> ./benchmarklogs/benchmark_config.md
         echo "Run Date: $(date -u)" >> ./benchmarklogs/benchmark_config.md
         echo "Workflow Run: ${{ github.run_number }}" >> ./benchmarklogs/benchmark_config.md
@@ -1104,6 +1112,7 @@ jobs:
         echo "  Pipeline: ${{ inputs.pipeline || '1' }}" >> results/benchmarks-v4/last_updated.txt
         echo "  Data Size: ${{ inputs.data_size || '1024' }}" >> results/benchmarks-v4/last_updated.txt
         echo "  Key Range: ${{ inputs.key_minimum || '1' }}-${{ inputs.key_maximum || '1000000' }}" >> results/benchmarks-v4/last_updated.txt
+        echo "  Intrinsinc Latency: ${{ inputs.intrinsic_latency || '10' }}" >> results/benchmarks-v4/last_updated.txt
         
         # Stage all changes
         git add results/benchmarks-v4/
@@ -1118,7 +1127,7 @@ jobs:
           - Updated benchmark results for Redis, KeyDB, Dragonfly, and Valkey
           - Generated charts for latency and ops/sec metrics
           - Both TLS and non-TLS configurations tested
-          - Custom parameters: requests=${{ inputs.requests || '2000' }}, clients=${{ inputs.clients || '100' }}, pipeline=${{ inputs.pipeline || '1' }}, data_size=${{ inputs.data_size || '1024' }}
+          - Custom parameters: requests=${{ inputs.requests || '2000' }}, clients=${{ inputs.clients || '100' }}, pipeline=${{ inputs.pipeline || '1' }}, intrinsic_latency=${{ inputs.intrinsic_latency || '10' }}, data_size=${{ inputs.data_size || '1024' }}
           - Key range: ${{ inputs.key_minimum || '1' }}-${{ inputs.key_maximum || '1000000' }}
           - Workflow: ${{ github.workflow }}
           - Run: ${{ github.run_number }}
