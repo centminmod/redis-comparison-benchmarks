@@ -998,6 +998,8 @@ jobs:
         cp ./benchmarklogs/versions.md results/benchmarks-v2/
         sed -i '/| ---------------------------------------------------------------------------------------------------------------------------- |/d' combined_all_results.md
         sed -i '/| ---------------------------------------------------------------------------------------------------------------------------- |/d' combined_all_results_tls.md
+        sed -i '/| Waits |/d' combined_all_results.md
+        sed -i '/| Waits |/d' combined_all_results_tls.md
         cp combined_all_results.md results/benchmarks-v2/
         cp combined_all_results_tls.md results/benchmarks-v2/
         
