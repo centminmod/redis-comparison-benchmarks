@@ -49,11 +49,11 @@ on:
         required: false
         default: '4'
         type: string
-      keydb_min_clients_per_thread:
-        description: 'KeyDB minimum clients per thread'
-        required: false
-        default: '50'
-        type: string
+      # keydb_min_clients_per_thread:
+      #   description: 'KeyDB minimum clients per thread'
+      #   required: false
+      #   default: '50'
+      #   type: string
       dragonfly_proactor_threads:
         description: 'Dragonfly proactor threads count'
         required: false
@@ -168,7 +168,7 @@ jobs:
     - name: Update KeyDB Configuration for non-TLS
       run: |
         echo "#server-thread-affinity true" >> keydb.conf
-        echo "min-clients-per-thread ${{ inputs.keydb_min_clients_per_thread || '50' }}" >> keydb.conf
+        echo "min-clients-per-thread 50" >> keydb.conf
         echo "server-threads ${{ inputs.keydb_server_threads || '4' }}" >> keydb.conf
         echo "io-threads-do-reads yes" >> keydb.conf
         echo "save \"\"" >> keydb.conf
@@ -200,7 +200,7 @@ jobs:
     - name: Update KeyDB Configuration for TLS
       run: |
         echo "#server-thread-affinity true" >> keydb-tls.conf
-        echo "min-clients-per-thread ${{ inputs.keydb_min_clients_per_thread || '50' }}" >> keydb-tls.conf
+        echo "min-clients-per-thread 50" >> keydb-tls.conf
         echo "server-threads ${{ inputs.keydb_server_threads || '4' }}" >> keydb-tls.conf
         echo "io-threads-do-reads yes" >> keydb-tls.conf
         echo "tls-port 6391" >> keydb-tls.conf
