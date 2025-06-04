@@ -170,145 +170,73 @@ def parse_markdown(filepath):
     return data
 
 
-def plot_grouped_bars(all_data, metric_key, title_suffix, ylabel, out_filename,
-                        redis_io_threads, keydb_server_threads, dragonfly_proactor_threads, valkey_io_threads,
-                        requests, clients, pipeline, data_size):
-    """
-    Build a grouped‐bar chart from all_data[db][metric_key][label]
-    and save it to out_filename. Optimized for 12 data points:
-    - Larger figure size for better spacing
-    - Smaller font sizes for data labels
-    - Rotated x-axis labels for better readability
-    - Adjusted bar width and spacing
-    """
+def plot_latency_chart_single(all_data, metric_key, title_suffix, ylabel, out_filename, redis_io_threads, keydb_server_threads, dragonfly_proactor_threads, valkey_io_threads, requests, clients, pipeline, data_size):
+    """Build single grouped-bar chart with improved spacing and fonts"""
     vals = []
     for db in DBS:
         row = [all_data[db][metric_key].get(lbl, 0.0) for lbl in EXPECTED_LABELS]
         vals.append(row)
-    arr = np.array(vals)  # shape = (4, 12)
+    arr = np.array(vals)
 
     x = np.arange(len(EXPECTED_LABELS))
-    width = 0.18  # Reduced from 0.2 to give more space
+    width = 0.15
     offsets = [-1.5 * width, -0.5 * width, 0.5 * width, 1.5 * width]
 
-    # Increased figure size for better spacing with 12 data points
-    fig, ax = plt.subplots(figsize=(20, 12))
+    fig, ax = plt.subplots(figsize=(24, 10))
 
-    DBS_WITH_THREADS = [
-        f"Redis io-threads {redis_io_threads}",
-        f"KeyDB io-threads {keydb_server_threads}",
-        f"Dragonfly proactor_threads {dragonfly_proactor_threads}",
-        f"Valkey io-threads {valkey_io_threads}"
-    ]
+    DBS_WITH_THREADS = [f"Redis io-threads {redis_io_threads}", f"KeyDB io-threads {keydb_server_threads}", f"Dragonfly proactor_threads {dragonfly_proactor_threads}", f"Valkey io-threads {valkey_io_threads}"]
 
     for i, db_label in enumerate(DBS_WITH_THREADS):
-        ax.bar(
-            x + offsets[i],
-            arr[i], # arr is ordered by DBS, not DBS_WITH_THREADS
-            width,
-            label=db_label
-        )
+        ax.bar(x + offsets[i], arr[i], width, label=db_label)
 
-    title_parts = [
-        "Redis vs KeyDB vs Dragonfly vs Valkey – Memtier Benchmarks (4 vCPU VM)",
-        f"(requests:{requests} clients:{clients} pipeline:{pipeline} data_size:{data_size})",
-        "(lower is better) by George Liu"
-    ]
-    ax.set_title(
-        "\n".join(title_parts),
-        fontsize=18,
-        fontweight='bold',
-        loc='center'
-    )
-    ax.set_ylabel(ylabel, fontsize=14, fontweight='semibold')
+    title_parts = ["Redis vs KeyDB vs Dragonfly vs Valkey – Memtier Benchmarks (4 vCPU VM)", f"(requests:{requests} clients:{clients} pipeline:{pipeline} data_size:{data_size})", "(lower is better) by George Liu"]
+    ax.set_title("\n".join(title_parts), fontsize=20, fontweight='bold', pad=20)
+    ax.set_ylabel(ylabel, fontsize=16, fontweight='semibold')
     ax.grid(axis='y', linestyle='--', linewidth=0.5, alpha=0.7)
     ax.set_xticks(x)
-    # Rotate x-axis labels for better readability with 12 labels
-    ax.set_xticklabels(EXPECTED_LABELS, rotation=45, ha="right", fontsize=9)
-    
-    # Position legend outside the plot area to avoid masking data
-    ax.legend(fontsize=9.5, bbox_to_anchor=(1.02, 1), loc='upper left', borderaxespad=0)
-    
-    ax.tick_params(axis='y', labelsize=12)
+    ax.set_xticklabels(EXPECTED_LABELS, rotation=35, ha="right", fontsize=11)
+    ax.legend(fontsize=12, bbox_to_anchor=(1.02, 1), loc='upper left')
+    ax.tick_params(axis='y', labelsize=13)
 
-    # Only add annotations for non-zero values
     for i, db in enumerate(DBS):
         for j, height in enumerate(arr[i]):
-            if height > 0:  # Only annotate non-zero bars
-                ax.annotate(
-                    f"{height:.2f}",
-                    xy=(x[j] + offsets[i], height),
-                    xytext=(0, 3),
-                    textcoords="offset points",
-                    ha="center", va="bottom",
-                    fontsize=7  # Reduced from 9 to 7
-                )
+            if height > 0:
+                ax.annotate(f"{height:.2f}", xy=(x[j] + offsets[i], height), xytext=(0, 4), textcoords="offset points", ha="center", va="bottom", fontsize=8)
 
-    plt.tight_layout(rect=[0, 0, 0.85, 0.94])  # Adjusted to leave space for external legend
-    print(f"[DEBUG] Saving plot to {out_filename}")
-    plt.savefig(out_filename, dpi=300, bbox_inches='tight')  # Higher DPI for better quality
+    plt.tight_layout()
+    plt.savefig(out_filename, dpi=300, bbox_inches='tight')
     plt.close()
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Generate latency charts from benchmark data.")
-    parser.add_argument("md_path", help="Path to the markdown file with benchmark results (e.g., combined_all_results.md)")
-    parser.add_argument("prefix", help="Prefix for output file names (e.g., nonTLS or TLS)")
-    parser.add_argument("--redis_io_threads", default='2', help="Redis IO threads")
-    parser.add_argument("--keydb_server_threads", default='2', help="KeyDB server threads")
-    parser.add_argument("--dragonfly_proactor_threads", default='3', help="Dragonfly proactor threads")
-    parser.add_argument("--valkey_io_threads", default='1', help="Valkey IO threads")
-    parser.add_argument("--requests", default='2000', help="Number of requests")
-    parser.add_argument("--clients", default='100', help="Number of clients")
-    parser.add_argument("--pipeline", default='1', help="Pipeline depth")
-    parser.add_argument("--data_size", default='1024', help="Data size in bytes")
 
-    args = parser.parse_args()
-
-    print(f"[DEBUG] Running latency-charts.py on '{args.md_path}' with prefix '{args.prefix}'")
-    data = parse_markdown(args.md_path)
-
-    plot_grouped_bars(
-        data,
-        "avg",
-        "Average Latency (ms)",
-        "Latency (ms)",
-        f"latency-{args.prefix}-avg.png",
-        args.redis_io_threads,
-        args.keydb_server_threads,
-        args.dragonfly_proactor_threads,
-        args.valkey_io_threads,
-        args.requests,
-        args.clients,
-        args.pipeline,
-        args.data_size
-    )
-    plot_grouped_bars(
-        data,
-        "p50",
-        "p50 Latency (ms)",
-        "Latency (ms)",
-        f"latency-{args.prefix}-p50.png",
-        args.redis_io_threads,
-        args.keydb_server_threads,
-        args.dragonfly_proactor_threads,
-        args.valkey_io_threads,
-        args.requests,
-        args.clients,
-        args.pipeline,
-        args.data_size
-    )
-    plot_grouped_bars(
-        data,
-        "p99",
-        "p99 Latency (ms)",
-        "Latency (ms)",
-        f"latency-{args.prefix}-p99.png",
-        args.redis_io_threads,
-        args.keydb_server_threads,
-        args.dragonfly_proactor_threads,
-        args.valkey_io_threads,
-        args.requests,
-        args.clients,
-        args.pipeline,
-        args.data_size
-    )
+def plot_latency_chart_grid(all_data, metric_key, title_suffix, ylabel, out_filename, redis_io_threads, keydb_server_threads, dragonfly_proactor_threads, valkey_io_threads, requests, clients, pipeline, data_size):
+    """Build 2x2 subplot grid - one subplot per thread count"""
+    thread_counts = ["1 Thread", "2 Threads", "4 Threads", "8 Threads"]
+    operations = ["Sets", "Gets", "Totals"]
+    
+    fig, axes = plt.subplots(2, 2, figsize=(16, 12))
+    axes = axes.flatten()
+    
+    DBS_WITH_THREADS = [f"Redis io-threads {redis_io_threads}", f"KeyDB io-threads {keydb_server_threads}", f"Dragonfly proactor_threads {dragonfly_proactor_threads}", f"Valkey io-threads {valkey_io_threads}"]
+    
+    colors = plt.cm.Set1(np.linspace(0, 1, len(DBS)))
+    
+    for idx, thread_count in enumerate(thread_counts):
+        ax = axes[idx]
+        x = np.arange(len(operations))
+        width = 0.2
+        offsets = [-1.5 * width, -0.5 * width, 0.5 * width, 1.5 * width]
+        
+        for i, db in enumerate(DBS):
+            values = []
+            for op in operations:
+                label = f"{thread_count} {op}"
+                values.append(all_data[db][metric_key].get(label, 0.0))
+            
+            bars = ax.bar(x + offsets[i], values, width, label=DBS_WITH_THREADS[i], color=colors[i])
+            
+            for j, height in enumerate(values):
+                if height > 0:
+                    ax.annotate(f"{height:.2f}", xy=(x[j] + offsets[i], height), xytext=(0, 3), textcoords="offset points", ha="center", va="bottom", fontsize=9)
+        
+        ax.set_title(f"{thread_count}", fontsize=14, fontweight='bold')
+        ax.set_ylabel(ylabel, fontsize=12
