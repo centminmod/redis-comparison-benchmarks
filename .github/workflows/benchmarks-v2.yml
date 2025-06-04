@@ -1025,6 +1025,7 @@ jobs:
         cp ./scripts/opssec-charts.py results/benchmarks-v2/
         cp ./scripts/combine_markdown_results.py results/benchmarks-v2/
         cp ./scripts/parse_memtier_to_md.py results/benchmarks-v2/
+        cp ./scripts/benchmark_charts.py results/benchmarks-v2/
         cp ./docker-compose.yml results/benchmarks-v2/
         cp ./Dockerfile-* results/benchmarks-v2/
 

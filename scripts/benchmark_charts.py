@@ -28,14 +28,15 @@ def parse_markdown_table(file_path):
     data = []
     lines = content.split('\n')
     
-    current_db = None
-    current_threads = None
-    
     for line_num, line in enumerate(lines):
         line = line.strip()
         
         # Skip empty lines and separator lines
-        if not line or '---' in line or line.startswith('| Databases'):
+        if not line or '---' in line:
+            continue
+            
+        # Skip header lines that start with |
+        if line.startswith('|'):
             continue
             
         # Skip if line doesn't contain pipe characters
@@ -45,84 +46,81 @@ def parse_markdown_table(file_path):
         # Split by pipe and clean up
         parts = [p.strip() for p in line.split('|')]
         
-        # Remove empty first/last elements that come from leading/trailing pipes
-        if len(parts) > 0 and parts[0] == '':
-            parts = parts[1:]
+        # Remove empty last element if line ends with |
         if len(parts) > 0 and parts[-1] == '':
             parts = parts[:-1]
         
-        # Skip if we don't have enough columns
-        if len(parts) < 9:
+        # Skip if we don't have enough columns (should have at least 10: db_info, type, ops, hits, misses, avg_lat, p50, p99, p99.9, kb)
+        if len(parts) < 10:
+            print(f"Skipping line {line_num} - not enough columns: {len(parts)} parts: {parts}")
             continue
         
-        # Check for database header (contains "Thread" in first column)
-        first_col = parts[0]
-        if 'Thread' in first_col:
-            # Parse database name and thread count
-            # Examples: "Redis 1 Thread", "KeyDB TLS 2 Threads", "Dragonfly 4 Threads"
-            words = first_col.split()
+        # Parse the first column which contains database info like "Redis TLS 1 Thread"
+        db_info = parts[0]
+        op_type = parts[1]
+        
+        # Skip if this isn't a data row with valid operation type
+        if op_type not in ['Sets', 'Gets', 'Totals']:
+            print(f"Skipping line {line_num} - invalid op_type: '{op_type}'")
+            continue
             
-            # Find database name (first word that's not TLS)
-            db_name = None
-            thread_count = None
+        # Parse database name and thread count from first column
+        # Examples: "Redis TLS 1 Thread", "KeyDB 2 Threads", "Dragonfly 4 Threads"
+        db_words = db_info.split()
+        
+        # Find database name (first word that's a known database)
+        database = None
+        for word in db_words:
+            if word in ['Redis', 'KeyDB', 'Dragonfly', 'Valkey']:
+                database = word
+                break
+        
+        if not database:
+            print(f"Skipping line {line_num} - couldn't find database name in: '{db_info}'")
+            continue
             
-            for i, word in enumerate(words):
-                if word in ['Redis', 'KeyDB', 'Dragonfly', 'Valkey']:
-                    db_name = word
-                    break
-            
-            # Find thread count (look for number followed by "Thread")
-            for i, word in enumerate(words):
-                if word.isdigit() and i + 1 < len(words) and 'Thread' in words[i + 1]:
-                    thread_count = int(word)
-                    break
-            
-            if db_name and thread_count:
-                current_db = db_name
-                current_threads = thread_count
-                print(f"Found database header: {current_db} with {current_threads} threads")
+        # Find thread count (look for number followed by "Thread")
+        threads = None
+        for i, word in enumerate(db_words):
+            if word.isdigit() and i + 1 < len(db_words) and 'Thread' in db_words[i + 1]:
+                threads = int(word)
+                break
+        
+        if threads is None:
+            print(f"Skipping line {line_num} - couldn't find thread count in: '{db_info}'")
             continue
         
-        # Skip if we don't have current database context
-        if current_db is None or current_threads is None:
-            continue
-            
-        # Check if this is a data row with operation type
-        if len(parts) >= 9:
-            op_type = parts[1] if len(parts) > 1 else parts[0]
-            
-            if op_type in ['Sets', 'Gets', 'Totals']:
+        try:
+            # Parse numeric values, handling "---" as 0
+            def safe_float(val):
+                if val == '---' or val == '':
+                    return 0.0
                 try:
-                    # Parse numeric values, handling "---" as 0
-                    def safe_float(val):
-                        if val == '---' or val == '':
-                            return 0.0
-                        try:
-                            return float(val)
-                        except:
-                            return 0.0
-                    
-                    row_data = {
-                        'Database': current_db,
-                        'Threads': current_threads,
-                        'Type': op_type,
-                        'Ops_sec': safe_float(parts[2]),
-                        'Hits_sec': safe_float(parts[3]),
-                        'Misses_sec': safe_float(parts[4]),
-                        'Avg_Latency': safe_float(parts[5]),
-                        'p50_Latency': safe_float(parts[6]),
-                        'p99_Latency': safe_float(parts[7]),
-                        'p99_9_Latency': safe_float(parts[8]),
-                        'KB_sec': safe_float(parts[9]) if len(parts) > 9 else 0.0
-                    }
-                    data.append(row_data)
-                    print(f"Added row: {current_db} {current_threads}T {op_type} - {row_data['Ops_sec']} ops/sec")
-                    
-                except Exception as e:
-                    print(f"Error parsing line {line_num}: {line}")
-                    print(f"Parts: {parts}")
-                    print(f"Error: {e}")
-                    continue
+                    return float(val)
+                except:
+                    return 0.0
+            
+            row_data = {
+                'Database': database,
+                'Threads': threads,
+                'Type': op_type,
+                'Ops_sec': safe_float(parts[2]),
+                'Hits_sec': safe_float(parts[3]),
+                'Misses_sec': safe_float(parts[4]),
+                'Avg_Latency': safe_float(parts[5]),
+                'p50_Latency': safe_float(parts[6]),
+                'p99_Latency': safe_float(parts[7]),
+                'p99_9_Latency': safe_float(parts[8]),
+                'KB_sec': safe_float(parts[9])
+            }
+            data.append(row_data)
+            print(f"Added row: {database} {threads}T {op_type} - {row_data['Ops_sec']} ops/sec")
+            
+        except Exception as e:
+            print(f"Error parsing line {line_num}: {line}")
+            print(f"Parts: {parts}")
+            print(f"Error: {e}")
+            continue
     
     df = pd.DataFrame(data)
     print(f"\nParsed {len(df)} rows")
@@ -135,11 +133,10 @@ def parse_markdown_table(file_path):
         print(df.head())
     else:
         print("No data parsed! Debugging the file content...")
-        print("\nFirst 10 lines of file:")
-        with open(file_path, 'r') as f:
-            for i, line in enumerate(f):
-                if i < 10:
-                    print(f"Line {i+1}: {repr(line.strip())}")
+        print("\nSample data lines:")
+        data_lines = [line for line in lines if '|' in line and not line.startswith('|') and '---' not in line]
+        for i, line in enumerate(data_lines[:5]):
+            print(f"Data line {i+1}: {repr(line.strip())}")
     
     return df
 
