@@ -10,7 +10,7 @@
 | Key Maximum | 1000000 |
 | Ratio | 1:15 (Read:Write) |
 | Key Pattern | G:G (Gaussian) |
-| Intrinsic Latency | 10 |
+| Intrinsic Latency | 5 |
 
-Run Date: Wed Jun  4 03:39:24 UTC 2025
-Workflow Run: 27
+Run Date: Wed Jun  4 04:27:17 UTC 2025
+Workflow Run: 28
