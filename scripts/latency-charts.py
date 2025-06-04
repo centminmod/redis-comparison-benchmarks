@@ -199,7 +199,7 @@ def plot_grouped_bars(all_data, metric_key, title_suffix, ylabel, out_filename):
         )
 
     ax.set_title(
-        "Redis vs KeyDB vs Dragonfly vs Valkey – Memtier Benchmarks (4 vCPU VM)\nby George Liu",
+        "Redis vs KeyDB vs Dragonfly vs Valkey – Memtier Benchmarks (4 vCPU VM)\n(lower is better) by George Liu",
         fontsize=18,
         fontweight='bold',
         loc='center'

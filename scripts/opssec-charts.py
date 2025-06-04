@@ -184,7 +184,7 @@ def plot_ops_chart(all_data, out_filename):
         )
 
     ax.set_title(
-        "Redis vs KeyDB vs Dragonfly vs Valkey – Memtier Benchmarks (4 vCPU VM)\nby George Liu",
+        "Redis vs KeyDB vs Dragonfly vs Valkey – Memtier Benchmarks (4 vCPU VM)\n(higher is better) by George Liu",
         fontsize=18,
         fontweight='bold',
         loc='center'
