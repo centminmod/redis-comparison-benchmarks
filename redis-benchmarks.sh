@@ -9,6 +9,18 @@ CLEANUP='n'  # Set to 'y' to cleanup containers after benchmarks, 'n' to keep th
 USE_DOCKER_COMPOSE=true
 CPUS=$(nproc)
 
+# Thread Configuration (configurable)
+REDIS_IO_THREADS=${REDIS_IO_THREADS:-$CPUS}
+KEYDB_SERVER_THREADS=${KEYDB_SERVER_THREADS:-$CPUS}
+DRAGONFLY_PROACTOR_THREADS=${DRAGONFLY_PROACTOR_THREADS:-$CPUS}
+VALKEY_IO_THREADS=${VALKEY_IO_THREADS:-$CPUS}
+
+# Benchmark Parameters (configurable)
+BENCHMARK_REQUESTS=${BENCHMARK_REQUESTS:-2000}
+BENCHMARK_CLIENTS=${BENCHMARK_CLIENTS:-100}
+BENCHMARK_PIPELINE=${BENCHMARK_PIPELINE:-1}
+BENCHMARK_DATA_SIZE=${BENCHMARK_DATA_SIZE:-384}
+
 # Port Configuration
 REDIS_HOST_PORT=6377        # Changed from 6379 to avoid conflict
 KEYDB_HOST_PORT=6380
@@ -67,6 +79,8 @@ echo "REDIS COMPARISON BENCHMARK SUITE"
 echo "Configuration: CLEANUP=$CLEANUP, USE_DOCKER_COMPOSE=$USE_DOCKER_COMPOSE"
 echo "Docker Compose Command: $COMPOSE_CMD"
 echo "Port Configuration: Redis=${REDIS_HOST_PORT}, KeyDB=${KEYDB_HOST_PORT}, Dragonfly=${DRAGONFLY_HOST_PORT}, Valkey=${VALKEY_HOST_PORT}"
+echo "Thread Configuration: Redis=${REDIS_IO_THREADS}, KeyDB=${KEYDB_SERVER_THREADS}, Dragonfly=${DRAGONFLY_PROACTOR_THREADS}, Valkey=${VALKEY_IO_THREADS}"
+echo "Benchmark Parameters: requests=${BENCHMARK_REQUESTS}, clients=${BENCHMARK_CLIENTS}, pipeline=${BENCHMARK_PIPELINE}, data_size=${BENCHMARK_DATA_SIZE}"
 echo "=================================="
 
 # System Information
@@ -125,21 +139,21 @@ update_configurations() {
     
     # Non-TLS configurations
     cat >> redis.conf << EOF
-io-threads $CPUS
+io-threads $REDIS_IO_THREADS
 io-threads-do-reads yes
 save ""
 appendonly no
 EOF
 
     cat >> keydb.conf << EOF
-server-threads $CPUS
+server-threads $KEYDB_SERVER_THREADS
 io-threads-do-reads yes
 save ""
 appendonly no
 EOF
 
     cat >> valkey.conf << EOF
-io-threads $CPUS
+io-threads $VALKEY_IO_THREADS
 io-threads-do-reads yes
 save ""
 appendonly no
@@ -147,7 +161,7 @@ EOF
 
     # TLS configurations
     cat >> redis-tls.conf << EOF
-io-threads $CPUS
+io-threads $REDIS_IO_THREADS
 io-threads-do-reads yes
 tls-port 6390
 tls-cert-file /tls/test.crt
@@ -158,7 +172,7 @@ appendonly no
 EOF
 
     cat >> keydb-tls.conf << EOF
-io-threads $CPUS
+io-threads $KEYDB_SERVER_THREADS
 io-threads-do-reads yes
 tls-port 6391
 tls-cert-file /tls/test.crt
@@ -169,7 +183,7 @@ appendonly no
 EOF
 
     cat >> dragonfly-tls.conf << EOF
---proactor_threads=$CPUS
+--proactor_threads=$DRAGONFLY_PROACTOR_THREADS
 --port=6392
 --tls_cert_file=/tls/test.crt
 --tls_key_file=/tls/test.key
@@ -178,7 +192,7 @@ EOF
 EOF
 
     cat >> valkey-tls.conf << EOF
-io-threads $CPUS
+io-threads $VALKEY_IO_THREADS
 io-threads-do-reads yes
 tls-port 6393
 tls-cert-file /tls/test.crt
@@ -190,8 +204,8 @@ appendonly no
 EOF
 
     # Update Dragonfly Dockerfiles
-    sed -i "s|--proactor_threads=2|--proactor_threads=$CPUS|" Dockerfile-dragonfly
-    sed -i "s|--proactor_threads=2|--proactor_threads=$CPUS|" Dockerfile-dragonfly-tls
+    sed -i "s|--proactor_threads=2|--proactor_threads=$DRAGONFLY_PROACTOR_THREADS|" Dockerfile-dragonfly
+    sed -i "s|--proactor_threads=2|--proactor_threads=$DRAGONFLY_PROACTOR_THREADS|" Dockerfile-dragonfly-tls
 }
 
 # Check container status
@@ -508,8 +522,8 @@ run_memtier_benchmark() {
 
   echo "==== Running benchmark: $output_file ===="
   local cmd="memtier_benchmark -s $host --ratio=1:15 -p $port --protocol=redis \
-    -t $threads --distinct-client-seed --hide-histogram --requests=2000 \
-    --clients=100 --pipeline=1 --data-size=384 \
+    -t $threads --distinct-client-seed --hide-histogram --requests=$BENCHMARK_REQUESTS \
+    --clients=$BENCHMARK_CLIENTS --pipeline=$BENCHMARK_PIPELINE --data-size=$BENCHMARK_DATA_SIZE \
     --key-pattern=G:G --key-minimum=1 --key-maximum=1000000 \
     --key-median=500000 --key-stddev=166667 $tls_opts"
 
@@ -643,18 +657,55 @@ process_results() {
 }
 
 # Generate charts
+# Generate charts
 generate_charts() {
     echo "==== Generating Charts ===="
     
     if command -v python3 &> /dev/null && python3 -c "import matplotlib" 2>/dev/null; then
         if [ -f "./combined_all_results.md" ]; then
-            python scripts/latency-charts.py combined_all_results.md nonTLS || echo "Chart generation failed"
-            python scripts/opssec-charts.py combined_all_results.md nonTLS || echo "Chart generation failed"
+            echo "Generating non-TLS charts..."
+            python scripts/latency-charts.py combined_all_results.md nonTLS \
+                --redis_io_threads "$REDIS_IO_THREADS" \
+                --keydb_server_threads "$KEYDB_SERVER_THREADS" \
+                --dragonfly_proactor_threads "$DRAGONFLY_PROACTOR_THREADS" \
+                --valkey_io_threads "$VALKEY_IO_THREADS" \
+                --requests "$BENCHMARK_REQUESTS" \
+                --clients "$BENCHMARK_CLIENTS" \
+                --pipeline "$BENCHMARK_PIPELINE" \
+                --data_size "$BENCHMARK_DATA_SIZE" || echo "Chart generation failed"
+            
+            python scripts/opssec-charts.py combined_all_results.md nonTLS \
+                --redis_io_threads "$REDIS_IO_THREADS" \
+                --keydb_server_threads "$KEYDB_SERVER_THREADS" \
+                --dragonfly_proactor_threads "$DRAGONFLY_PROACTOR_THREADS" \
+                --valkey_io_threads "$VALKEY_IO_THREADS" \
+                --requests "$BENCHMARK_REQUESTS" \
+                --clients "$BENCHMARK_CLIENTS" \
+                --pipeline "$BENCHMARK_PIPELINE" \
+                --data_size "$BENCHMARK_DATA_SIZE" || echo "Chart generation failed"
         fi
         
         if [ -f "./combined_all_results_tls.md" ]; then
-            python scripts/latency-charts.py combined_all_results_tls.md TLS || echo "TLS chart generation failed"
-            python scripts/opssec-charts.py combined_all_results_tls.md TLS || echo "TLS chart generation failed"
+            echo "Generating TLS charts..."
+            python scripts/latency-charts.py combined_all_results_tls.md TLS \
+                --redis_io_threads "$REDIS_IO_THREADS" \
+                --keydb_server_threads "$KEYDB_SERVER_THREADS" \
+                --dragonfly_proactor_threads "$DRAGONFLY_PROACTOR_THREADS" \
+                --valkey_io_threads "$VALKEY_IO_THREADS" \
+                --requests "$BENCHMARK_REQUESTS" \
+                --clients "$BENCHMARK_CLIENTS" \
+                --pipeline "$BENCHMARK_PIPELINE" \
+                --data_size "$BENCHMARK_DATA_SIZE" || echo "TLS chart generation failed"
+            
+            python scripts/opssec-charts.py combined_all_results_tls.md TLS \
+                --redis_io_threads "$REDIS_IO_THREADS" \
+                --keydb_server_threads "$KEYDB_SERVER_THREADS" \
+                --dragonfly_proactor_threads "$DRAGONFLY_PROACTOR_THREADS" \
+                --valkey_io_threads "$VALKEY_IO_THREADS" \
+                --requests "$BENCHMARK_REQUESTS" \
+                --clients "$BENCHMARK_CLIENTS" \
+                --pipeline "$BENCHMARK_PIPELINE" \
+                --data_size "$BENCHMARK_DATA_SIZE" || echo "TLS chart generation failed"
         fi
     else
         echo "Python3 or matplotlib not available, skipping chart generation"
@@ -1125,6 +1176,18 @@ case "${1:-}" in
         echo "  CLEANUP=y|n                    Cleanup containers after benchmarks (default: n)"
         echo "  USE_DOCKER_COMPOSE=true|false Use docker-compose or individual containers"
         echo "  MEMTIER_*_TLS=y|n             Enable/disable TLS testing for each database"
+        echo ""
+        echo "Thread Configuration:"
+        echo "  REDIS_IO_THREADS=N            Redis IO threads (default: CPU count)"
+        echo "  KEYDB_SERVER_THREADS=N        KeyDB server threads (default: CPU count)"
+        echo "  DRAGONFLY_PROACTOR_THREADS=N  Dragonfly proactor threads (default: CPU count)"
+        echo "  VALKEY_IO_THREADS=N           Valkey IO threads (default: CPU count)"
+        echo ""
+        echo "Benchmark Parameters:"
+        echo "  BENCHMARK_REQUESTS=N          Number of requests (default: 2000)"
+        echo "  BENCHMARK_CLIENTS=N           Number of clients (default: 100)"
+        echo "  BENCHMARK_PIPELINE=N          Pipeline depth (default: 1)"
+        echo "  BENCHMARK_DATA_SIZE=N         Data size in bytes (default: 384)"
         echo ""
         echo "Port Configuration:"
         echo "  Redis: $REDIS_HOST_PORT, KeyDB: $KEYDB_HOST_PORT, Dragonfly: $DRAGONFLY_HOST_PORT, Valkey: $VALKEY_HOST_PORT"
