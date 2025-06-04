@@ -492,6 +492,31 @@ jobs:
         echo "CONFIGURATION ANALYSIS COMPLETE"
         echo "=================================="
 
+    - name: Intrinsic latency from inside each container
+      continue-on-error: true
+      run: |
+        echo "=== Intrinsic Latency Tests ===" | tee ./benchmarklogs/intrinsic_latency.log
+        echo "Test Duration: 5 seconds" | tee -a ./benchmarklogs/intrinsic_latency.log
+        echo "Timestamp: $(date -u)" | tee -a ./benchmarklogs/intrinsic_latency.log
+        echo "" | tee -a ./benchmarklogs/intrinsic_latency.log
+        
+        for container in redis keydb dragonfly valkey redis-tls keydb-tls dragonfly-tls valkey-tls; do
+          echo "" | tee -a ./benchmarklogs/intrinsic_latency.log
+          echo ">>> Container-side intrinsic latency inside: $container" | tee -a ./benchmarklogs/intrinsic_latency.log
+          echo "Command: docker exec $container redis-cli --intrinsic-latency 5" | tee -a ./benchmarklogs/intrinsic_latency.log
+          echo "---" | tee -a ./benchmarklogs/intrinsic_latency.log
+          
+          # Run the intrinsic latency test and capture output
+          if docker exec "$container" redis-cli --intrinsic-latency 5 2>&1 | tee -a ./benchmarklogs/intrinsic_latency.log; then
+            echo "✅ $container intrinsic latency test completed" | tee -a ./benchmarklogs/intrinsic_latency.log
+          else
+            echo "❌ $container intrinsic latency test failed" | tee -a ./benchmarklogs/intrinsic_latency.log
+          fi
+          echo "" | tee -a ./benchmarklogs/intrinsic_latency.log
+        done
+        
+        echo "=== Intrinsic Latency Tests Complete ===" | tee -a ./benchmarklogs/intrinsic_latency.log
+
     - name: Install memtier_benchmark
       run: |
         sudo apt-get update
@@ -995,7 +1020,17 @@ jobs:
         mkdir -p results/benchmarks-v2
         
         # Copy files to results directory
+        cp ./.github/workflows/benchmarks-v2.yml results/benchmarks-v2/
+        cp ./scripts/latency-charts.py results/benchmarks-v2/
+        cp ./scripts/opssec-charts.py results/benchmarks-v2/
+        cp ./scripts/combine_markdown_results.py results/benchmarks-v2/
+        cp ./scripts/parse_memtier_to_md.py results/benchmarks-v2/
+        cp ./docker-compose.yml results/benchmarks-v2/
+        cp ./Dockerfile-* results/benchmarks-v2/
+
+        cp ./benchmarklogs/intrinsic_latency.log results/benchmarks-v2/
         cp ./benchmarklogs/versions.md results/benchmarks-v2/
+        cp ./benchmarklogs/benchmark_config.md results/benchmarks-v2/ || true
         sed -i '/| ---------------------------------------------------------------------------------------------------------------------------- |/d' combined_all_results.md
         sed -i '/| ---------------------------------------------------------------------------------------------------------------------------- |/d' combined_all_results_tls.md
         sed -i '/| Waits |/d' combined_all_results.md
