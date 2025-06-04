@@ -1204,7 +1204,7 @@ jobs:
     - name: Install charting dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install matplotlib numpy 
+        pip install pandas matplotlib seaborn numpy
 
     - name: Debug Chart Input Data
       continue-on-error: true
@@ -1380,6 +1380,40 @@ jobs:
           
           echo "✅ Benchmark results committed and pushed to results/benchmarks-v4/"
         fi 
+
+    - name: Generate Advanced Benchmark Charts
+      continue-on-error: true
+      run: |
+        echo "=== Generating Advanced Benchmark Charts ==="
+        
+        # Check if input files exist
+        if [ -f "combined_all_results.md" ]; then
+          echo "✅ Found combined_all_results.md"
+        else
+          echo "❌ combined_all_results.md not found"
+          ls -la combined_all_results.md || true
+        fi
+        
+        if [ -f "combined_all_results_tls.md" ]; then
+          echo "✅ Found combined_all_results_tls.md"  
+        else
+          echo "❌ combined_all_results_tls.md not found"
+          ls -la combined_all_results_tls.md || true
+        fi
+        
+        # Generate non-TLS advanced charts
+        echo "=== Generating non-TLS Advanced Charts ==="
+        python scripts/benchmark_charts.py --non-tls --input-dir . --output-dir benchmarklogs 2>&1 | tee ./benchmarklogs/advanced-charts-nonTLS.log
+        
+        # Generate TLS advanced charts  
+        echo "=== Generating TLS Advanced Charts ==="
+        python scripts/benchmark_charts.py --tls --input-dir . --output-dir benchmarklogs 2>&1 | tee ./benchmarklogs/advanced-charts-TLS.log
+        
+        # List generated chart files
+        echo "=== Generated Chart Files ==="
+        ls -la benchmarklogs/advcharts-*.png || echo "No advanced chart files found"
+        
+        echo "✅ Advanced benchmark charts generation completed"
 
     - name: Upload Benchmark Logs and Charts
       uses: actions/upload-artifact@v4
