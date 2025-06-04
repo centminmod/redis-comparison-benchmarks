@@ -5,12 +5,12 @@
 | Requests | 100 |
 | Clients | 10 |
 | Pipeline | 1 |
-| Data Size | 8 bytes |
+| Data Size | 4 bytes |
 | Key Minimum | 1 |
 | Key Maximum | 1000000 |
 | Ratio | 1:15 (Read:Write) |
 | Key Pattern | G:G (Gaussian) |
 | Intrinsic Latency | 1 |
 
-Run Date: Wed Jun  4 08:09:11 UTC 2025
-Workflow Run: 36
+Run Date: Wed Jun  4 08:27:09 UTC 2025
+Workflow Run: 37
