@@ -190,12 +190,12 @@ def plot_latency_chart_single(all_data, metric_key, title_suffix, ylabel, out_fi
         ax.bar(x + offsets[i], arr[i], width, label=db_label)
 
     title_parts = ["Redis vs KeyDB vs Dragonfly vs Valkey – Memtier Benchmarks (4 vCPU VM)", f"(requests:{requests} clients:{clients} pipeline:{pipeline} data_size:{data_size})", "(lower is better) by George Liu"]
-    ax.set_title("\n".join(title_parts), fontsize=17, fontweight='bold', pad=20)
-    ax.set_ylabel(ylabel, fontsize=12, fontweight='semibold')
+    ax.set_title("\n".join(title_parts), fontsize=20, fontweight='bold', pad=20)
+    ax.set_ylabel(ylabel, fontsize=16, fontweight='semibold')
     ax.grid(axis='y', linestyle='--', linewidth=0.5, alpha=0.7)
     ax.set_xticks(x)
-    ax.set_xticklabels(EXPECTED_LABELS, rotation=35, ha="right", fontsize=8)
-    ax.legend(fontsize=8, bbox_to_anchor=(1.02, 1), loc='upper left')
+    ax.set_xticklabels(EXPECTED_LABELS, rotation=35, ha="right", fontsize=11)
+    ax.legend(fontsize=12, bbox_to_anchor=(1.02, 1), loc='upper left')
     ax.tick_params(axis='y', labelsize=13)
 
     for i, db in enumerate(DBS):
@@ -239,4 +239,47 @@ def plot_latency_chart_grid(all_data, metric_key, title_suffix, ylabel, out_file
                     ax.annotate(f"{height:.2f}", xy=(x[j] + offsets[i], height), xytext=(0, 3), textcoords="offset points", ha="center", va="bottom", fontsize=9)
         
         ax.set_title(f"{thread_count}", fontsize=14, fontweight='bold')
-        ax.set_ylabel(ylabel, fontsize=12
+        ax.set_ylabel(ylabel, fontsize=12)
+        ax.set_xticks(x)
+        ax.set_xticklabels(operations, fontsize=11)
+        ax.grid(axis='y', linestyle='--', linewidth=0.3, alpha=0.7)
+        ax.tick_params(axis='y', labelsize=10)
+
+    title_parts = ["Redis vs KeyDB vs Dragonfly vs Valkey – Memtier Benchmarks (4 vCPU VM)", f"(requests:{requests} clients:{clients} pipeline:{pipeline} data_size:{data_size})", "(lower is better) by George Liu"]
+    fig.suptitle("\n".join(title_parts), fontsize=16, fontweight='bold', y=0.98)
+    
+    handles, labels = axes[0].get_legend_handles_labels()
+    fig.legend(handles, labels, loc='lower center', bbox_to_anchor=(0.5, -0.02), ncol=2, fontsize=11)
+    
+    plt.tight_layout()
+    plt.subplots_adjust(top=0.85, bottom=0.15)
+    plt.savefig(out_filename, dpi=300, bbox_inches='tight')
+    plt.close()
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Generate latency charts from benchmark data.")
+    parser.add_argument("md_path", help="Path to the markdown file with benchmark results")
+    parser.add_argument("prefix", help="Prefix for output file names")
+    parser.add_argument("--layout", choices=["single", "grid"], default="single", help="Chart layout: single (default) or grid (2x2 subplots)")
+    parser.add_argument("--redis_io_threads", default='2', help="Redis IO threads")
+    parser.add_argument("--keydb_server_threads", default='2', help="KeyDB server threads")
+    parser.add_argument("--dragonfly_proactor_threads", default='3', help="Dragonfly proactor threads")
+    parser.add_argument("--valkey_io_threads", default='1', help="Valkey IO threads")
+    parser.add_argument("--requests", default='2000', help="Number of requests")
+    parser.add_argument("--clients", default='100', help="Number of clients")
+    parser.add_argument("--pipeline", default='1', help="Pipeline depth")
+    parser.add_argument("--data_size", default='1024', help="Data size in bytes")
+
+    args = parser.parse_args()
+
+    print(f"[DEBUG] Running latency-charts.py with layout='{args.layout}'")
+    data = parse_markdown(args.md_path)
+
+    for metric_key, ylabel in [("avg", "Average Latency (ms)"), ("p50", "p50 Latency (ms)"), ("p99", "p99 Latency (ms)")]:
+        out_filename = f"latency-{args.prefix}-{metric_key}-{args.layout}.png"
+        
+        if args.layout == "grid":
+            plot_latency_chart_grid(data, metric_key, ylabel, ylabel, out_filename, args.redis_io_threads, args.keydb_server_threads, args.dragonfly_proactor_threads, args.valkey_io_threads, args.requests, args.clients, args.pipeline, args.data_size)
+        else:
+            plot_latency_chart_single(data, metric_key, ylabel, ylabel, out_filename, args.redis_io_threads, args.keydb_server_threads, args.dragonfly_proactor_threads, args.valkey_io_threads, args.requests, args.clients, args.pipeline, args.data_size)
