@@ -37,7 +37,7 @@ on:
       intrinsic_latency:
         description: 'intrinsic latency value'
         required: false
-        default: '10'
+        default: '5'
         type: string
       redis_io_threads:
         description: 'Redis IO threads count'
@@ -107,7 +107,7 @@ jobs:
         echo "Key Maximum: ${{ inputs.key_maximum || '1000000' }}"
         echo "Key Median: $(( (${{ inputs.key_maximum || '1000000' }} + ${{ inputs.key_minimum || '1' }}) / 2 ))"
         echo "Key Stddev: $(( (${{ inputs.key_maximum || '1000000' }} - ${{ inputs.key_minimum || '1' }}) / 6 ))"
-        echo "Intrinsic Latency: ${{ inputs.intrinsic_latency || '10' }}"
+        echo "Intrinsic Latency: ${{ inputs.intrinsic_latency || '5' }}"
 
     - name: Update System
       run: |
@@ -583,7 +583,7 @@ jobs:
         echo "KEY_MAXIMUM=${{ inputs.key_maximum || '1000000' }}" >> $GITHUB_ENV
         echo "KEY_MEDIAN=$(( (${{ inputs.key_maximum || '1000000' }} + ${{ inputs.key_minimum || '1' }}) / 2 ))" >> $GITHUB_ENV
         echo "KEY_STDDEV=$(( (${{ inputs.key_maximum || '1000000' }} - ${{ inputs.key_minimum || '1' }}) / 6 ))" >> $GITHUB_ENV
-        echo "INTRINSIC_LATENCY=${{ inputs.intrinsic_latency || '10' }}" >> $GITHUB_ENV
+        echo "INTRINSIC_LATENCY=${{ inputs.intrinsic_latency || '5' }}" >> $GITHUB_ENV
         echo "==== Database Thread Configuration ===="
         echo "Redis IO Threads: ${{ inputs.redis_io_threads || '2' }}"
         echo "KeyDB Server Threads: ${{ inputs.keydb_server_threads || '2' }}"
@@ -1276,7 +1276,7 @@ jobs:
         echo "| Key Maximum | ${{ inputs.key_maximum || '1000000' }} |" >> ./benchmarklogs/benchmark_config.md
         echo "| Ratio | 1:15 (Read:Write) |" >> ./benchmarklogs/benchmark_config.md
         echo "| Key Pattern | G:G (Gaussian) |" >> ./benchmarklogs/benchmark_config.md
-        echo "| Intrinsic Latency | ${{ inputs.intrinsic_latency || '10' }} |" >> ./benchmarklogs/benchmark_config.md
+        echo "| Intrinsic Latency | ${{ inputs.intrinsic_latency || '5' }} |" >> ./benchmarklogs/benchmark_config.md
         echo "" >> ./benchmarklogs/benchmark_config.md
         echo "Run Date: $(date -u)" >> ./benchmarklogs/benchmark_config.md
         echo "Workflow Run: ${{ github.run_number }}" >> ./benchmarklogs/benchmark_config.md
@@ -1327,7 +1327,7 @@ jobs:
         echo "  Pipeline: ${{ inputs.pipeline || '1' }}" >> results/benchmarks-v4/last_updated.txt
         echo "  Data Size: ${{ inputs.data_size || '1024' }}" >> results/benchmarks-v4/last_updated.txt
         echo "  Key Range: ${{ inputs.key_minimum || '1' }}-${{ inputs.key_maximum || '1000000' }}" >> results/benchmarks-v4/last_updated.txt
-        echo "  Intrinsinc Latency: ${{ inputs.intrinsic_latency || '10' }}" >> results/benchmarks-v4/last_updated.txt
+        echo "  Intrinsinc Latency: ${{ inputs.intrinsic_latency || '5' }}" >> results/benchmarks-v4/last_updated.txt
         echo "Server Configs:" >> results/benchmarks-v4/last_updated.txt
         echo "Redis IO Threads: ${{ inputs.redis_io_threads || '2' }}" >> results/benchmarks-v4/last_updated.txt
         echo "KeyDB Server Threads: ${{ inputs.keydb_server_threads || '2' }}" >> results/benchmarks-v4/last_updated.txt
@@ -1348,7 +1348,7 @@ jobs:
           - Updated benchmark results for Redis, KeyDB, Dragonfly, and Valkey
           - Generated charts for latency and ops/sec metrics
           - Both TLS and non-TLS configurations tested
-          - Custom parameters: requests=${{ inputs.requests || '2000' }}, clients=${{ inputs.clients || '100' }}, pipeline=${{ inputs.pipeline || '1' }}, intrinsic_latency=${{ inputs.intrinsic_latency || '10' }}, data_size=${{ inputs.data_size || '1024' }}
+          - Custom parameters: requests=${{ inputs.requests || '2000' }}, clients=${{ inputs.clients || '100' }}, pipeline=${{ inputs.pipeline || '1' }}, intrinsic_latency=${{ inputs.intrinsic_latency || '5' }}, data_size=${{ inputs.data_size || '1024' }}
           - Key range: ${{ inputs.key_minimum || '1' }}-${{ inputs.key_maximum || '1000000' }}
           - Workflow: ${{ github.workflow }}
           - Run: ${{ github.run_number }}
