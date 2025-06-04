@@ -225,7 +225,10 @@ def plot_grouped_bars(all_data, metric_key, title_suffix, ylabel, out_filename,
     ax.set_xticks(x)
     # Rotate x-axis labels for better readability with 12 labels
     ax.set_xticklabels(EXPECTED_LABELS, rotation=45, ha="right", fontsize=9)
-    ax.legend(fontsize=12, loc='upper left')
+    
+    # Position legend outside the plot area to avoid masking data
+    ax.legend(fontsize=9.5, bbox_to_anchor=(1.02, 1), loc='upper left', borderaxespad=0)
+    
     ax.tick_params(axis='y', labelsize=12)
 
     # Only add annotations for non-zero values
@@ -241,11 +244,10 @@ def plot_grouped_bars(all_data, metric_key, title_suffix, ylabel, out_filename,
                     fontsize=7  # Reduced from 9 to 7
                 )
 
-    plt.tight_layout(rect=[0, 0, 1, 0.94])  # Adjusted for rotated labels
+    plt.tight_layout(rect=[0, 0, 0.85, 0.94])  # Adjusted to leave space for external legend
     print(f"[DEBUG] Saving plot to {out_filename}")
     plt.savefig(out_filename, dpi=300, bbox_inches='tight')  # Higher DPI for better quality
     plt.close()
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate latency charts from benchmark data.")
