@@ -182,8 +182,8 @@ def plot_latency_chart_single(all_data, metric_key, title_suffix, ylabel, out_fi
     arr = np.array(vals)
 
     x = np.arange(len(EXPECTED_LABELS))
-    width = 0.12  # Reduced from 0.15 to make bars thinner
-    offsets = [-2.0 * width, -0.7 * width, 0.7 * width, 2.0 * width]  # Increased spacing
+    width = 0.10  # Reduced from 0.15 to make bars thinner
+    offsets = [-2.5 * width, -0.8 * width, 0.8 * width, 2.5 * width]  # Increased spacing
 
     fig, ax = plt.subplots(figsize=(26, 10))  # Slightly wider figure
 
