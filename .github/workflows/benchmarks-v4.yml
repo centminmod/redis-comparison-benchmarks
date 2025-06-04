@@ -1308,16 +1308,19 @@ jobs:
         sed -i '/| Waits |/d' combined_all_results_tls.md
         cp combined_all_results.md results/benchmarks-v4/
         cp combined_all_results_tls.md results/benchmarks-v4/
+
+        # Remove old chart files with previous naming convention
+        rm -f results/benchmarks-v4/latency-nonTLS-avg.png
+        rm -f results/benchmarks-v4/latency-nonTLS-p50.png
+        rm -f results/benchmarks-v4/latency-nonTLS-p99.png
+        rm -f results/benchmarks-v4/latency-TLS-avg.png
+        rm -f results/benchmarks-v4/latency-TLS-p50.png
+        rm -f results/benchmarks-v4/latency-TLS-p99.png
+        rm -f results/benchmarks-v4/ops-nonTLS.png
+        rm -f results/benchmarks-v4/ops-TLS.png
         
-        # Copy chart files (only if they exist)
-        [ -f latency-nonTLS-avg.png ] && cp latency-nonTLS-avg.png results/benchmarks-v4/
-        [ -f latency-nonTLS-p50.png ] && cp latency-nonTLS-p50.png results/benchmarks-v4/
-        [ -f latency-nonTLS-p99.png ] && cp latency-nonTLS-p99.png results/benchmarks-v4/
-        [ -f latency-TLS-avg.png ] && cp latency-TLS-avg.png results/benchmarks-v4/
-        [ -f latency-TLS-p50.png ] && cp latency-TLS-p50.png results/benchmarks-v4/
-        [ -f latency-TLS-p99.png ] && cp latency-TLS-p99.png results/benchmarks-v4/
-        [ -f ops-nonTLS.png ] && cp ops-nonTLS.png results/benchmarks-v4/
-        [ -f ops-TLS.png ] && cp ops-TLS.png results/benchmarks-v4/
+        # Copy all new chart files from benchmarklogs/ to results directory
+        cp benchmarklogs/*.png results/benchmarks-v4/ 2>/dev/null || true
 
         # Add a timestamp file
         echo "Last updated: $(date -u)" > results/benchmarks-v4/last_updated.txt
@@ -1378,14 +1381,6 @@ jobs:
           benchmarklogs/**
           combined_all_results.md
           combined_all_results_tls.md
-          latency-nonTLS-avg.png
-          latency-nonTLS-p50.png
-          latency-nonTLS-p99.png
-          ops-nonTLS.png
-          latency-TLS-avg.png
-          latency-TLS-p50.png
-          latency-TLS-p99.png
-          ops-TLS.png 
 
     - name: Cleanup
       run: |
