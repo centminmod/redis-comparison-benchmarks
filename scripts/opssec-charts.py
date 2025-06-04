@@ -156,7 +156,7 @@ def parse_markdown_ops(filepath):
 
 
 def plot_ops_chart(all_data, out_filename,
-                     redis_io_threads, keydb_server_threads, valkey_io_threads,
+                     redis_io_threads, keydb_server_threads, dragonfly_proactor_threads, valkey_io_threads,
                      requests, clients, pipeline, data_size):
     """
     Build a grouped‐bar chart for Ops/sec across 4 DBs and 12 labels,
@@ -182,7 +182,7 @@ def plot_ops_chart(all_data, out_filename,
     DBS_WITH_THREADS = [
         f"Redis io-threads {redis_io_threads}",
         f"KeyDB io-threads {keydb_server_threads}",
-        "Dragonfly proactor_threads 3",  # Fixed as per issue
+        f"Dragonfly proactor_threads {dragonfly_proactor_threads}",
         f"Valkey io-threads {valkey_io_threads}"
     ]
 
@@ -238,6 +238,7 @@ if __name__ == "__main__":
     parser.add_argument("prefix", help="Prefix for output file names (e.g., nonTLS or TLS)")
     parser.add_argument("--redis_io_threads", default='2', help="Redis IO threads")
     parser.add_argument("--keydb_server_threads", default='2', help="KeyDB server threads")
+    parser.add_argument("--dragonfly_proactor_threads", default='3', help="Dragonfly proactor threads")
     parser.add_argument("--valkey_io_threads", default='1', help="Valkey IO threads")
     parser.add_argument("--requests", default='2000', help="Number of requests")
     parser.add_argument("--clients", default='100', help="Number of clients")
@@ -254,6 +255,7 @@ if __name__ == "__main__":
         f"ops-{args.prefix}.png",
         args.redis_io_threads,
         args.keydb_server_threads,
+        args.dragonfly_proactor_threads,
         args.valkey_io_threads,
         args.requests,
         args.clients,
