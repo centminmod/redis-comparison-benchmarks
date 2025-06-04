@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # Requires: pip install matplotlib numpy
 
+import argparse
 import matplotlib.pyplot as plt
 import numpy as np
 import sys
@@ -154,7 +155,9 @@ def parse_markdown_ops(filepath):
     return data
 
 
-def plot_ops_chart(all_data, out_filename):
+def plot_ops_chart(all_data, out_filename,
+                     redis_io_threads, keydb_server_threads, dragonfly_proactor_threads, valkey_io_threads,
+                     requests, clients, pipeline, data_size):
     """
     Build a grouped‐bar chart for Ops/sec across 4 DBs and 12 labels,
     and save to out_filename. Optimized for 12 data points:
@@ -175,16 +178,29 @@ def plot_ops_chart(all_data, out_filename):
 
     # Increased figure size for better spacing with 12 data points
     fig, ax = plt.subplots(figsize=(20, 12))
-    for i, db in enumerate(DBS):
+
+    DBS_WITH_THREADS = [
+        f"Redis io-threads {redis_io_threads}",
+        f"KeyDB io-threads {keydb_server_threads}",
+        f"Dragonfly proactor_threads {dragonfly_proactor_threads}",
+        f"Valkey io-threads {valkey_io_threads}"
+    ]
+
+    for i, db_label in enumerate(DBS_WITH_THREADS):
         ax.bar(
             x + offsets[i],
-            arr[i],
+            arr[i],  # arr is ordered by DBS
             width,
-            label=db
+            label=db_label
         )
 
+    title_parts = [
+        "Redis vs KeyDB vs Dragonfly vs Valkey – Memtier Benchmarks (4 vCPU VM)",
+        f"(requests:{requests} clients:{clients} pipeline:{pipeline} data_size:{data_size})",
+        "(higher is better) by George Liu"
+    ]
     ax.set_title(
-        "Redis vs KeyDB vs Dragonfly vs Valkey – Memtier Benchmarks (4 vCPU VM)\n(higher is better) by George Liu",
+        "\n".join(title_parts),
         fontsize=18,
         fontweight='bold',
         loc='center'
@@ -217,14 +233,32 @@ def plot_ops_chart(all_data, out_filename):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 3:
-        print("Usage: python opssec-charts.py <combined_md> <prefix>")
-        sys.exit(1)
+    parser = argparse.ArgumentParser(description="Generate Ops/sec charts from benchmark data.")
+    parser.add_argument("md_path", help="Path to the markdown file with benchmark results (e.g., combined_all_results.md)")
+    parser.add_argument("prefix", help="Prefix for output file names (e.g., nonTLS or TLS)")
+    parser.add_argument("--redis_io_threads", default='2', help="Redis IO threads")
+    parser.add_argument("--keydb_server_threads", default='2', help="KeyDB server threads")
+    parser.add_argument("--dragonfly_proactor_threads", default='3', help="Dragonfly proactor threads")
+    parser.add_argument("--valkey_io_threads", default='1', help="Valkey IO threads")
+    parser.add_argument("--requests", default='2000', help="Number of requests")
+    parser.add_argument("--clients", default='100', help="Number of clients")
+    parser.add_argument("--pipeline", default='1', help="Pipeline depth")
+    parser.add_argument("--data_size", default='1024', help="Data size in bytes")
 
-    md_path = sys.argv[1]  # e.g. "combined_all_results.md"
-    prefix = sys.argv[2]   # e.g. "nonTLS" or "TLS"
+    args = parser.parse_args()
 
-    print(f"[DEBUG] Running opssec-charts.py on '{md_path}' with prefix '{prefix}'")
-    data_ops = parse_markdown_ops(md_path)
+    print(f"[DEBUG] Running opssec-charts.py on '{args.md_path}' with prefix '{args.prefix}'")
+    data_ops = parse_markdown_ops(args.md_path)
 
-    plot_ops_chart(data_ops, f"ops-{prefix}.png")
+    plot_ops_chart(
+        data_ops,
+        f"ops-{args.prefix}.png",
+        args.redis_io_threads,
+        args.keydb_server_threads,
+        args.dragonfly_proactor_threads,
+        args.valkey_io_threads,
+        args.requests,
+        args.clients,
+        args.pipeline,
+        args.data_size
+    )

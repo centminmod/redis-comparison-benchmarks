@@ -66,6 +66,8 @@ permissions:
 jobs:
   benchmark:
     runs-on: ubuntu-24.04
+    env:
+      DRAGONFLY_PROACTOR_THREADS: 3
 
     steps:
     - name: Checkout repository
@@ -172,8 +174,8 @@ jobs:
 
     - name: Update Dragonfly Configuration for non-TLS
       run: |
-        sed -i "s|--proactor_threads=2|--proactor_threads=3|" Dockerfile-dragonfly
-        echo "--proactor_threads=3" >> dragonfly.conf
+        sed -i "s|--proactor_threads=2|--proactor_threads=${DRAGONFLY_PROACTOR_THREADS}|" Dockerfile-dragonfly
+        echo "--proactor_threads=${DRAGONFLY_PROACTOR_THREADS}" >> dragonfly.conf
         echo "--dbfilename=''" >> dragonfly.conf
 
     - name: Update Valkey Configuration for non-TLS
@@ -209,8 +211,8 @@ jobs:
     
     - name: Update Dragonfly Configuration for TLS
       run: |
-        sed -i "s|--proactor_threads=2|--proactor_threads=3|" Dockerfile-dragonfly-tls
-        echo "--proactor_threads=3" >> dragonfly-tls.conf
+        sed -i "s|--proactor_threads=2|--proactor_threads=${DRAGONFLY_PROACTOR_THREADS}|" Dockerfile-dragonfly-tls
+        echo "--proactor_threads=${DRAGONFLY_PROACTOR_THREADS}" >> dragonfly-tls.conf
         echo "--port=6392" >> dragonfly-tls.conf
         echo "--tls_cert_file=/tls/test.crt" >> dragonfly-tls.conf
         echo "--tls_key_file=/tls/test.key" >> dragonfly-tls.conf
@@ -588,7 +590,7 @@ jobs:
         echo "Redis IO Threads: ${{ inputs.redis_io_threads || '2' }}"
         echo "KeyDB Server Threads: ${{ inputs.keydb_server_threads || '2' }}"
         echo "KeyDB Min Clients Per Thread: ${{ inputs.keydb_min_clients_per_thread || '50' }}"
-        echo "Dragonfly Proactor Threads: 4"
+        echo "Dragonfly Proactor Threads: ${DRAGONFLY_PROACTOR_THREADS}"
         echo "Valkey IO Threads: ${{ inputs.valkey_io_threads || '1' }}"
 
     # - name: Intrinsic latency from client (localhost ports, with container names)
@@ -1222,22 +1224,22 @@ jobs:
     - name: Generate non-TLS Latency Charts
       continue-on-error: true
       run: |
-        python scripts/latency-charts.py combined_all_results.md nonTLS 2>&1 | tee ./benchmarklogs/latency-charts-nonTLS.log 
+        python scripts/latency-charts.py combined_all_results.md nonTLS --redis_io_threads ${{ inputs.redis_io_threads }} --keydb_server_threads ${{ inputs.keydb_server_threads }} --dragonfly_proactor_threads ${DRAGONFLY_PROACTOR_THREADS} --valkey_io_threads ${{ inputs.valkey_io_threads }} --requests ${{ inputs.requests }} --clients ${{ inputs.clients }} --pipeline ${{ inputs.pipeline }} --data_size ${{ inputs.data_size }} 2>&1 | tee ./benchmarklogs/latency-charts-nonTLS.log
 
     - name: Generate non-TLS Ops/Sec Charts
       continue-on-error: true
       run: |
-        python scripts/opssec-charts.py combined_all_results.md nonTLS 2>&1 | tee ./benchmarklogs/opssec-charts-nonTLS.log 
+        python scripts/opssec-charts.py combined_all_results.md nonTLS --redis_io_threads ${{ inputs.redis_io_threads }} --keydb_server_threads ${{ inputs.keydb_server_threads }} --dragonfly_proactor_threads ${DRAGONFLY_PROACTOR_THREADS} --valkey_io_threads ${{ inputs.valkey_io_threads }} --requests ${{ inputs.requests }} --clients ${{ inputs.clients }} --pipeline ${{ inputs.pipeline }} --data_size ${{ inputs.data_size }} 2>&1 | tee ./benchmarklogs/opssec-charts-nonTLS.log
 
     - name: Generate TLS Latency Charts
       continue-on-error: true
       run: |
-        python scripts/latency-charts.py combined_all_results_tls.md TLS 2>&1 | tee ./benchmarklogs/latency-charts-TLS.log 
+        python scripts/latency-charts.py combined_all_results_tls.md TLS --redis_io_threads ${{ inputs.redis_io_threads }} --keydb_server_threads ${{ inputs.keydb_server_threads }} --dragonfly_proactor_threads ${DRAGONFLY_PROACTOR_THREADS} --valkey_io_threads ${{ inputs.valkey_io_threads }} --requests ${{ inputs.requests }} --clients ${{ inputs.clients }} --pipeline ${{ inputs.pipeline }} --data_size ${{ inputs.data_size }} 2>&1 | tee ./benchmarklogs/latency-charts-TLS.log
 
     - name: Generate TLS Ops/Sec Charts
       continue-on-error: true
       run: |
-        python scripts/opssec-charts.py combined_all_results_tls.md TLS 2>&1 | tee ./benchmarklogs/opssec-charts-TLS.log 
+        python scripts/opssec-charts.py combined_all_results_tls.md TLS --redis_io_threads ${{ inputs.redis_io_threads }} --keydb_server_threads ${{ inputs.keydb_server_threads }} --dragonfly_proactor_threads ${DRAGONFLY_PROACTOR_THREADS} --valkey_io_threads ${{ inputs.valkey_io_threads }} --requests ${{ inputs.requests }} --clients ${{ inputs.clients }} --pipeline ${{ inputs.pipeline }} --data_size ${{ inputs.data_size }} 2>&1 | tee ./benchmarklogs/opssec-charts-TLS.log
 
     - name: Capture Versions for Benchmark Report
       continue-on-error: true
@@ -1332,7 +1334,7 @@ jobs:
         echo "Redis IO Threads: ${{ inputs.redis_io_threads || '2' }}" >> results/benchmarks-v4/last_updated.txt
         echo "KeyDB Server Threads: ${{ inputs.keydb_server_threads || '2' }}" >> results/benchmarks-v4/last_updated.txt
         echo "KeyDB Min Clients Per Thread: ${{ inputs.keydb_min_clients_per_thread || '50' }}" >> results/benchmarks-v4/last_updated.txt
-        echo "Dragonfly Proactor Threads: 4" >> results/benchmarks-v4/last_updated.txt
+        echo "Dragonfly Proactor Threads: ${DRAGONFLY_PROACTOR_THREADS}" >> results/benchmarks-v4/last_updated.txt
         echo "Valkey IO Threads: ${{ inputs.valkey_io_threads || '1' }}" >> results/benchmarks-v4/last_updated.txt
         
         # Stage all changes
