@@ -175,12 +175,12 @@ def plot_ops_chart_single(all_data, out_filename, redis_io_threads, keydb_server
         ax.bar(x + offsets[i], arr[i], width, label=db_label)
 
     title_parts = ["Redis vs KeyDB vs Dragonfly vs Valkey – Memtier Benchmarks (4 vCPU VM)", f"(requests:{requests} clients:{clients} pipeline:{pipeline} data_size:{data_size})", "(higher is better) by George Liu"]
-    ax.set_title("\n".join(title_parts), fontsize=20, fontweight='bold', pad=20)
-    ax.set_ylabel("Ops/Sec", fontsize=16, fontweight='semibold')
+    ax.set_title("\n".join(title_parts), fontsize=17, fontweight='bold', pad=20)
+    ax.set_ylabel("Ops/Sec", fontsize=12, fontweight='semibold')
     ax.grid(axis='y', linestyle='--', linewidth=0.5, alpha=0.7)
     ax.set_xticks(x)
-    ax.set_xticklabels(EXPECTED_LABELS, rotation=35, ha="right", fontsize=11)
-    ax.legend(fontsize=12, bbox_to_anchor=(1.02, 1), loc='upper left')
+    ax.set_xticklabels(EXPECTED_LABELS, rotation=35, ha="right", fontsize=8)
+    ax.legend(fontsize=8, bbox_to_anchor=(1.02, 1), loc='upper left')
     ax.tick_params(axis='y', labelsize=13)
 
     for i, db in enumerate(DBS):
