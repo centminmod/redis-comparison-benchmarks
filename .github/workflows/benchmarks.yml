@@ -1006,6 +1006,47 @@ jobs:
         
         cat ./benchmarklogs/versions.md
 
+    - name: Generate Advanced Benchmark Charts
+      continue-on-error: true
+      run: |
+        echo "=== Generating Advanced Benchmark Charts ==="
+        
+        # Check if input files exist and show their structure
+        if [ -f "combined_all_results.md" ]; then
+          echo "✅ Found combined_all_results.md"
+          echo "First 20 lines:"
+          head -20 combined_all_results.md
+        else
+          echo "❌ combined_all_results.md not found"
+        fi
+        
+        if [ -f "combined_all_results_tls.md" ]; then
+          echo "✅ Found combined_all_results_tls.md"
+          echo "First 20 lines:"
+          head -20 combined_all_results_tls.md
+        else
+          echo "❌ combined_all_results_tls.md not found"
+        fi
+
+        sed -i '/| ---------------------------------------------------------------------------------------------------------------------------- |/d' combined_all_results.md
+        sed -i '/| ---------------------------------------------------------------------------------------------------------------------------- |/d' combined_all_results_tls.md
+        sed -i '/| Waits |/d' combined_all_results.md
+        sed -i '/| Waits |/d' combined_all_results_tls.md
+        
+        # Generate non-TLS advanced charts
+        echo "=== Generating non-TLS Advanced Charts ==="
+        python scripts/benchmark_charts.py --non-tls --input-dir . --output-dir benchmarklogs 2>&1 | tee ./benchmarklogs/advanced-charts-nonTLS.log
+        
+        # Generate TLS advanced charts  
+        echo "=== Generating TLS Advanced Charts ==="
+        python scripts/benchmark_charts.py --tls --input-dir . --output-dir benchmarklogs 2>&1 | tee ./benchmarklogs/advanced-charts-TLS.log
+        
+        # List generated chart files
+        echo "=== Generated Chart Files ==="
+        ls -la benchmarklogs/advcharts-*.png || echo "No advanced chart files found"
+        
+        echo "✅ Advanced benchmark charts generation completed"
+
     - name: Commit Benchmark Results to Repository
       continue-on-error: true
       run: |
@@ -1087,42 +1128,6 @@ jobs:
           
           echo "✅ Benchmark results committed and pushed to results/benchmarks-v1/"
         fi
-
-    - name: Generate Advanced Benchmark Charts
-      continue-on-error: true
-      run: |
-        echo "=== Generating Advanced Benchmark Charts ==="
-        
-        # Check if input files exist and show their structure
-        if [ -f "combined_all_results.md" ]; then
-          echo "✅ Found combined_all_results.md"
-          echo "First 20 lines:"
-          head -20 combined_all_results.md
-        else
-          echo "❌ combined_all_results.md not found"
-        fi
-        
-        if [ -f "combined_all_results_tls.md" ]; then
-          echo "✅ Found combined_all_results_tls.md"
-          echo "First 20 lines:"
-          head -20 combined_all_results_tls.md
-        else
-          echo "❌ combined_all_results_tls.md not found"
-        fi
-        
-        # Generate non-TLS advanced charts
-        echo "=== Generating non-TLS Advanced Charts ==="
-        python scripts/benchmark_charts.py --non-tls --input-dir . --output-dir benchmarklogs 2>&1 | tee ./benchmarklogs/advanced-charts-nonTLS.log
-        
-        # Generate TLS advanced charts  
-        echo "=== Generating TLS Advanced Charts ==="
-        python scripts/benchmark_charts.py --tls --input-dir . --output-dir benchmarklogs 2>&1 | tee ./benchmarklogs/advanced-charts-TLS.log
-        
-        # List generated chart files
-        echo "=== Generated Chart Files ==="
-        ls -la benchmarklogs/advcharts-*.png || echo "No advanced chart files found"
-        
-        echo "✅ Advanced benchmark charts generation completed"
 
     - name: Upload Benchmark Logs and Charts
       uses: actions/upload-artifact@v4
