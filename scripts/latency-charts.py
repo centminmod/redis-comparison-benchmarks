@@ -172,6 +172,8 @@ def parse_markdown(filepath):
 
 def plot_latency_chart_single(all_data, metric_key, title_suffix, ylabel, out_filename, redis_io_threads, keydb_server_threads, dragonfly_proactor_threads, valkey_io_threads, requests, clients, pipeline, data_size):
     """Build single grouped-bar chart with improved spacing and fonts"""
+    print(f"[DEBUG] Starting single chart generation: {out_filename}")
+    
     vals = []
     for db in DBS:
         row = [all_data[db][metric_key].get(lbl, 0.0) for lbl in EXPECTED_LABELS]
@@ -204,12 +206,16 @@ def plot_latency_chart_single(all_data, metric_key, title_suffix, ylabel, out_fi
                 ax.annotate(f"{height:.2f}", xy=(x[j] + offsets[i], height), xytext=(0, 4), textcoords="offset points", ha="center", va="bottom", fontsize=8)
 
     plt.tight_layout()
+    print(f"[DEBUG] Saving plot to {out_filename}")
     plt.savefig(out_filename, dpi=300, bbox_inches='tight')
     plt.close()
+    print(f"[DEBUG] Successfully saved {out_filename}")
 
 
 def plot_latency_chart_grid(all_data, metric_key, title_suffix, ylabel, out_filename, redis_io_threads, keydb_server_threads, dragonfly_proactor_threads, valkey_io_threads, requests, clients, pipeline, data_size):
     """Build 2x2 subplot grid - one subplot per thread count"""
+    print(f"[DEBUG] Starting grid chart generation: {out_filename}")
+    
     thread_counts = ["1 Thread", "2 Threads", "4 Threads", "8 Threads"]
     operations = ["Sets", "Gets", "Totals"]
     
@@ -253,8 +259,10 @@ def plot_latency_chart_grid(all_data, metric_key, title_suffix, ylabel, out_file
     
     plt.tight_layout()
     plt.subplots_adjust(top=0.85, bottom=0.15)
+    print(f"[DEBUG] Saving plot to {out_filename}")
     plt.savefig(out_filename, dpi=300, bbox_inches='tight')
     plt.close()
+    print(f"[DEBUG] Successfully saved {out_filename}")
 
 
 if __name__ == "__main__":
@@ -278,8 +286,11 @@ if __name__ == "__main__":
 
     for metric_key, ylabel in [("avg", "Average Latency (ms)"), ("p50", "p50 Latency (ms)"), ("p99", "p99 Latency (ms)")]:
         out_filename = f"latency-{args.prefix}-{metric_key}-{args.layout}.png"
+        print(f"[DEBUG] Output filename will be: {out_filename}")
         
         if args.layout == "grid":
             plot_latency_chart_grid(data, metric_key, ylabel, ylabel, out_filename, args.redis_io_threads, args.keydb_server_threads, args.dragonfly_proactor_threads, args.valkey_io_threads, args.requests, args.clients, args.pipeline, args.data_size)
         else:
             plot_latency_chart_single(data, metric_key, ylabel, ylabel, out_filename, args.redis_io_threads, args.keydb_server_threads, args.dragonfly_proactor_threads, args.valkey_io_threads, args.requests, args.clients, args.pipeline, args.data_size)
+    
+    print("[DEBUG] Script completed")

@@ -157,6 +157,8 @@ def parse_markdown_ops(filepath):
 
 def plot_ops_chart_single(all_data, out_filename, redis_io_threads, keydb_server_threads, dragonfly_proactor_threads, valkey_io_threads, requests, clients, pipeline, data_size):
     """Build single grouped-bar chart with improved spacing and fonts"""
+    print(f"[DEBUG] Starting single chart generation: {out_filename}")
+    
     vals = []
     for db in DBS:
         row = [all_data[db]["ops"].get(lbl, 0.0) for lbl in EXPECTED_LABELS]
@@ -175,12 +177,12 @@ def plot_ops_chart_single(all_data, out_filename, redis_io_threads, keydb_server
         ax.bar(x + offsets[i], arr[i], width, label=db_label)
 
     title_parts = ["Redis vs KeyDB vs Dragonfly vs Valkey – Memtier Benchmarks (4 vCPU VM)", f"(requests:{requests} clients:{clients} pipeline:{pipeline} data_size:{data_size})", "(higher is better) by George Liu"]
-    ax.set_title("\n".join(title_parts), fontsize=17, fontweight='bold', pad=20)
-    ax.set_ylabel("Ops/Sec", fontsize=12, fontweight='semibold')
+    ax.set_title("\n".join(title_parts), fontsize=20, fontweight='bold', pad=20)
+    ax.set_ylabel("Ops/Sec", fontsize=16, fontweight='semibold')
     ax.grid(axis='y', linestyle='--', linewidth=0.5, alpha=0.7)
     ax.set_xticks(x)
-    ax.set_xticklabels(EXPECTED_LABELS, rotation=35, ha="right", fontsize=8)
-    ax.legend(fontsize=8, bbox_to_anchor=(1.02, 1), loc='upper left')
+    ax.set_xticklabels(EXPECTED_LABELS, rotation=35, ha="right", fontsize=11)
+    ax.legend(fontsize=12, bbox_to_anchor=(1.02, 1), loc='upper left')
     ax.tick_params(axis='y', labelsize=13)
 
     for i, db in enumerate(DBS):
@@ -189,12 +191,16 @@ def plot_ops_chart_single(all_data, out_filename, redis_io_threads, keydb_server
                 ax.annotate(f"{int(round(height))}", xy=(x[j] + offsets[i], height), xytext=(0, 4), textcoords="offset points", ha="center", va="bottom", fontsize=8)
 
     plt.tight_layout()
+    print(f"[DEBUG] Saving Ops/Sec plot to {out_filename}")
     plt.savefig(out_filename, dpi=300, bbox_inches='tight')
     plt.close()
+    print(f"[DEBUG] Successfully saved {out_filename}")
 
 
 def plot_ops_chart_grid(all_data, out_filename, redis_io_threads, keydb_server_threads, dragonfly_proactor_threads, valkey_io_threads, requests, clients, pipeline, data_size):
     """Build 2x2 subplot grid - one subplot per thread count"""
+    print(f"[DEBUG] Starting grid chart generation: {out_filename}")
+    
     thread_counts = ["1 Thread", "2 Threads", "4 Threads", "8 Threads"]
     operations = ["Sets", "Gets", "Totals"]
     
@@ -238,8 +244,10 @@ def plot_ops_chart_grid(all_data, out_filename, redis_io_threads, keydb_server_t
     
     plt.tight_layout()
     plt.subplots_adjust(top=0.85, bottom=0.15)
+    print(f"[DEBUG] Saving Ops/Sec grid plot to {out_filename}")
     plt.savefig(out_filename, dpi=300, bbox_inches='tight')
     plt.close()
+    print(f"[DEBUG] Successfully saved {out_filename}")
 
 
 if __name__ == "__main__":
@@ -262,8 +270,11 @@ if __name__ == "__main__":
     data_ops = parse_markdown_ops(args.md_path)
 
     out_filename = f"ops-{args.prefix}-{args.layout}.png"
+    print(f"[DEBUG] Output filename will be: {out_filename}")
     
     if args.layout == "grid":
         plot_ops_chart_grid(data_ops, out_filename, args.redis_io_threads, args.keydb_server_threads, args.dragonfly_proactor_threads, args.valkey_io_threads, args.requests, args.clients, args.pipeline, args.data_size)
     else:
         plot_ops_chart_single(data_ops, out_filename, args.redis_io_threads, args.keydb_server_threads, args.dragonfly_proactor_threads, args.valkey_io_threads, args.requests, args.clients, args.pipeline, args.data_size)
+    
+    print("[DEBUG] Script completed")
