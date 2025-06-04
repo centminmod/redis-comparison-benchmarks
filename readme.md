@@ -4,7 +4,7 @@
 
 ## Summary
 
-This comprehensive benchmark compares four leading Redis-compatible databases: **Redis**, **KeyDB**, **Dragonfly**, and **Valkey** across various threading scenarios on a 4 vCPU system Azure VPS server with 16GB of memory GitHub Actions Ubuntu hosted runner. Tests used [memtier_benchmark](#https://github.com/RedisLabs/memtier_benchmark).
+This comprehensive benchmark compares four leading Redis-compatible databases: **Redis**, **KeyDB**, **Dragonfly**, and **Valkey** across various threading scenarios on a 4 vCPU system Azure VPS server with 16GB of memory GitHub Actions Ubuntu hosted runner. Tests used [memtier_benchmark](https://github.com/RedisLabs/memtier_benchmark).
 
 Previous test comparison results without Valkey can be read [here](readme-v1.md).
 
