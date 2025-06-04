@@ -1,0 +1,1402 @@
+name: v4 Benchmark Redis vs KeyDB vs Dragonfly vs Valkey
+
+on:
+  workflow_dispatch:
+    branches: [master]
+    inputs:
+      requests:
+        description: 'Number of requests per thread'
+        required: false
+        default: '2000'
+        type: string
+      clients:
+        description: 'Number of clients per thread'
+        required: false
+        default: '100'
+        type: string
+      pipeline:
+        description: 'Pipeline depth'
+        required: false
+        default: '1'
+        type: string
+      data_size:
+        description: 'Data size in bytes'
+        required: false
+        default: '1024'
+        type: string
+      key_minimum:
+        description: 'Minimum key value'
+        required: false
+        default: '1'
+        type: string
+      key_maximum:
+        description: 'Maximum key value'
+        required: false
+        default: '1000000'
+        type: string
+      intrinsic_latency:
+        description: 'intrinsic latency value'
+        required: false
+        default: '5'
+        type: string
+      redis_io_threads:
+        description: 'Redis IO threads count'
+        required: false
+        default: '2'
+        type: string
+      keydb_server_threads:
+        description: 'KeyDB server threads count'
+        required: false
+        default: '2'
+        type: string
+      # dragonfly_proactor_threads:
+      #   description: 'Dragonfly proactor threads count'
+      #   required: false
+      #   default: '4'
+      #   type: string
+      valkey_io_threads:
+        description: 'Valkey IO threads count'
+        required: false
+        default: '1'
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-24.04
+    env:
+      DRAGONFLY_PROACTOR_THREADS: 3
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Cache Docker layers
+      uses: actions/cache@v4
+      with:
+        path: /tmp/.buildx-cache
+        key: ${{ runner.os }}-buildx-${{ github.sha }}
+        restore-keys: |
+          ${{ runner.os }}-buildx-
+
+    - name: System Info
+      run: |
+        echo "==== Kernel ===="
+        uname -r
+
+        echo "==== CPU Info ===="
+        lscpu
+    
+        echo "==== Memory Info ===="
+        free -m
+    
+        echo "==== Disk Info ===="
+        df -hT
+
+    - name: Display Benchmark Configuration
+      run: |
+        echo "==== Benchmark Configuration ===="
+        echo "Requests: ${{ inputs.requests || '2000' }}"
+        echo "Clients: ${{ inputs.clients || '100' }}"
+        echo "Pipeline: ${{ inputs.pipeline || '1' }}"
+        echo "Data Size: ${{ inputs.data_size || '1024' }}"
+        echo "Key Minimum: ${{ inputs.key_minimum || '1' }}"
+        echo "Key Maximum: ${{ inputs.key_maximum || '1000000' }}"
+        echo "Key Median: $(( (${{ inputs.key_maximum || '1000000' }} + ${{ inputs.key_minimum || '1' }}) / 2 ))"
+        echo "Key Stddev: $(( (${{ inputs.key_maximum || '1000000' }} - ${{ inputs.key_minimum || '1' }}) / 6 ))"
+        echo "Intrinsic Latency: ${{ inputs.intrinsic_latency || '5' }}"
+
+    - name: Update System
+      run: |
+        sudo apt-get update -y
+        sudo DEBIAN_FRONTEND=noninteractive apt-get upgrade -y
+        sudo DEBIAN_FRONTEND=noninteractive apt-get dist-upgrade -y
+
+    - name: Check IRQ and Network Capabilities
+      continue-on-error: true
+      run: |
+        echo "=== Network Interfaces ==="
+        ip link show || ifconfig -a
+        
+        echo "=== IRQ Information ==="
+        cat /proc/interrupts | head -20
+        
+        echo "=== CPU Topology ==="
+        lscpu
+        cat /proc/cpuinfo | grep processor
+        
+        echo "=== Test sudo access ==="
+        sudo -n echo "Sudo available" 2>/dev/null || echo "No sudo access to system settings"
+        
+        echo "=== Test ethtool access ==="
+        sudo ethtool -i eth0 2>/dev/null || echo "No ethtool access"
+
+    - name: Generate Distinct CA, Server, and Client Certificates
+      run: |
+        # Generate CA's private key and self-signed certificate
+        openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out ca.key
+        openssl req -new -x509 -days 365 -key ca.key -out ca.crt -subj "/C=US/ST=Some-State/O=OrganizationName/OU=OrganizationalUnit/CN=CA"
+        
+        # Generate server's private key and certificate signing request (CSR)
+        openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out test.key
+        openssl req -new -key test.key -out test.csr -subj "/C=US/ST=Some-State/O=OrganizationName/OU=OrganizationalUnit/CN=test.com"
+        
+        # Sign the server's CSR with the CA's private key to get the server's certificate
+        openssl x509 -req -in test.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out test.crt -days 365
+        
+        # Generate client's private key and CSR
+        openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out client_priv.pem
+        openssl req -new -key client_priv.pem -out client.csr -subj "/C=US/ST=Some-State/O=OrganizationName/OU=OrganizationalUnit/CN=test.server.com"
+        
+        # Sign the client's CSR with the CA's private key to get the client's certificate
+        openssl x509 -req -in client.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out client_cert.pem -days 365
+
+    - name: Update Redis Configuration for non-TLS
+      run: |
+        echo "io-threads ${{ inputs.redis_io_threads || '4' }}" >> redis.conf
+        echo "io-threads-do-reads yes" >> redis.conf
+        echo "save \"\"" >> redis.conf
+        echo "appendonly no" >> redis.conf
+
+    - name: Update KeyDB Configuration for non-TLS
+      run: |
+        echo "#server-thread-affinity true" >> keydb.conf
+        echo "min-clients-per-thread 50" >> keydb.conf
+        echo "server-threads ${{ inputs.keydb_server_threads || '2' }}" >> keydb.conf
+        echo "io-threads-do-reads yes" >> keydb.conf
+        echo "save \"\"" >> keydb.conf
+        echo "appendonly no" >> keydb.conf
+
+    - name: Update Dragonfly Configuration for non-TLS
+      run: |
+        sed -i "s|--proactor_threads=2|--proactor_threads=${DRAGONFLY_PROACTOR_THREADS}|" Dockerfile-dragonfly
+        echo "--proactor_threads=${DRAGONFLY_PROACTOR_THREADS}" >> dragonfly.conf
+        echo "--dbfilename=''" >> dragonfly.conf
+
+    - name: Update Valkey Configuration for non-TLS
+      run: |
+        echo "io-threads ${{ inputs.valkey_io_threads || '4' }}" >> valkey.conf
+        echo "io-threads-do-reads yes" >> valkey.conf
+        echo "save \"\"" >> valkey.conf
+        echo "appendonly no" >> valkey.conf
+
+    - name: Update Redis Configuration for TLS
+      run: |
+        echo "io-threads ${{ inputs.redis_io_threads || '4' }}" >> redis-tls.conf
+        echo "io-threads-do-reads yes" >> redis-tls.conf
+        echo "tls-port 6390" >> redis-tls.conf
+        echo "tls-cert-file /tls/test.crt" >> redis-tls.conf
+        echo "tls-key-file /tls/test.key" >> redis-tls.conf
+        echo "tls-ca-cert-file /tls/ca.crt" >> redis-tls.conf
+        echo "save \"\"" >> redis-tls.conf
+        echo "appendonly no" >> redis-tls.conf
+    
+    - name: Update KeyDB Configuration for TLS
+      run: |
+        echo "#server-thread-affinity true" >> keydb-tls.conf
+        echo "min-clients-per-thread 50" >> keydb-tls.conf
+        echo "server-threads ${{ inputs.keydb_server_threads || '2' }}" >> keydb-tls.conf
+        echo "io-threads-do-reads yes" >> keydb-tls.conf
+        echo "tls-port 6391" >> keydb-tls.conf
+        echo "tls-cert-file /tls/test.crt" >> keydb-tls.conf
+        echo "tls-key-file /tls/test.key" >> keydb-tls.conf
+        echo "tls-ca-cert-file /tls/ca.crt" >> keydb-tls.conf
+        echo "save \"\"" >> keydb-tls.conf
+        echo "appendonly no" >> keydb-tls.conf
+    
+    - name: Update Dragonfly Configuration for TLS
+      run: |
+        sed -i "s|--proactor_threads=2|--proactor_threads=${DRAGONFLY_PROACTOR_THREADS}|" Dockerfile-dragonfly-tls
+        echo "--proactor_threads=${DRAGONFLY_PROACTOR_THREADS}" >> dragonfly-tls.conf
+        echo "--port=6392" >> dragonfly-tls.conf
+        echo "--tls_cert_file=/tls/test.crt" >> dragonfly-tls.conf
+        echo "--tls_key_file=/tls/test.key" >> dragonfly-tls.conf
+        echo "--tls_ca_cert_file=/tls/ca.crt" >> dragonfly-tls.conf
+        echo "--dbfilename=''" >> dragonfly-tls.conf
+
+    - name: Update Valkey Configuration for TLS
+      run: |
+        echo "io-threads ${{ inputs.valkey_io_threads || '4' }}" >> valkey-tls.conf
+        echo "io-threads-do-reads yes" >> valkey-tls.conf
+        echo "tls-port 6393" >> valkey-tls.conf
+        echo "tls-cert-file /tls/test.crt" >> valkey-tls.conf
+        echo "tls-key-file /tls/test.key" >> valkey-tls.conf
+        echo "tls-ca-cert-file /tls/ca.crt" >> valkey-tls.conf
+        echo "tls-auth-clients no" >> valkey-tls.conf
+        echo "save \"\"" >> valkey-tls.conf
+        echo "appendonly no" >> valkey-tls.conf
+
+    - name: Build Redis Docker image
+      uses: docker/build-push-action@v6
+      with:
+        context: .
+        file: ./Dockerfile-redis
+        load: true
+        tags: redis:latest
+
+    - name: Build KeyDB Docker image
+      uses: docker/build-push-action@v6
+      with:
+        context: .
+        file: ./Dockerfile-keydb
+        load: true
+        tags: keydb:latest
+
+    - name: Build Dragonfly Docker image
+      uses: docker/build-push-action@v6
+      with:
+        context: .
+        file: ./Dockerfile-dragonfly
+        load: true
+        tags: dragonfly:latest
+
+    - name: Build Valkey Docker image
+      uses: docker/build-push-action@v6
+      with:
+        context: .
+        file: ./Dockerfile-valkey
+        load: true
+        tags: valkey:latest
+
+    - name: Build Redis Docker image with TLS
+      uses: docker/build-push-action@v6
+      with:
+        context: .
+        file: ./Dockerfile-redis-tls
+        load: true
+        tags: redis-tls:latest
+    
+    - name: Build KeyDB Docker image with TLS
+      uses: docker/build-push-action@v6
+      with:
+        context: .
+        file: ./Dockerfile-keydb-tls
+        load: true
+        tags: keydb-tls:latest
+    
+    - name: Build Dragonfly Docker image with TLS
+      uses: docker/build-push-action@v6
+      with:
+        context: .
+        file: ./Dockerfile-dragonfly-tls-nopass
+        load: true
+        tags: dragonfly-tls:latest
+
+    - name: Build Valkey Docker image with TLS
+      uses: docker/build-push-action@v6
+      with:
+        context: .
+        file: ./Dockerfile-valkey-tls
+        load: true
+        tags: valkey-tls:latest
+
+    - name: Run Redis container
+      run: |
+        docker run -d --name redis -p 6379:6379 --cpuset-cpus="0-3" --ulimit memlock=-1 redis:latest
+        sleep 20
+
+    - name: Run KeyDB container
+      run: |
+        docker run -d --name keydb -p 6380:6379 --cpuset-cpus="0-3" --ulimit memlock=-1 keydb:latest
+        sleep 20
+
+    - name: Run Dragonfly container
+      run: |
+        docker run -d --name dragonfly -p 6381:6379 --cpuset-cpus="0-3" --ulimit memlock=-1 dragonfly:latest
+        sleep 20
+
+    - name: Run Redis container with TLS
+      run: |
+        docker run -d --name redis-tls -p 6390:6390 --cpuset-cpus="0-3" --ulimit memlock=-1 redis-tls:latest
+        sleep 20
+    
+    - name: Run KeyDB container with TLS
+      run: |
+        docker run -d --name keydb-tls -p 6391:6391 --cpuset-cpus="0-3" --ulimit memlock=-1 keydb-tls:latest
+        sleep 20
+    
+    - name: Run Dragonfly container with TLS
+      run: |
+        docker run -d --name dragonfly-tls -p 6392:6392 --cpuset-cpus="0-3" --ulimit memlock=-1 dragonfly-tls:latest
+        sleep 20
+
+    - name: Run Valkey container
+      run: |
+        docker run -d --name valkey -p 6382:6379 --cpuset-cpus="0-3" --ulimit memlock=-1 valkey:latest
+        sleep 20
+
+    - name: Run Valkey container with TLS
+      run: |
+        docker run -d --name valkey-tls -p 6393:6393 --cpuset-cpus="0-3" --ulimit memlock=-1 valkey-tls:latest
+        sleep 20
+
+    - name: Check Redis logs
+      continue-on-error: true
+      run: docker logs redis
+
+    - name: Test Redis Connectivity
+      continue-on-error: true
+      run: docker exec redis redis-cli -h 127.0.0.1 -p 6379 PING
+
+    - name: Check KeyDB logs
+      continue-on-error: true
+      run: docker logs keydb
+    
+    - name: Test KeyDB Connectivity
+      continue-on-error: true
+      run: docker exec keydb keydb-cli -h 127.0.0.1 -p 6379 PING
+
+    - name: Check Dragonfly logs
+      continue-on-error: true
+      run: docker logs dragonfly
+    
+    - name: Test Dragonfly Connectivity
+      continue-on-error: true
+      run: docker exec dragonfly redis-cli -h 127.0.0.1 -p 6379 PING
+
+    - name: Inspect Dragonfly Help
+      continue-on-error: true
+      run: |
+        docker exec dragonfly dragonfly --help || true
+
+    - name: Check Redis TLS logs
+      continue-on-error: true
+      run: docker logs redis-tls
+
+    - name: Check Valkey logs
+      continue-on-error: true
+      run: docker logs valkey
+
+    - name: Test Valkey Connectivity
+      continue-on-error: true
+      run: docker exec valkey redis-cli -h 127.0.0.1 -p 6379 PING
+    
+    - name: Test Redis TLS Connectivity
+      continue-on-error: true
+      run: docker exec redis-tls redis-cli -h 127.0.0.1 -p 6390 --tls --insecure --cert /tls/test.crt --key /tls/test.key --cacert /tls/ca.crt PING
+
+    - name: Check KeyDB TLS logs
+      continue-on-error: true
+      run: docker logs keydb-tls
+    
+    - name: Test KeyDB TLS Connectivity
+      continue-on-error: true
+      run: docker exec keydb-tls keydb-cli -h 127.0.0.1 -p 6391 --tls --insecure --cert /tls/test.crt --key /tls/test.key --cacert /tls/ca.crt PING
+
+    - name: Check Dragonfly TLS logs
+      continue-on-error: true
+      run: docker logs dragonfly-tls
+
+    - name: Check Dragonfly TLS config
+      continue-on-error: true
+      run: |
+        docker exec dragonfly-tls ls -lAh /etc/dragonfly/
+   
+    - name: Test Dragonfly TLS Connectivity
+      continue-on-error: true
+      run: |
+        docker exec dragonfly-tls redis-cli --help
+        docker exec dragonfly-tls redis-cli -h 127.0.0.1 -p 6392 --cert /tls/test.crt --key /tls/test.key --cacert /tls/ca.crt PING
+
+    - name: Check Valkey TLS logs
+      continue-on-error: true
+      run: docker logs valkey-tls
+
+    - name: Test Valkey TLS Connectivity
+      continue-on-error: true
+      run: docker exec valkey-tls redis-cli -h 127.0.0.1 -p 6393 --tls --insecure --cert /tls/test.crt --key /tls/test.key --cacert /tls/ca.crt PING
+
+    - name: Check Database Versions
+      continue-on-error: true
+      run: |
+        echo "==== Database Versions ===="
+        
+        echo "=== Redis Version ==="
+        docker exec redis redis-server --version || docker exec redis redis-cli INFO server | grep redis_version | head -1
+        
+        echo "=== KeyDB Version ==="
+        docker exec keydb keydb-server --version || docker exec keydb keydb-cli INFO server | grep -E "(keydb_version|redis_version)" | head -1
+        
+        echo "=== Dragonfly Version ==="
+        docker exec dragonfly dragonfly --version || docker logs dragonfly 2>&1 | grep -i "version\|dragonfly" | head -3
+        
+        echo "=== Valkey Version ==="
+        docker exec valkey valkey-server --version || docker exec valkey redis-cli INFO server | grep -E "(valkey_version|redis_version)" | head -1      
+
+    - name: Check Database Server Configurations
+      continue-on-error: true
+      run: |
+        echo "=================================="
+        echo "DATABASE CONFIGURATION ANALYSIS"
+        echo "=================================="
+        
+        echo ""
+        echo "=== REDIS CONFIGURATION ==="
+        echo "--- IO Threads ---"
+        docker exec redis redis-cli CONFIG GET "*io-threads*" || echo "Failed to get Redis IO thread config"
+        docker exec redis redis-cli INFO | grep ^io || echo "no ^io"
+        echo ""
+        docker exec redis redis-cli INFO | grep thread || echo "no thread"
+        echo ""
+        echo "--- Memory Settings ---"
+        docker exec redis redis-cli CONFIG GET "maxmemory*" || echo "Failed to get Redis memory config"
+        echo "--- Save/Persistence ---"
+        docker exec redis redis-cli CONFIG GET "save" || echo "Failed to get Redis save config"
+        docker exec redis redis-cli CONFIG GET "appendonly" || echo "Failed to get Redis AOF config"
+        echo ""
+        echo "--- Network ---"
+        docker exec redis redis-cli CONFIG GET "*timeout*" || echo "Failed to get Redis timeout config"
+        docker exec redis redis-cli CONFIG GET "tcp-*" || echo "Failed to get Redis TCP config"
+        echo ""
+        echo "--- Performance ---"
+        docker exec redis redis-cli CONFIG GET "lazyfree-*" || echo "Failed to get Redis lazyfree config"
+        docker exec redis redis-cli INFO stats | grep -E "(keyspace_|expired_|evicted_)" || echo "Failed to get Redis stats"
+        
+        echo ""
+        echo "=== KEYDB CONFIGURATION ==="
+        echo "--- IO Threads ---"
+        docker exec keydb keydb-cli CONFIG GET "*io-threads*" || echo "Failed to get KeyDB IO thread config"
+        docker exec keydb keydb-cli CONFIG GET "*server-threads*" || echo "Failed to get KeyDB IO server thread config"
+        docker exec keydb redis-cli INFO | grep ^io || echo "no ^io"
+        echo ""
+        docker exec keydb redis-cli INFO | grep thread || echo "no thread"
+        echo ""
+        echo "--- KeyDB Specific ---"
+        docker exec keydb keydb-cli CONFIG GET "*multimaster*" || echo "No multimaster config"
+        docker exec keydb keydb-cli CONFIG GET "*active-replica*" || echo "No active-replica config"
+        echo ""
+        echo "--- Memory Settings ---"
+        docker exec keydb keydb-cli CONFIG GET "maxmemory*" || echo "Failed to get KeyDB memory config"
+        echo "--- Save/Persistence ---"
+        docker exec keydb keydb-cli CONFIG GET "save" || echo "Failed to get KeyDB save config"
+        docker exec keydb keydb-cli CONFIG GET "appendonly" || echo "Failed to get KeyDB AOF config"
+        echo ""
+        echo "--- Performance ---"
+        docker exec keydb keydb-cli INFO stats | grep -E "(keyspace_|expired_|evicted_)" || echo "Failed to get KeyDB stats"
+        
+        echo ""
+        echo "=== DRAGONFLY CONFIGURATION ==="
+        echo "--- Dragonfly Help (Performance Options) ---"
+        docker exec dragonfly dragonfly --help | grep -E "(thread|memory|cache|performance)" || echo "Failed to get Dragonfly help"
+        echo "--- IO Threads ---"
+        docker exec dragonfly redis-cli INFO | grep ^io || echo "no ^io"
+        echo ""
+        docker exec dragonfly redis-cli INFO | grep thread || echo "no thread"
+        echo ""
+        echo "--- Dragonfly Logs (Config Info) ---"
+        docker logs dragonfly 2>&1 | grep -E "(thread|memory|port|bind)" | head -10 || echo "No config info in logs"
+        echo "--- Dragonfly Process Info ---"
+        docker exec dragonfly ps aux | grep dragonfly || echo "Failed to get Dragonfly process info"
+        echo "--- Dragonfly Memory Info ---"
+        docker exec dragonfly redis-cli INFO memory || echo "Failed to get Dragonfly memory info"
+        
+        echo ""
+        echo "=== VALKEY CONFIGURATION ==="
+        echo "--- IO Threads ---"
+        docker exec valkey redis-cli CONFIG GET "*io-threads*" || echo "Failed to get Valkey IO thread config"
+        docker exec valkey redis-cli INFO | grep ^io || echo "no ^io"
+        echo ""
+        docker exec valkey redis-cli INFO | grep thread || echo "no thread"
+        echo ""
+        echo "--- Valkey Specific Features ---"
+        docker exec valkey redis-cli CONFIG GET "*async*" || echo "No async config found"
+        docker exec valkey redis-cli MODULE LIST || echo "No modules loaded"
+        echo ""
+        echo "--- Memory Settings ---"
+        docker exec valkey redis-cli CONFIG GET "maxmemory*" || echo "Failed to get Valkey memory config"
+        echo "--- Save/Persistence ---"
+        docker exec valkey redis-cli CONFIG GET "save" || echo "Failed to get Valkey save config"
+        docker exec valkey redis-cli CONFIG GET "appendonly" || echo "Failed to get Valkey AOF config"
+        echo ""
+        echo "--- Network ---"
+        docker exec valkey redis-cli CONFIG GET "*timeout*" || echo "Failed to get Valkey timeout config"
+        echo ""
+        echo "--- Performance ---"
+        docker exec valkey redis-cli CONFIG GET "lazyfree-*" || echo "Failed to get Valkey lazyfree config"
+        docker exec valkey redis-cli INFO stats | grep -E "(keyspace_|expired_|evicted_)" || echo "Failed to get Valkey stats"
+        
+        echo ""
+        echo "=== CONTAINER RESOURCE ANALYSIS ==="
+        echo "--- Container CPU Affinity ---"
+        for db in redis keydb dragonfly valkey; do
+          if docker ps | grep -q $db; then
+            echo "=== $db CPU affinity ==="
+            docker exec $db cat /proc/self/status | grep Cpus_allowed_list 2>/dev/null || echo "$db: Could not get CPU affinity"
+            docker exec $db cat /proc/self/status | grep "voluntary_ctxt_switches\|nonvoluntary_ctxt_switches" 2>/dev/null || echo "$db: Could not get context switch info"
+          fi
+        done
+        
+        echo ""
+        echo "--- Container Memory Usage ---"
+        docker stats --no-stream --format "table {{.Container}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.MemPerc}}\t{{.NetIO}}\t{{.BlockIO}}" 2>/dev/null || echo "Could not get container stats"
+        
+        echo ""
+        echo "=== BUILD AND VERSION DETAILS ==="
+        echo
+        echo "--- Redis Build Info ---"
+        docker exec redis redis-cli INFO server | grep -E "(redis_version|redis_git|redis_build|gcc_version|arch_bits|multiplexing_api|executable)" || echo "Failed to get Redis build info"
+        
+        echo
+        echo "--- KeyDB Build Info ---"
+        docker exec keydb keydb-cli INFO server | grep -E "(keydb_version|redis_version|gcc_version|arch_bits|multiplexing_api|executable)" || echo "Failed to get KeyDB build info"
+        
+        echo
+        echo "--- Dragonfly Build Info ---"
+        docker exec dragonfly dragonfly --version 2>/dev/null || docker logs dragonfly 2>&1 | grep -i "version\|build" | head -3 || echo "Failed to get Dragonfly build info"
+        
+        echo
+        echo "--- Valkey Build Info ---"
+        docker exec valkey redis-cli INFO server | grep -E "(valkey_version|redis_version|gcc_version|arch_bits|multiplexing_api|executable)" || echo "Failed to get Valkey build info"
+        
+        echo ""
+        echo "=== PERFORMANCE-RELATED SYSTEM INFO ==="
+        echo "--- Available System Resources ---"
+        echo "CPU cores: $(nproc)"
+        echo "Memory: $(free -h | grep '^Mem:' | awk '{print $2}')"
+        echo "--- Docker Network ---"
+        docker network ls
+        echo "--- Container Network Mode ---"
+        for db in redis keydb dragonfly valkey; do
+          if docker ps | grep -q $db; then
+            echo "$db network: $(docker inspect $db | grep -i networkmode | head -1)"
+          fi
+        done
+        
+        echo ""
+        echo "=================================="
+        echo "CONFIGURATION ANALYSIS COMPLETE"
+        echo "=================================="
+
+    - name: Create Benchmark Logs Directory
+      run: mkdir -p ./benchmarklogs
+
+    - name: Set Benchmark Parameters
+      run: |
+        echo "REQUESTS=${{ inputs.requests || '2000' }}" >> $GITHUB_ENV
+        echo "CLIENTS=${{ inputs.clients || '100' }}" >> $GITHUB_ENV
+        echo "PIPELINE=${{ inputs.pipeline || '1' }}" >> $GITHUB_ENV
+        echo "DATA_SIZE=${{ inputs.data_size || '1024' }}" >> $GITHUB_ENV
+        echo "KEY_MINIMUM=${{ inputs.key_minimum || '1' }}" >> $GITHUB_ENV
+        echo "KEY_MAXIMUM=${{ inputs.key_maximum || '1000000' }}" >> $GITHUB_ENV
+        echo "KEY_MEDIAN=$(( (${{ inputs.key_maximum || '1000000' }} + ${{ inputs.key_minimum || '1' }}) / 2 ))" >> $GITHUB_ENV
+        echo "KEY_STDDEV=$(( (${{ inputs.key_maximum || '1000000' }} - ${{ inputs.key_minimum || '1' }}) / 6 ))" >> $GITHUB_ENV
+        echo "INTRINSIC_LATENCY=${{ inputs.intrinsic_latency || '5' }}" >> $GITHUB_ENV
+        echo "==== Database Thread Configuration ===="
+        echo "Redis IO Threads: ${{ inputs.redis_io_threads || '2' }}"
+        echo "KeyDB Server Threads: ${{ inputs.keydb_server_threads || '2' }}"
+        echo "KeyDB Min Clients Per Thread: ${{ inputs.keydb_min_clients_per_thread || '50' }}"
+        echo "Dragonfly Proactor Threads: ${DRAGONFLY_PROACTOR_THREADS}"
+        echo "Valkey IO Threads: ${{ inputs.valkey_io_threads || '1' }}"
+
+    # - name: Intrinsic latency from client (localhost ports, with container names)
+    #   continue-on-error: true
+    #   run: |
+    #     ports=(6379 6380 6381 6382 6390 6391 6392 6393)
+    #     containers=(redis keydb dragonfly valkey redis-tls keydb-tls dragonfly-tls valkey-tls)
+
+    #     for i in "${!ports[@]}"; do
+    #       port="${ports[$i]}"
+    #       container="${containers[$i]}"
+    #       echo ">>> Client‐side intrinsic latency for container \"$container\" @ 127.0.0.1:$port"
+    #       redis-cli -h 127.0.0.1 -p "$port" --intrinsic-latency $INTRINSIC_LATENCY
+    #     done
+
+    - name: Intrinsic latency from inside each container
+      continue-on-error: true
+      run: |
+        echo "=== Intrinsic Latency Tests ===" | tee ./benchmarklogs/intrinsic_latency.log
+        echo "Test Duration: ${INTRINSIC_LATENCY} seconds" | tee -a ./benchmarklogs/intrinsic_latency.log
+        echo "Timestamp: $(date -u)" | tee -a ./benchmarklogs/intrinsic_latency.log
+        echo "" | tee -a ./benchmarklogs/intrinsic_latency.log
+        
+        for container in redis keydb dragonfly valkey redis-tls keydb-tls dragonfly-tls valkey-tls; do
+          echo "" | tee -a ./benchmarklogs/intrinsic_latency.log
+          echo ">>> Container-side intrinsic latency inside: $container" | tee -a ./benchmarklogs/intrinsic_latency.log
+          echo "Command: docker exec $container redis-cli --intrinsic-latency ${INTRINSIC_LATENCY}" | tee -a ./benchmarklogs/intrinsic_latency.log
+          echo "---" | tee -a ./benchmarklogs/intrinsic_latency.log
+          
+          # Run the intrinsic latency test and capture output
+          if docker exec "$container" redis-cli --intrinsic-latency ${INTRINSIC_LATENCY} 2>&1 | tee -a ./benchmarklogs/intrinsic_latency.log; then
+            echo "✅ $container intrinsic latency test completed" | tee -a ./benchmarklogs/intrinsic_latency.log
+          else
+            echo "❌ $container intrinsic latency test failed" | tee -a ./benchmarklogs/intrinsic_latency.log
+          fi
+          echo "" | tee -a ./benchmarklogs/intrinsic_latency.log
+        done
+        
+        echo "=== Intrinsic Latency Tests Complete ===" | tee -a ./benchmarklogs/intrinsic_latency.log
+
+    - name: Install memtier_benchmark
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential autoconf automake libpcre3-dev libevent-dev pkg-config zlib1g-dev libssl-dev util-linux
+        git clone https://github.com/RedisLabs/memtier_benchmark.git
+        cd memtier_benchmark
+        autoreconf -ivf
+        ./configure
+        make
+        sudo make install
+
+    - name: Inspect memtier_benchmark Help
+      run: |
+        memtier_benchmark --help || true
+
+    - name: Memtier 1 Threads Benchmark Redis
+      run: taskset -c 0 memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6379 --protocol=redis -t 1 --distinct-client-seed --hide-histogram --requests=$REQUESTS --clients=$CLIENTS --pipeline=$PIPELINE --data-size=$DATA_SIZE --key-pattern=G:G --key-minimum=$KEY_MINIMUM --key-maximum=$KEY_MAXIMUM --key-median=$KEY_MEDIAN --key-stddev=$KEY_STDDEV | tee ./benchmarklogs/redis_benchmarks_1threads.txt || true
+
+    - name: Memtier 1 Threads Benchmark KeyDB
+      run: taskset -c 0 memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6380 --protocol=redis -t 1 --distinct-client-seed --hide-histogram --requests=$REQUESTS --clients=$CLIENTS --pipeline=$PIPELINE --data-size=$DATA_SIZE --key-pattern=G:G --key-minimum=$KEY_MINIMUM --key-maximum=$KEY_MAXIMUM --key-median=$KEY_MEDIAN --key-stddev=$KEY_STDDEV | tee ./benchmarklogs/keydb_benchmarks_1threads.txt || true
+
+    - name: Memtier 1 Threads Benchmark Dragonfly
+      run: taskset -c 0 memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6381 --protocol=redis -t 1 --distinct-client-seed --hide-histogram --requests=$REQUESTS --clients=$CLIENTS --pipeline=$PIPELINE --data-size=$DATA_SIZE --key-pattern=G:G --key-minimum=$KEY_MINIMUM --key-maximum=$KEY_MAXIMUM --key-median=$KEY_MEDIAN --key-stddev=$KEY_STDDEV | tee ./benchmarklogs/dragonfly_benchmarks_1threads.txt || true
+
+    - name: Memtier 1 Threads Benchmark Valkey
+      run: taskset -c 0 memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6382 --protocol=redis -t 1 --distinct-client-seed --hide-histogram --requests=$REQUESTS --clients=$CLIENTS --pipeline=$PIPELINE --data-size=$DATA_SIZE --key-pattern=G:G --key-minimum=$KEY_MINIMUM --key-maximum=$KEY_MAXIMUM --key-median=$KEY_MEDIAN --key-stddev=$KEY_STDDEV | tee ./benchmarklogs/valkey_benchmarks_1threads.txt || true
+
+    - name: Memtier 2 Threads Benchmark Redis
+      run: taskset -c 0,1 memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6379 --protocol=redis -t 2 --distinct-client-seed --hide-histogram --requests=$REQUESTS --clients=$CLIENTS --pipeline=$PIPELINE --data-size=$DATA_SIZE --key-pattern=G:G --key-minimum=$KEY_MINIMUM --key-maximum=$KEY_MAXIMUM --key-median=$KEY_MEDIAN --key-stddev=$KEY_STDDEV | tee ./benchmarklogs/redis_benchmarks_2threads.txt || true
+
+    - name: Memtier 2 Threads Benchmark KeyDB
+      run: taskset -c 0,1 memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6380 --protocol=redis -t 2 --distinct-client-seed --hide-histogram --requests=$REQUESTS --clients=$CLIENTS --pipeline=$PIPELINE --data-size=$DATA_SIZE --key-pattern=G:G --key-minimum=$KEY_MINIMUM --key-maximum=$KEY_MAXIMUM --key-median=$KEY_MEDIAN --key-stddev=$KEY_STDDEV | tee ./benchmarklogs/keydb_benchmarks_2threads.txt || true
+
+    - name: Memtier 2 Threads Benchmark Dragonfly
+      run: taskset -c 0,1 memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6381 --protocol=redis -t 2 --distinct-client-seed --hide-histogram --requests=$REQUESTS --clients=$CLIENTS --pipeline=$PIPELINE --data-size=$DATA_SIZE --key-pattern=G:G --key-minimum=$KEY_MINIMUM --key-maximum=$KEY_MAXIMUM --key-median=$KEY_MEDIAN --key-stddev=$KEY_STDDEV | tee ./benchmarklogs/dragonfly_benchmarks_2threads.txt || true
+
+    - name: Memtier 2 Threads Benchmark Valkey
+      run: taskset -c 0,1 memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6382 --protocol=redis -t 2 --distinct-client-seed --hide-histogram --requests=$REQUESTS --clients=$CLIENTS --pipeline=$PIPELINE --data-size=$DATA_SIZE --key-pattern=G:G --key-minimum=$KEY_MINIMUM --key-maximum=$KEY_MAXIMUM --key-median=$KEY_MEDIAN --key-stddev=$KEY_STDDEV | tee ./benchmarklogs/valkey_benchmarks_2threads.txt || true 
+
+    - name: Memtier 4 Threads Benchmark Redis
+      run: taskset -c 0,1,2,3 memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6379 --protocol=redis -t 4 --distinct-client-seed --hide-histogram --requests=$REQUESTS --clients=$CLIENTS --pipeline=$PIPELINE --data-size=$DATA_SIZE --key-pattern=G:G --key-minimum=$KEY_MINIMUM --key-maximum=$KEY_MAXIMUM --key-median=$KEY_MEDIAN --key-stddev=$KEY_STDDEV | tee ./benchmarklogs/redis_benchmarks_4threads.txt || true 
+
+    - name: Memtier 4 Threads Benchmark KeyDB
+      run: taskset -c 0,1,2,3 memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6380 --protocol=redis -t 4 --distinct-client-seed --hide-histogram --requests=$REQUESTS --clients=$CLIENTS --pipeline=$PIPELINE --data-size=$DATA_SIZE --key-pattern=G:G --key-minimum=$KEY_MINIMUM --key-maximum=$KEY_MAXIMUM --key-median=$KEY_MEDIAN --key-stddev=$KEY_STDDEV | tee ./benchmarklogs/keydb_benchmarks_4threads.txt || true 
+
+    - name: Memtier 4 Threads Benchmark Dragonfly
+      run: taskset -c 0,1,2,3 memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6381 --protocol=redis -t 4 --distinct-client-seed --hide-histogram --requests=$REQUESTS --clients=$CLIENTS --pipeline=$PIPELINE --data-size=$DATA_SIZE --key-pattern=G:G --key-minimum=$KEY_MINIMUM --key-maximum=$KEY_MAXIMUM --key-median=$KEY_MEDIAN --key-stddev=$KEY_STDDEV | tee ./benchmarklogs/dragonfly_benchmarks_4threads.txt || true 
+
+    - name: Memtier 4 Threads Benchmark Valkey
+      run: taskset -c 0,1,2,3 memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6382 --protocol=redis -t 4 --distinct-client-seed --hide-histogram --requests=$REQUESTS --clients=$CLIENTS --pipeline=$PIPELINE --data-size=$DATA_SIZE --key-pattern=G:G --key-minimum=$KEY_MINIMUM --key-maximum=$KEY_MAXIMUM --key-median=$KEY_MEDIAN --key-stddev=$KEY_STDDEV | tee ./benchmarklogs/valkey_benchmarks_4threads.txt || true 
+
+    - name: Memtier 8 Threads Benchmark Redis
+      run: memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6379 --protocol=redis -t 8 --distinct-client-seed --hide-histogram --requests=$REQUESTS --clients=$CLIENTS --pipeline=$PIPELINE --data-size=$DATA_SIZE --key-pattern=G:G --key-minimum=$KEY_MINIMUM --key-maximum=$KEY_MAXIMUM --key-median=$KEY_MEDIAN --key-stddev=$KEY_STDDEV | tee ./benchmarklogs/redis_benchmarks_8threads.txt || true 
+
+    - name: Memtier 8 Threads Benchmark KeyDB
+      run: memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6380 --protocol=redis -t 8 --distinct-client-seed --hide-histogram --requests=$REQUESTS --clients=$CLIENTS --pipeline=$PIPELINE --data-size=$DATA_SIZE --key-pattern=G:G --key-minimum=$KEY_MINIMUM --key-maximum=$KEY_MAXIMUM --key-median=$KEY_MEDIAN --key-stddev=$KEY_STDDEV | tee ./benchmarklogs/keydb_benchmarks_8threads.txt || true 
+
+    - name: Memtier 8 Threads Benchmark Dragonfly
+      run: memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6381 --protocol=redis -t 8 --distinct-client-seed --hide-histogram --requests=$REQUESTS --clients=$CLIENTS --pipeline=$PIPELINE --data-size=$DATA_SIZE --key-pattern=G:G --key-minimum=$KEY_MINIMUM --key-maximum=$KEY_MAXIMUM --key-median=$KEY_MEDIAN --key-stddev=$KEY_STDDEV | tee ./benchmarklogs/dragonfly_benchmarks_8threads.txt || true 
+
+    - name: Memtier 8 Threads Benchmark Valkey
+      run: memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6382 --protocol=redis -t 8 --distinct-client-seed --hide-histogram --requests=$REQUESTS --clients=$CLIENTS --pipeline=$PIPELINE --data-size=$DATA_SIZE --key-pattern=G:G --key-minimum=$KEY_MINIMUM --key-maximum=$KEY_MAXIMUM --key-median=$KEY_MEDIAN --key-stddev=$KEY_STDDEV | tee ./benchmarklogs/valkey_benchmarks_8threads.txt || true 
+
+    - name: Check Redis IO Thread Usage non-TLS
+      run: |
+        docker exec redis redis-cli INFO | grep -i thread || echo "threads match" 
+
+    - name: Check KeyDB IO Thread Usage non-TLS
+      run: |
+        docker exec keydb redis-cli INFO | grep -i thread || echo "threads match" 
+
+    - name: Check Dragonfly IO Thread Usage non-TLS
+      run: |
+        docker exec dragonfly redis-cli INFO | grep -i thread || echo "threads match" 
+
+    - name: Check Valkey IO Thread Usage non-TLS
+      run: |
+        docker exec valkey redis-cli INFO | grep -i thread || echo "threads match" 
+
+    - name: Check Database Server Configurations After Benchmarks
+      continue-on-error: true
+      run: |
+        echo "=================================="
+        echo "DATABASE CONFIGURATION ANALYSIS"
+        echo "=================================="
+        
+        echo ""
+        echo "=== REDIS CONFIGURATION ==="
+        echo "--- IO Threads ---"
+        docker exec redis redis-cli CONFIG GET "*io-threads*" || echo "Failed to get Redis IO thread config"
+        docker exec redis redis-cli INFO | grep ^io || echo "no ^io"
+        echo ""
+        docker exec redis redis-cli INFO | grep thread || echo "no thread"
+        echo ""
+        echo "--- Memory Settings ---"
+        docker exec redis redis-cli CONFIG GET "maxmemory*" || echo "Failed to get Redis memory config"
+        echo "--- Save/Persistence ---"
+        docker exec redis redis-cli CONFIG GET "save" || echo "Failed to get Redis save config"
+        docker exec redis redis-cli CONFIG GET "appendonly" || echo "Failed to get Redis AOF config"
+        echo ""
+        echo "--- Network ---"
+        docker exec redis redis-cli CONFIG GET "*timeout*" || echo "Failed to get Redis timeout config"
+        docker exec redis redis-cli CONFIG GET "tcp-*" || echo "Failed to get Redis TCP config"
+        echo ""
+        echo "--- Performance ---"
+        docker exec redis redis-cli CONFIG GET "lazyfree-*" || echo "Failed to get Redis lazyfree config"
+        docker exec redis redis-cli INFO stats | grep -E "(keyspace_|expired_|evicted_)" || echo "Failed to get Redis stats"
+        
+        echo ""
+        echo "=== KEYDB CONFIGURATION ==="
+        echo "--- IO Threads ---"
+        docker exec keydb keydb-cli CONFIG GET "*io-threads*" || echo "Failed to get KeyDB IO thread config"
+        docker exec keydb keydb-cli CONFIG GET "*server-threads*" || echo "Failed to get KeyDB IO server thread config"
+        docker exec keydb redis-cli INFO | grep ^io || echo "no ^io"
+        echo ""
+        docker exec keydb redis-cli INFO | grep thread || echo "no thread"
+        echo ""
+        echo "--- KeyDB Specific ---"
+        docker exec keydb keydb-cli CONFIG GET "*multimaster*" || echo "No multimaster config"
+        docker exec keydb keydb-cli CONFIG GET "*active-replica*" || echo "No active-replica config"
+        echo ""
+        echo "--- Memory Settings ---"
+        docker exec keydb keydb-cli CONFIG GET "maxmemory*" || echo "Failed to get KeyDB memory config"
+        echo "--- Save/Persistence ---"
+        docker exec keydb keydb-cli CONFIG GET "save" || echo "Failed to get KeyDB save config"
+        docker exec keydb keydb-cli CONFIG GET "appendonly" || echo "Failed to get KeyDB AOF config"
+        echo ""
+        echo "--- Performance ---"
+        docker exec keydb keydb-cli INFO stats | grep -E "(keyspace_|expired_|evicted_)" || echo "Failed to get KeyDB stats"
+        
+        echo ""
+        echo "=== DRAGONFLY CONFIGURATION ==="
+        echo "--- Dragonfly Help (Performance Options) ---"
+        docker exec dragonfly dragonfly --help | grep -E "(thread|memory|cache|performance)" || echo "Failed to get Dragonfly help"
+        echo ""
+        echo "--- IO Threads ---"
+        docker exec dragonfly redis-cli INFO | grep ^io || echo "no ^io"
+        echo ""
+        docker exec dragonfly redis-cli INFO | grep thread || echo "no thread"
+        echo ""
+        echo "--- Dragonfly Logs (Config Info) ---"
+        docker logs dragonfly 2>&1 | grep -E "(thread|memory|port|bind)" | head -10 || echo "No config info in logs"
+        echo ""
+        echo "--- Dragonfly Process Info ---"
+        docker exec dragonfly ps aux | grep dragonfly || echo "Failed to get Dragonfly process info"
+        echo ""
+        echo "--- Dragonfly Memory Info ---"
+        docker exec dragonfly redis-cli INFO memory || echo "Failed to get Dragonfly memory info"
+        
+        echo ""
+        echo "=== VALKEY CONFIGURATION ==="
+        echo "--- IO Threads ---"
+        docker exec valkey redis-cli CONFIG GET "*io-threads*" || echo "Failed to get Valkey IO thread config"
+        docker exec valkey redis-cli INFO | grep ^io || echo "no ^io"
+        echo ""
+        docker exec valkey redis-cli INFO | grep thread || echo "no thread"
+        echo ""
+        echo "--- Valkey Specific Features ---"
+        docker exec valkey redis-cli CONFIG GET "*async*" || echo "No async config found"
+        docker exec valkey redis-cli MODULE LIST || echo "No modules loaded"
+        echo ""
+        echo "--- Memory Settings ---"
+        docker exec valkey redis-cli CONFIG GET "maxmemory*" || echo "Failed to get Valkey memory config"
+        echo "--- Save/Persistence ---"
+        docker exec valkey redis-cli CONFIG GET "save" || echo "Failed to get Valkey save config"
+        docker exec valkey redis-cli CONFIG GET "appendonly" || echo "Failed to get Valkey AOF config"
+        echo ""
+        echo "--- Network ---"
+        docker exec valkey redis-cli CONFIG GET "*timeout*" || echo "Failed to get Valkey timeout config"
+        echo ""
+        echo "--- Performance ---"
+        docker exec valkey redis-cli CONFIG GET "lazyfree-*" || echo "Failed to get Valkey lazyfree config"
+        docker exec valkey redis-cli INFO stats | grep -E "(keyspace_|expired_|evicted_)" || echo "Failed to get Valkey stats"
+        
+        echo ""
+        echo "=== CONTAINER RESOURCE ANALYSIS ==="
+        echo "--- Container CPU Affinity ---"
+        for db in redis keydb dragonfly valkey; do
+          if docker ps | grep -q $db; then
+            echo "=== $db CPU affinity ==="
+            docker exec $db cat /proc/self/status | grep Cpus_allowed_list 2>/dev/null || echo "$db: Could not get CPU affinity"
+            docker exec $db cat /proc/self/status | grep "voluntary_ctxt_switches\|nonvoluntary_ctxt_switches" 2>/dev/null || echo "$db: Could not get context switch info"
+          fi
+        done
+        
+        echo ""
+        echo "--- Container Memory Usage ---"
+        docker stats --no-stream --format "table {{.Container}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.MemPerc}}\t{{.NetIO}}\t{{.BlockIO}}" 2>/dev/null || echo "Could not get container stats"
+        
+        echo ""
+        echo "=== BUILD AND VERSION DETAILS ==="
+        echo
+        echo "--- Redis Build Info ---"
+        docker exec redis redis-cli INFO server | grep -E "(redis_version|redis_git|redis_build|gcc_version|arch_bits|multiplexing_api|executable)" || echo "Failed to get Redis build info"
+        
+        echo
+        echo "--- KeyDB Build Info ---"
+        docker exec keydb keydb-cli INFO server | grep -E "(keydb_version|redis_version|gcc_version|arch_bits|multiplexing_api|executable)" || echo "Failed to get KeyDB build info"
+        
+        echo
+        echo "--- Dragonfly Build Info ---"
+        docker exec dragonfly dragonfly --version 2>/dev/null || docker logs dragonfly 2>&1 | grep -i "version\|build" | head -3 || echo "Failed to get Dragonfly build info"
+        
+        echo
+        echo "--- Valkey Build Info ---"
+        docker exec valkey redis-cli INFO server | grep -E "(valkey_version|redis_version|gcc_version|arch_bits|multiplexing_api|executable)" || echo "Failed to get Valkey build info"
+        
+        echo ""
+        echo "=== PERFORMANCE-RELATED SYSTEM INFO ==="
+        echo "--- Available System Resources ---"
+        echo "CPU cores: $(nproc)"
+        echo "Memory: $(free -h | grep '^Mem:' | awk '{print $2}')"
+        echo "--- Docker Network ---"
+        docker network ls
+        echo "--- Container Network Mode ---"
+        for db in redis keydb dragonfly valkey; do
+          if docker ps | grep -q $db; then
+            echo "$db network: $(docker inspect $db | grep -i networkmode | head -1)"
+          fi
+        done
+        
+        echo ""
+        echo "=================================="
+        echo "CONFIGURATION ANALYSIS COMPLETE"
+        echo "=================================="
+
+    - name: Memtier 1 Threads Benchmark Redis with TLS
+      run: |
+        taskset -c 0 memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6390 --protocol=redis --tls --cert=${PWD}/test.crt --key=${PWD}/test.key --cacert=${PWD}/ca.crt --tls-skip-verify -t 1 --distinct-client-seed --hide-histogram --requests=$REQUESTS --clients=$CLIENTS --pipeline=$PIPELINE --data-size=$DATA_SIZE --key-pattern=G:G --key-minimum=$KEY_MINIMUM --key-maximum=$KEY_MAXIMUM --key-median=$KEY_MEDIAN --key-stddev=$KEY_STDDEV | tee ./benchmarklogs/redis_benchmarks_1threads_tls.txt || true
+    
+    - name: Memtier 1 Threads Benchmark KeyDB with TLS
+      run: |
+        taskset -c 0 memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6391 --protocol=redis --tls --cert=${PWD}/test.crt --key=${PWD}/test.key --cacert=${PWD}/ca.crt --tls-skip-verify -t 1 --distinct-client-seed --hide-histogram --requests=$REQUESTS --clients=$CLIENTS --pipeline=$PIPELINE --data-size=$DATA_SIZE --key-pattern=G:G --key-minimum=$KEY_MINIMUM --key-maximum=$KEY_MAXIMUM --key-median=$KEY_MEDIAN --key-stddev=$KEY_STDDEV | tee ./benchmarklogs/keydb_benchmarks_1threads_tls.txt || true
+    
+    - name: Memtier 1 Threads Benchmark Dragonfly with TLS
+      run: |
+        taskset -c 0 memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6392 --protocol=redis --tls --cert=${PWD}/client_cert.pem --key=${PWD}/client_priv.pem --cacert=${PWD}/ca.crt -t 1 --distinct-client-seed --hide-histogram --requests=$REQUESTS --clients=$CLIENTS --pipeline=$PIPELINE --data-size=$DATA_SIZE --key-pattern=G:G --key-minimum=$KEY_MINIMUM --key-maximum=$KEY_MAXIMUM --key-median=$KEY_MEDIAN --key-stddev=$KEY_STDDEV | tee ./benchmarklogs/dragonfly_benchmarks_1threads_tls.txt || true
+    
+    - name: Memtier 1 Threads Benchmark Valkey with TLS
+      run: |
+        taskset -c 0 memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6393 --protocol=redis --tls --cert=${PWD}/test.crt --key=${PWD}/test.key --cacert=${PWD}/ca.crt --tls-skip-verify -t 1 --distinct-client-seed --hide-histogram --requests=$REQUESTS --clients=$CLIENTS --pipeline=$PIPELINE --data-size=$DATA_SIZE --key-pattern=G:G --key-minimum=$KEY_MINIMUM --key-maximum=$KEY_MAXIMUM --key-median=$KEY_MEDIAN --key-stddev=$KEY_STDDEV | tee ./benchmarklogs/valkey_benchmarks_1threads_tls.txt || true 
+
+    - name: Memtier 2 Threads Benchmark Redis with TLS
+      run: |
+        taskset -c 0,1 memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6390 --protocol=redis --tls --cert=${PWD}/test.crt --key=${PWD}/test.key --cacert=${PWD}/ca.crt --tls-skip-verify -t 2 --distinct-client-seed --hide-histogram --requests=$REQUESTS --clients=$CLIENTS --pipeline=$PIPELINE --data-size=$DATA_SIZE --key-pattern=G:G --key-minimum=$KEY_MINIMUM --key-maximum=$KEY_MAXIMUM --key-median=$KEY_MEDIAN --key-stddev=$KEY_STDDEV | tee ./benchmarklogs/redis_benchmarks_2threads_tls.txt || true
+    
+    - name: Memtier 2 Threads Benchmark KeyDB with TLS
+      run: |
+        taskset -c 0,1 memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6391 --protocol=redis --tls --cert=${PWD}/test.crt --key=${PWD}/test.key --cacert=${PWD}/ca.crt --tls-skip-verify -t 2 --distinct-client-seed --hide-histogram --requests=$REQUESTS --clients=$CLIENTS --pipeline=$PIPELINE --data-size=$DATA_SIZE --key-pattern=G:G --key-minimum=$KEY_MINIMUM --key-maximum=$KEY_MAXIMUM --key-median=$KEY_MEDIAN --key-stddev=$KEY_STDDEV | tee ./benchmarklogs/keydb_benchmarks_2threads_tls.txt || true
+    
+    - name: Memtier 2 Threads Benchmark Dragonfly with TLS
+      run: |
+        taskset -c 0,1 memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6392 --protocol=redis --tls --cert=${PWD}/client_cert.pem --key=${PWD}/client_priv.pem --cacert=${PWD}/ca.crt -t 2 --distinct-client-seed --hide-histogram --requests=$REQUESTS --clients=$CLIENTS --pipeline=$PIPELINE --data-size=$DATA_SIZE --key-pattern=G:G --key-minimum=$KEY_MINIMUM --key-maximum=$KEY_MAXIMUM --key-median=$KEY_MEDIAN --key-stddev=$KEY_STDDEV | tee ./benchmarklogs/dragonfly_benchmarks_2threads_tls.txt || true
+    
+    - name: Memtier 2 Threads Benchmark Valkey with TLS
+      run: |
+        taskset -c 0,1 memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6393 --protocol=redis --tls --cert=${PWD}/test.crt --key=${PWD}/test.key --cacert=${PWD}/ca.crt --tls-skip-verify -t 2 --distinct-client-seed --hide-histogram --requests=$REQUESTS --clients=$CLIENTS --pipeline=$PIPELINE --data-size=$DATA_SIZE --key-pattern=G:G --key-minimum=$KEY_MINIMUM --key-maximum=$KEY_MAXIMUM --key-median=$KEY_MEDIAN --key-stddev=$KEY_STDDEV | tee ./benchmarklogs/valkey_benchmarks_2threads_tls.txt || true 
+
+    - name: Memtier 4 Threads Benchmark Redis with TLS
+      run: |
+        taskset -c 0,1,2,3 memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6390 --protocol=redis --tls --cert=${PWD}/test.crt --key=${PWD}/test.key --cacert=${PWD}/ca.crt --tls-skip-verify -t 4 --distinct-client-seed --hide-histogram --requests=$REQUESTS --clients=$CLIENTS --pipeline=$PIPELINE --data-size=$DATA_SIZE --key-pattern=G:G --key-minimum=$KEY_MINIMUM --key-maximum=$KEY_MAXIMUM --key-median=$KEY_MEDIAN --key-stddev=$KEY_STDDEV | tee ./benchmarklogs/redis_benchmarks_4threads_tls.txt || true
+    
+    - name: Memtier 4 Threads Benchmark KeyDB with TLS
+      run: |
+        taskset -c 0,1,2,3 memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6391 --protocol=redis --tls --cert=${PWD}/test.crt --key=${PWD}/test.key --cacert=${PWD}/ca.crt --tls-skip-verify -t 4 --distinct-client-seed --hide-histogram --requests=$REQUESTS --clients=$CLIENTS --pipeline=$PIPELINE --data-size=$DATA_SIZE --key-pattern=G:G --key-minimum=$KEY_MINIMUM --key-maximum=$KEY_MAXIMUM --key-median=$KEY_MEDIAN --key-stddev=$KEY_STDDEV | tee ./benchmarklogs/keydb_benchmarks_4threads_tls.txt || true
+    
+    - name: Memtier 4 Threads Benchmark Dragonfly with TLS
+      run: |
+        taskset -c 0,1,2,3 memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6392 --protocol=redis --tls --cert=${PWD}/client_cert.pem --key=${PWD}/client_priv.pem --cacert=${PWD}/ca.crt -t 4 --distinct-client-seed --hide-histogram --requests=$REQUESTS --clients=$CLIENTS --pipeline=$PIPELINE --data-size=$DATA_SIZE --key-pattern=G:G --key-minimum=$KEY_MINIMUM --key-maximum=$KEY_MAXIMUM --key-median=$KEY_MEDIAN --key-stddev=$KEY_STDDEV | tee ./benchmarklogs/dragonfly_benchmarks_4threads_tls.txt || true
+    
+    - name: Memtier 4 Threads Benchmark Valkey with TLS
+      run: |
+        taskset -c 0,1,2,3 memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6393 --protocol=redis --tls --cert=${PWD}/test.crt --key=${PWD}/test.key --cacert=${PWD}/ca.crt --tls-skip-verify -t 4 --distinct-client-seed --hide-histogram --requests=$REQUESTS --clients=$CLIENTS --pipeline=$PIPELINE --data-size=$DATA_SIZE --key-pattern=G:G --key-minimum=$KEY_MINIMUM --key-maximum=$KEY_MAXIMUM --key-median=$KEY_MEDIAN --key-stddev=$KEY_STDDEV | tee ./benchmarklogs/valkey_benchmarks_4threads_tls.txt || true 
+
+    - name: Memtier 8 Threads Benchmark Redis with TLS
+      run: |
+        memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6390 --protocol=redis --tls --cert=${PWD}/test.crt --key=${PWD}/test.key --cacert=${PWD}/ca.crt --tls-skip-verify -t 8 --distinct-client-seed --hide-histogram --requests=$REQUESTS --clients=$CLIENTS --pipeline=$PIPELINE --data-size=$DATA_SIZE --key-pattern=G:G --key-minimum=$KEY_MINIMUM --key-maximum=$KEY_MAXIMUM --key-median=$KEY_MEDIAN --key-stddev=$KEY_STDDEV | tee ./benchmarklogs/redis_benchmarks_8threads_tls.txt || true
+    
+    - name: Memtier 8 Threads Benchmark KeyDB with TLS
+      run: |
+        memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6391 --protocol=redis --tls --cert=${PWD}/test.crt --key=${PWD}/test.key --cacert=${PWD}/ca.crt --tls-skip-verify -t 8 --distinct-client-seed --hide-histogram --requests=$REQUESTS --clients=$CLIENTS --pipeline=$PIPELINE --data-size=$DATA_SIZE --key-pattern=G:G --key-minimum=$KEY_MINIMUM --key-maximum=$KEY_MAXIMUM --key-median=$KEY_MEDIAN --key-stddev=$KEY_STDDEV | tee ./benchmarklogs/keydb_benchmarks_8threads_tls.txt || true
+    
+    - name: Memtier 8 Threads Benchmark Dragonfly with TLS
+      run: |
+        memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6392 --protocol=redis --tls --cert=${PWD}/client_cert.pem --key=${PWD}/client_priv.pem --cacert=${PWD}/ca.crt -t 8 --distinct-client-seed --hide-histogram --requests=$REQUESTS --clients=$CLIENTS --pipeline=$PIPELINE --data-size=$DATA_SIZE --key-pattern=G:G --key-minimum=$KEY_MINIMUM --key-maximum=$KEY_MAXIMUM --key-median=$KEY_MEDIAN --key-stddev=$KEY_STDDEV | tee ./benchmarklogs/dragonfly_benchmarks_8threads_tls.txt || true 
+
+    - name: Memtier 8 Threads Benchmark Valkey with TLS
+      run: |
+        memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6393 --protocol=redis --tls --cert=${PWD}/test.crt --key=${PWD}/test.key --cacert=${PWD}/ca.crt --tls-skip-verify -t 8 --distinct-client-seed --hide-histogram --requests=$REQUESTS --clients=$CLIENTS --pipeline=$PIPELINE --data-size=$DATA_SIZE --key-pattern=G:G --key-minimum=$KEY_MINIMUM --key-maximum=$KEY_MAXIMUM --key-median=$KEY_MEDIAN --key-stddev=$KEY_STDDEV | tee ./benchmarklogs/valkey_benchmarks_8threads_tls.txt || true 
+
+    - name: Convert Redis 1 Threads Benchmark to MD
+      continue-on-error: true
+      run: |
+        python scripts/parse_memtier_to_md.py ./benchmarklogs/redis_benchmarks_1threads.txt "Redis 1 Thread"
+        cat ./benchmarklogs/redis_benchmarks_1threads.md 
+
+    - name: Convert KeyDB 1 Threads Benchmark to MD
+      continue-on-error: true
+      run: |
+        python scripts/parse_memtier_to_md.py ./benchmarklogs/keydb_benchmarks_1threads.txt "KeyDB 1 Thread"
+        cat ./benchmarklogs/keydb_benchmarks_1threads.md 
+
+    - name: Convert Dragonfly 1 Threads Benchmark to MD
+      continue-on-error: true
+      run: |
+        python scripts/parse_memtier_to_md.py ./benchmarklogs/dragonfly_benchmarks_1threads.txt "Dragonfly 1 Threads"
+        cat ./benchmarklogs/dragonfly_benchmarks_1threads.md 
+
+    - name: Convert Valkey 1 Threads Benchmark to MD
+      continue-on-error: true
+      run: |
+        python scripts/parse_memtier_to_md.py ./benchmarklogs/valkey_benchmarks_1threads.txt "Valkey 1 Thread"
+        cat ./benchmarklogs/valkey_benchmarks_1threads.md 
+
+    - name: Convert Redis 2 Threads Benchmark to MD
+      continue-on-error: true
+      run: |
+        python scripts/parse_memtier_to_md.py ./benchmarklogs/redis_benchmarks_2threads.txt "Redis 2 Threads"
+        cat ./benchmarklogs/redis_benchmarks_2threads.md 
+
+    - name: Convert KeyDB 2 Threads Benchmark to MD
+      continue-on-error: true
+      run: |
+        python scripts/parse_memtier_to_md.py ./benchmarklogs/keydb_benchmarks_2threads.txt "KeyDB 2 Threads"
+        cat ./benchmarklogs/keydb_benchmarks_2threads.md 
+
+    - name: Convert Dragonfly 2 Threads Benchmark to MD
+      continue-on-error: true
+      run: |
+        python scripts/parse_memtier_to_md.py ./benchmarklogs/dragonfly_benchmarks_2threads.txt "Dragonfly 2 Thread"
+        cat ./benchmarklogs/dragonfly_benchmarks_2threads.md 
+
+    - name: Convert Valkey 2 Threads Benchmark to MD
+      continue-on-error: true
+      run: |
+        python scripts/parse_memtier_to_md.py ./benchmarklogs/valkey_benchmarks_2threads.txt "Valkey 2 Threads"
+        cat ./benchmarklogs/valkey_benchmarks_2threads.md 
+
+    - name: Convert Redis 4 Threads Benchmark to MD
+      continue-on-error: true
+      run: |
+        python scripts/parse_memtier_to_md.py ./benchmarklogs/redis_benchmarks_4threads.txt "Redis 4 Threads"
+        cat ./benchmarklogs/redis_benchmarks_4threads.md 
+
+    - name: Convert KeyDB 4 Threads Benchmark to MD
+      continue-on-error: true
+      run: |
+        python scripts/parse_memtier_to_md.py ./benchmarklogs/keydb_benchmarks_4threads.txt "KeyDB 4 Threads"
+        cat ./benchmarklogs/keydb_benchmarks_4threads.md 
+
+    - name: Convert Dragonfly 4 Threads Benchmark to MD
+      continue-on-error: true
+      run: |
+        python scripts/parse_memtier_to_md.py ./benchmarklogs/dragonfly_benchmarks_4threads.txt "Dragonfly 4 Threads"
+        cat ./benchmarklogs/dragonfly_benchmarks_4threads.md 
+
+    - name: Convert Valkey 4 Threads Benchmark to MD
+      continue-on-error: true
+      run: |
+        python scripts/parse_memtier_to_md.py ./benchmarklogs/valkey_benchmarks_4threads.txt "Valkey 4 Threads"
+        cat ./benchmarklogs/valkey_benchmarks_4threads.md 
+
+    - name: Convert Redis 8 Threads Benchmark to MD
+      continue-on-error: true
+      run: |
+        python scripts/parse_memtier_to_md.py ./benchmarklogs/redis_benchmarks_8threads.txt "Redis 8 Threads"
+        cat ./benchmarklogs/redis_benchmarks_8threads.md 
+
+    - name: Convert KeyDB 8 Threads Benchmark to MD
+      continue-on-error: true
+      run: |
+        python scripts/parse_memtier_to_md.py ./benchmarklogs/keydb_benchmarks_8threads.txt "KeyDB 8 Threads"
+        cat ./benchmarklogs/keydb_benchmarks_8threads.md 
+
+    - name: Convert Dragonfly 8 Threads Benchmark to MD
+      continue-on-error: true
+      run: |
+        python scripts/parse_memtier_to_md.py ./benchmarklogs/dragonfly_benchmarks_8threads.txt "Dragonfly 8 Threads"
+        cat ./benchmarklogs/dragonfly_benchmarks_8threads.md 
+
+    - name: Convert Valkey 8 Threads Benchmark to MD
+      continue-on-error: true
+      run: |
+        python scripts/parse_memtier_to_md.py ./benchmarklogs/valkey_benchmarks_8threads.txt "Valkey 8 Threads"
+        cat ./benchmarklogs/valkey_benchmarks_8threads.md 
+
+    - name: Convert Redis 1 Threads Benchmark with TLS to MD
+      continue-on-error: true
+      run: |
+        python scripts/parse_memtier_to_md.py ./benchmarklogs/redis_benchmarks_1threads_tls.txt "Redis TLS 1 Thread"
+        cat ./benchmarklogs/redis_benchmarks_1threads_tls.md
+    
+    - name: Convert KeyDB 1 Threads Benchmark with TLS to MD
+      continue-on-error: true
+      run: |
+        python scripts/parse_memtier_to_md.py ./benchmarklogs/keydb_benchmarks_1threads_tls.txt "KeyDB TLS 1 Thread"
+        cat ./benchmarklogs/keydb_benchmarks_1threads_tls.md
+    
+    - name: Convert Dragonfly 1 Threads Benchmark with TLS to MD
+      continue-on-error: true
+      run: |
+        python scripts/parse_memtier_to_md.py ./benchmarklogs/dragonfly_benchmarks_1threads_tls.txt "Dragonfly TLS 1 Thread"
+        cat ./benchmarklogs/dragonfly_benchmarks_1threads_tls.md 
+
+    - name: Convert Valkey 1 Threads Benchmark with TLS to MD
+      continue-on-error: true
+      run: |
+        python scripts/parse_memtier_to_md.py ./benchmarklogs/valkey_benchmarks_1threads_tls.txt "Valkey TLS 1 Thread"
+        cat ./benchmarklogs/valkey_benchmarks_1threads_tls.md
+    
+    - name: Convert Redis 2 Threads Benchmark with TLS to MD
+      continue-on-error: true
+      run: |
+        python scripts/parse_memtier_to_md.py ./benchmarklogs/redis_benchmarks_2threads_tls.txt "Redis TLS 2 Threads"
+        cat ./benchmarklogs/redis_benchmarks_2threads_tls.md
+    
+    - name: Convert KeyDB 2 Threads Benchmark with TLS to MD
+      continue-on-error: true
+      run: |
+        python scripts/parse_memtier_to_md.py ./benchmarklogs/keydb_benchmarks_2threads_tls.txt "KeyDB TLS 2 Threads"
+        cat ./benchmarklogs/keydb_benchmarks_2threads_tls.md
+    
+    - name: Convert Dragonfly 2 Threads Benchmark with TLS to MD
+      continue-on-error: true
+      run: |
+        python scripts/parse_memtier_to_md.py ./benchmarklogs/dragonfly_benchmarks_2threads_tls.txt "Dragonfly TLS 2 Threads"
+        cat ./benchmarklogs/dragonfly_benchmarks_2threads_tls.md 
+
+    - name: Convert Valkey 2 Threads Benchmark with TLS to MD
+      continue-on-error: true
+      run: |
+        python scripts/parse_memtier_to_md.py ./benchmarklogs/valkey_benchmarks_2threads_tls.txt "Valkey TLS 2 Threads"
+        cat ./benchmarklogs/valkey_benchmarks_2threads_tls.md 
+
+    - name: Convert Redis 4 Threads Benchmark with TLS to MD
+      continue-on-error: true
+      run: |
+        python scripts/parse_memtier_to_md.py ./benchmarklogs/redis_benchmarks_4threads_tls.txt "Redis TLS 4 Threads"
+        cat ./benchmarklogs/redis_benchmarks_4threads_tls.md
+    
+    - name: Convert KeyDB 4 Threads Benchmark with TLS to MD
+      continue-on-error: true
+      run: |
+        python scripts/parse_memtier_to_md.py ./benchmarklogs/keydb_benchmarks_4threads_tls.txt "KeyDB TLS 4 Threads"
+        cat ./benchmarklogs/keydb_benchmarks_4threads_tls.md
+    
+    - name: Convert Dragonfly 4 Threads Benchmark with TLS to MD
+      continue-on-error: true
+      run: |
+        python scripts/parse_memtier_to_md.py ./benchmarklogs/dragonfly_benchmarks_4threads_tls.txt "Dragonfly TLS 4 Threads"
+        cat ./benchmarklogs/dragonfly_benchmarks_4threads_tls.md 
+
+    - name: Convert Valkey 4 Threads Benchmark with TLS to MD
+      continue-on-error: true
+      run: |
+        python scripts/parse_memtier_to_md.py ./benchmarklogs/valkey_benchmarks_4threads_tls.txt "Valkey TLS 4 Threads"
+        cat ./benchmarklogs/valkey_benchmarks_4threads_tls.md
+    
+    - name: Convert Redis 8 Threads Benchmark with TLS to MD
+      continue-on-error: true
+      run: |
+        python scripts/parse_memtier_to_md.py ./benchmarklogs/redis_benchmarks_8threads_tls.txt "Redis TLS 8 Threads"
+        cat ./benchmarklogs/redis_benchmarks_8threads_tls.md
+    
+    - name: Convert KeyDB 8 Threads Benchmark with TLS to MD
+      continue-on-error: true
+      run: |
+        python scripts/parse_memtier_to_md.py ./benchmarklogs/keydb_benchmarks_8threads_tls.txt "KeyDB TLS 8 Threads"
+        cat ./benchmarklogs/keydb_benchmarks_8threads_tls.md
+    
+    - name: Convert Dragonfly 8 Threads Benchmark with TLS to MD
+      continue-on-error: true
+      run: |
+        python scripts/parse_memtier_to_md.py ./benchmarklogs/dragonfly_benchmarks_8threads_tls.txt "Dragonfly TLS 8 Threads"
+        cat ./benchmarklogs/dragonfly_benchmarks_8threads_tls.md 
+
+    - name: Convert Valkey 8 Threads Benchmark with TLS to MD
+      continue-on-error: true
+      run: |
+        python scripts/parse_memtier_to_md.py ./benchmarklogs/valkey_benchmarks_8threads_tls.txt "Valkey TLS 8 Threads"
+        cat ./benchmarklogs/valkey_benchmarks_8threads_tls.md 
+
+    - name: Combine Redis Benchmark MD Table
+      continue-on-error: true
+      run: |
+        python scripts/combine_markdown_results.py "./benchmarklogs/redis_benchmarks_1threads.md ./benchmarklogs/redis_benchmarks_2threads.md ./benchmarklogs/redis_benchmarks_4threads.md ./benchmarklogs/redis_benchmarks_8threads.md" redis
+        cat ./benchmarklogs/combined_redis_results.md 
+
+    - name: Combine KeyDB Benchmark MD Table
+      continue-on-error: true
+      run: |
+        python scripts/combine_markdown_results.py "./benchmarklogs/keydb_benchmarks_1threads.md ./benchmarklogs/keydb_benchmarks_2threads.md ./benchmarklogs/keydb_benchmarks_4threads.md ./benchmarklogs/keydb_benchmarks_8threads.md" keydb
+        cat ./benchmarklogs/combined_keydb_results.md 
+
+    - name: Combine Dragonfly Benchmark MD Table
+      continue-on-error: true
+      run: |
+        python scripts/combine_markdown_results.py "./benchmarklogs/dragonfly_benchmarks_1threads.md ./benchmarklogs/dragonfly_benchmarks_2threads.md ./benchmarklogs/dragonfly_benchmarks_4threads.md ./benchmarklogs/dragonfly_benchmarks_8threads.md" dragonfly
+        cat ./benchmarklogs/combined_dragonfly_results.md 
+
+    - name: Combine Valkey Benchmark MD Table
+      continue-on-error: true
+      run: |
+        python scripts/combine_markdown_results.py "./benchmarklogs/valkey_benchmarks_1threads.md ./benchmarklogs/valkey_benchmarks_2threads.md ./benchmarklogs/valkey_benchmarks_4threads.md ./benchmarklogs/valkey_benchmarks_8threads.md" valkey
+        cat ./benchmarklogs/combined_valkey_results.md 
+
+    - name: Combine Redis TLS Benchmark MD Table
+      continue-on-error: true
+      run: |
+        python scripts/combine_markdown_results.py "./benchmarklogs/redis_benchmarks_1threads_tls.md ./benchmarklogs/redis_benchmarks_2threads_tls.md ./benchmarklogs/redis_benchmarks_4threads_tls.md ./benchmarklogs/redis_benchmarks_8threads_tls.md" "redis-tls"
+        cat ./benchmarklogs/combined_redis-tls_results.md 
+
+    - name: Combine KeyDB TLS Benchmark MD Table
+      continue-on-error: true
+      run: |
+        python scripts/combine_markdown_results.py "./benchmarklogs/keydb_benchmarks_1threads_tls.md ./benchmarklogs/keydb_benchmarks_2threads_tls.md ./benchmarklogs/keydb_benchmarks_4threads_tls.md ./benchmarklogs/keydb_benchmarks_8threads_tls.md" "keydb-tls"
+        cat ./benchmarklogs/combined_keydb-tls_results.md 
+
+    - name: Combine Dragonfly TLS Benchmark MD Table
+      continue-on-error: true
+      run: |
+        python scripts/combine_markdown_results.py "./benchmarklogs/dragonfly_benchmarks_1threads_tls.md ./benchmarklogs/dragonfly_benchmarks_2threads_tls.md ./benchmarklogs/dragonfly_benchmarks_4threads_tls.md ./benchmarklogs/dragonfly_benchmarks_8threads_tls.md" "dragonfly-tls"
+        cat ./benchmarklogs/combined_dragonfly-tls_results.md 
+
+    - name: Combine Valkey TLS Benchmark MD Table
+      continue-on-error: true
+      run: |
+        python scripts/combine_markdown_results.py "./benchmarklogs/valkey_benchmarks_1threads_tls.md ./benchmarklogs/valkey_benchmarks_2threads_tls.md ./benchmarklogs/valkey_benchmarks_4threads_tls.md ./benchmarklogs/valkey_benchmarks_8threads_tls.md" "valkey-tls"
+        cat ./benchmarklogs/combined_valkey-tls_results.md 
+
+    - name: Combine benchmark Markdown results
+      continue-on-error: true
+      run: |
+        # Create a single combined file in the desired order
+        cat \
+          ./benchmarklogs/combined_redis_results.md \
+          ./benchmarklogs/combined_keydb_results.md \
+          ./benchmarklogs/combined_dragonfly_results.md \
+          ./benchmarklogs/combined_valkey_results.md \
+          > ./combined_all_results.md 
+
+        echo "✅ All results merged into combined_all_results.md" 
+
+    - name: Combine TLS benchmark Markdown results
+      continue-on-error: true
+      run: |
+        # Create a single combined file in the desired order
+        cat \
+          ./benchmarklogs/combined_redis-tls_results.md \
+          ./benchmarklogs/combined_keydb-tls_results.md \
+          ./benchmarklogs/combined_dragonfly-tls_results.md \
+          ./benchmarklogs/combined_valkey-tls_results.md \
+          > ./combined_all_results_tls.md 
+
+        echo "✅ All results merged into combined_all_results_tls.md" 
+
+    - name: Debug Combined Results File
+      run: |
+        echo "=== Check if combined file exists ==="
+        ls -la combined_all_results.md
+        echo "=== First 20 lines of combined file ==="
+        head -20 combined_all_results.md
+        echo "=== File size ==="
+        wc -l combined_all_results.md 
+
+    - name: Set up Python 3.x
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.x" 
+
+    - name: Install charting dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install matplotlib numpy 
+
+    - name: Debug Chart Input Data
+      continue-on-error: true
+      run: |
+        echo "=== Contents of combined_all_results.md ==="
+        cat combined_all_results.md
+        
+        echo "=== Check for database names ==="
+        grep -E "(Redis|KeyDB|Dragonfly|Valkey)" combined_all_results.md || echo "No database names found"
+        
+        echo "=== Check for Ops/sec data ==="
+        grep -i "ops/sec" combined_all_results.md || echo "No ops/sec data found"
+        
+        echo "=== Check table structure ==="
+        grep "|" combined_all_results.md | head -10 
+
+    - name: Generate non-TLS Latency Charts
+      continue-on-error: true
+      run: |
+        python scripts/latency-charts.py combined_all_results.md nonTLS --redis_io_threads ${{ inputs.redis_io_threads }} --keydb_server_threads ${{ inputs.keydb_server_threads }} --dragonfly_proactor_threads ${DRAGONFLY_PROACTOR_THREADS} --valkey_io_threads ${{ inputs.valkey_io_threads }} --requests ${{ inputs.requests }} --clients ${{ inputs.clients }} --pipeline ${{ inputs.pipeline }} --data_size ${{ inputs.data_size }} 2>&1 | tee ./benchmarklogs/latency-charts-nonTLS.log
+
+    - name: Generate non-TLS Ops/Sec Charts
+      continue-on-error: true
+      run: |
+        python scripts/opssec-charts.py combined_all_results.md nonTLS --redis_io_threads ${{ inputs.redis_io_threads }} --keydb_server_threads ${{ inputs.keydb_server_threads }} --dragonfly_proactor_threads ${DRAGONFLY_PROACTOR_THREADS} --valkey_io_threads ${{ inputs.valkey_io_threads }} --requests ${{ inputs.requests }} --clients ${{ inputs.clients }} --pipeline ${{ inputs.pipeline }} --data_size ${{ inputs.data_size }} 2>&1 | tee ./benchmarklogs/opssec-charts-nonTLS.log
+
+    - name: Generate TLS Latency Charts
+      continue-on-error: true
+      run: |
+        python scripts/latency-charts.py combined_all_results_tls.md TLS --redis_io_threads ${{ inputs.redis_io_threads }} --keydb_server_threads ${{ inputs.keydb_server_threads }} --dragonfly_proactor_threads ${DRAGONFLY_PROACTOR_THREADS} --valkey_io_threads ${{ inputs.valkey_io_threads }} --requests ${{ inputs.requests }} --clients ${{ inputs.clients }} --pipeline ${{ inputs.pipeline }} --data_size ${{ inputs.data_size }} 2>&1 | tee ./benchmarklogs/latency-charts-TLS.log
+
+    - name: Generate TLS Ops/Sec Charts
+      continue-on-error: true
+      run: |
+        python scripts/opssec-charts.py combined_all_results_tls.md TLS --redis_io_threads ${{ inputs.redis_io_threads }} --keydb_server_threads ${{ inputs.keydb_server_threads }} --dragonfly_proactor_threads ${DRAGONFLY_PROACTOR_THREADS} --valkey_io_threads ${{ inputs.valkey_io_threads }} --requests ${{ inputs.requests }} --clients ${{ inputs.clients }} --pipeline ${{ inputs.pipeline }} --data_size ${{ inputs.data_size }} 2>&1 | tee ./benchmarklogs/opssec-charts-TLS.log
+
+    - name: Capture Versions for Benchmark Report
+      continue-on-error: true
+      run: |
+        mkdir -p ./benchmarklogs
+        echo "# Database Versions Used" > ./benchmarklogs/versions.md
+        echo "" >> ./benchmarklogs/versions.md
+        echo "| Database | Version |" >> ./benchmarklogs/versions.md
+        echo "|----------|---------|" >> ./benchmarklogs/versions.md
+        
+        REDIS_VER=$(docker exec redis redis-server --version 2>/dev/null | cut -d' ' -f3 || docker exec redis redis-cli INFO server | grep redis_version | cut -d: -f2 | tr -d '\r')
+        echo "| Redis | ${REDIS_VER} |" >> ./benchmarklogs/versions.md
+        
+        KEYDB_VER=$(docker exec keydb keydb-server --version 2>/dev/null | cut -d' ' -f3 || docker exec keydb keydb-cli INFO server | grep -E "(keydb_version|redis_version)" | head -1 | cut -d: -f2 | tr -d '\r')
+        echo "| KeyDB | ${KEYDB_VER} |" >> ./benchmarklogs/versions.md
+        
+        DRAGONFLY_VER=$(docker exec dragonfly dragonfly --version 2>/dev/null | cut -d' ' -f2 | head -n1 || docker logs dragonfly 2>&1 | grep -i "version" | head -1 | cut -d' ' -f4 || echo "unknown")
+        echo "| Dragonfly | ${DRAGONFLY_VER} |" >> ./benchmarklogs/versions.md
+        
+        VALKEY_VER=$(docker exec valkey valkey-server --version 2>/dev/null | cut -d' ' -f3 || docker exec valkey redis-cli INFO server | grep -E "(valkey_version|redis_version)" | head -1 | cut -d: -f2 | tr -d '\r')
+        echo "| Valkey | ${VALKEY_VER} |" >> ./benchmarklogs/versions.md
+        
+        cat ./benchmarklogs/versions.md 
+
+    - name: Create Benchmark Summary with Parameters
+      run: |
+        echo "# Benchmark v4 Configuration Summary" > ./benchmarklogs/benchmark_config.md
+        echo "" >> ./benchmarklogs/benchmark_config.md
+        echo "| Parameter | Value |" >> ./benchmarklogs/benchmark_config.md
+        echo "|-----------|-------|" >> ./benchmarklogs/benchmark_config.md
+        echo "| Requests | ${{ inputs.requests || '2000' }} |" >> ./benchmarklogs/benchmark_config.md
+        echo "| Clients | ${{ inputs.clients || '100' }} |" >> ./benchmarklogs/benchmark_config.md
+        echo "| Pipeline | ${{ inputs.pipeline || '1' }} |" >> ./benchmarklogs/benchmark_config.md
+        echo "| Data Size | ${{ inputs.data_size || '1024' }} bytes |" >> ./benchmarklogs/benchmark_config.md
+        echo "| Key Minimum | ${{ inputs.key_minimum || '1' }} |" >> ./benchmarklogs/benchmark_config.md
+        echo "| Key Maximum | ${{ inputs.key_maximum || '1000000' }} |" >> ./benchmarklogs/benchmark_config.md
+        echo "| Ratio | 1:15 (Read:Write) |" >> ./benchmarklogs/benchmark_config.md
+        echo "| Key Pattern | G:G (Gaussian) |" >> ./benchmarklogs/benchmark_config.md
+        echo "| Intrinsic Latency | ${{ inputs.intrinsic_latency || '5' }} |" >> ./benchmarklogs/benchmark_config.md
+        echo "" >> ./benchmarklogs/benchmark_config.md
+        echo "Run Date: $(date -u)" >> ./benchmarklogs/benchmark_config.md
+        echo "Workflow Run: ${{ github.run_number }}" >> ./benchmarklogs/benchmark_config.md
+        
+        cat ./benchmarklogs/benchmark_config.md 
+
+    - name: Commit Benchmark Results to Repository
+      continue-on-error: true
+      run: |
+        # Configure git
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action" 
+
+        # Fetch latest changes
+        git fetch origin
+        
+        # Create results directory structure
+        mkdir -p results/benchmarks-v4
+        
+        # Copy files to results directory
+        cp ./.github/workflows/benchmarks-v4.yml results/benchmarks-v4/
+        cp ./scripts/latency-charts.py results/benchmarks-v4/
+        cp ./scripts/opssec-charts.py results/benchmarks-v4/
+        cp ./scripts/combine_markdown_results.py results/benchmarks-v4/
+        cp ./scripts/parse_memtier_to_md.py results/benchmarks-v4/
+        cp ./docker-compose.yml results/benchmarks-v4/
+        cp ./Dockerfile-* results/benchmarks-v4/
+
+        cp ./benchmarklogs/intrinsic_latency.log results/benchmarks-v4/
+        cp ./benchmarklogs/versions.md results/benchmarks-v4/
+        cp ./benchmarklogs/benchmark_config.md results/benchmarks-v4/
+        sed -i '/| ---------------------------------------------------------------------------------------------------------------------------- |/d' combined_all_results.md
+        sed -i '/| ---------------------------------------------------------------------------------------------------------------------------- |/d' combined_all_results_tls.md
+        sed -i '/| Waits |/d' combined_all_results.md
+        sed -i '/| Waits |/d' combined_all_results_tls.md
+        cp combined_all_results.md results/benchmarks-v4/
+        cp combined_all_results_tls.md results/benchmarks-v4/
+
+        # Remove old chart files with previous naming convention
+        rm -f results/benchmarks-v4/latency-nonTLS-avg.png
+        rm -f results/benchmarks-v4/latency-nonTLS-p50.png
+        rm -f results/benchmarks-v4/latency-nonTLS-p99.png
+        rm -f results/benchmarks-v4/latency-TLS-avg.png
+        rm -f results/benchmarks-v4/latency-TLS-p50.png
+        rm -f results/benchmarks-v4/latency-TLS-p99.png
+        rm -f results/benchmarks-v4/ops-nonTLS.png
+        rm -f results/benchmarks-v4/ops-TLS.png
+        
+        # Copy all new chart files from benchmarklogs/ to results directory
+        cp benchmarklogs/*.png results/benchmarks-v4/ 2>/dev/null || true
+
+        # Add a timestamp file
+        echo "Last updated: $(date -u)" > results/benchmarks-v4/last_updated.txt
+        echo "Workflow run: ${{ github.run_number }}" >> results/benchmarks-v4/last_updated.txt
+        echo "Commit SHA: ${{ github.sha }}" >> results/benchmarks-v4/last_updated.txt
+        echo "Benchmark Config:" >> results/benchmarks-v4/last_updated.txt
+        echo "  Requests: ${{ inputs.requests || '2000' }}" >> results/benchmarks-v4/last_updated.txt
+        echo "  Clients: ${{ inputs.clients || '100' }}" >> results/benchmarks-v4/last_updated.txt
+        echo "  Pipeline: ${{ inputs.pipeline || '1' }}" >> results/benchmarks-v4/last_updated.txt
+        echo "  Data Size: ${{ inputs.data_size || '1024' }}" >> results/benchmarks-v4/last_updated.txt
+        echo "  Key Range: ${{ inputs.key_minimum || '1' }}-${{ inputs.key_maximum || '1000000' }}" >> results/benchmarks-v4/last_updated.txt
+        echo "  Intrinsinc Latency: ${{ inputs.intrinsic_latency || '5' }}" >> results/benchmarks-v4/last_updated.txt
+        echo "Server Configs:" >> results/benchmarks-v4/last_updated.txt
+        echo "Redis IO Threads: ${{ inputs.redis_io_threads || '2' }}" >> results/benchmarks-v4/last_updated.txt
+        echo "KeyDB Server Threads: ${{ inputs.keydb_server_threads || '2' }}" >> results/benchmarks-v4/last_updated.txt
+        echo "KeyDB Min Clients Per Thread: ${{ inputs.keydb_min_clients_per_thread || '50' }}" >> results/benchmarks-v4/last_updated.txt
+        echo "Dragonfly Proactor Threads: ${DRAGONFLY_PROACTOR_THREADS}" >> results/benchmarks-v4/last_updated.txt
+        echo "Valkey IO Threads: ${{ inputs.valkey_io_threads || '1' }}" >> results/benchmarks-v4/last_updated.txt
+        
+        # Stage all changes
+        git add results/benchmarks-v4/
+        
+        # Check if there are changes to commit
+        if git diff --staged --quiet; then
+          echo "No changes to commit"
+        else
+          # Commit changes
+          git commit -m "Update benchmark v4 results from workflow run #${{ github.run_number }}
+          
+          - Updated benchmark results for Redis, KeyDB, Dragonfly, and Valkey
+          - Generated charts for latency and ops/sec metrics
+          - Both TLS and non-TLS configurations tested
+          - Custom parameters: requests=${{ inputs.requests || '2000' }}, clients=${{ inputs.clients || '100' }}, pipeline=${{ inputs.pipeline || '1' }}, intrinsic_latency=${{ inputs.intrinsic_latency || '5' }}, data_size=${{ inputs.data_size || '1024' }}
+          - Key range: ${{ inputs.key_minimum || '1' }}-${{ inputs.key_maximum || '1000000' }}
+          - Workflow: ${{ github.workflow }}
+          - Run: ${{ github.run_number }}
+          - SHA: ${{ github.sha }}"
+          
+          # Try to push, if it fails due to new commits, pull and retry
+          if ! git push origin HEAD; then
+            echo "Push failed, pulling latest changes and retrying..."
+            
+            # Pull with rebase to keep our commit on top
+            git pull --rebase origin ${{ github.ref_name }}
+            
+            # Try push again
+            git push origin HEAD
+          fi
+          
+          echo "✅ Benchmark results committed and pushed to results/benchmarks-v4/"
+        fi 
+
+    - name: Upload Benchmark Logs and Charts
+      uses: actions/upload-artifact@v4
+      with:
+        name: all_benchmark_v4_artifacts
+        path: |
+          benchmarklogs/**
+          combined_all_results.md
+          combined_all_results_tls.md
+
+    - name: Cleanup
+      run: |
+        docker stop redis
+        docker stop keydb
+        docker stop dragonfly
+        docker stop valkey
+        docker stop redis-tls
+        docker stop keydb-tls
+        docker stop dragonfly-tls
+        docker stop valkey-tls

@@ -2,8 +2,8 @@
 
 | Parameter | Value |
 |-----------|-------|
-| Requests | 5000 |
-| Clients | 50 |
+| Requests | 10000 |
+| Clients | 100 |
 | Pipeline | 1 |
 | Data Size | 384 bytes |
 | Key Minimum | 1 |
@@ -12,5 +12,5 @@
 | Key Pattern | G:G (Gaussian) |
 | Intrinsic Latency | 5 |
 
-Run Date: Wed Jun  4 10:53:11 UTC 2025
-Workflow Run: 42
+Run Date: Wed Jun  4 20:38:52 UTC 2025
+Workflow Run: 43
