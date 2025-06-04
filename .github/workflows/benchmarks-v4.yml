@@ -173,8 +173,8 @@ jobs:
     - name: Update Dragonfly Configuration for non-TLS
       run: |
         sed -i "s|--proactor_threads=2|--proactor_threads=3|" Dockerfile-dragonfly
-        echo "--proactor_threads=3" >> dragonfly-tls.conf
-        echo "--dbfilename=''" >> dragonfly-tls.conf
+        echo "--proactor_threads=3" >> dragonfly.conf
+        echo "--dbfilename=''" >> dragonfly.conf
 
     - name: Update Valkey Configuration for non-TLS
       run: |
