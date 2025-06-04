@@ -589,7 +589,7 @@ jobs:
         echo "KeyDB Server Threads: ${{ inputs.keydb_server_threads || '2' }}"
         echo "KeyDB Min Clients Per Thread: ${{ inputs.keydb_min_clients_per_thread || '50' }}"
         echo "Dragonfly Proactor Threads: 4"
-        echo "Valkey IO Threads: ${{ inputs.valkey_io_threads || '2' }}"
+        echo "Valkey IO Threads: ${{ inputs.valkey_io_threads || '1' }}"
 
     # - name: Intrinsic latency from client (localhost ports, with container names)
     #   continue-on-error: true
@@ -1333,7 +1333,7 @@ jobs:
         echo "KeyDB Server Threads: ${{ inputs.keydb_server_threads || '2' }}" >> results/benchmarks-v4/last_updated.txt
         echo "KeyDB Min Clients Per Thread: ${{ inputs.keydb_min_clients_per_thread || '50' }}" >> results/benchmarks-v4/last_updated.txt
         echo "Dragonfly Proactor Threads: 4" >> results/benchmarks-v4/last_updated.txt
-        echo "Valkey IO Threads: ${{ inputs.valkey_io_threads || '2' }}" >> results/benchmarks-v4/last_updated.txt
+        echo "Valkey IO Threads: ${{ inputs.valkey_io_threads || '1' }}" >> results/benchmarks-v4/last_updated.txt
         
         # Stage all changes
         git add results/benchmarks-v4/
