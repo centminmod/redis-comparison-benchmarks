@@ -1222,22 +1222,22 @@ jobs:
     - name: Generate non-TLS Latency Charts
       continue-on-error: true
       run: |
-        python scripts/latency-charts.py combined_all_results.md nonTLS 2>&1 | tee ./benchmarklogs/latency-charts-nonTLS.log 
+        python scripts/latency-charts.py combined_all_results.md nonTLS --redis_io_threads ${{ inputs.redis_io_threads }} --keydb_server_threads ${{ inputs.keydb_server_threads }} --valkey_io_threads ${{ inputs.valkey_io_threads }} --requests ${{ inputs.requests }} --clients ${{ inputs.clients }} --pipeline ${{ inputs.pipeline }} --data_size ${{ inputs.data_size }} 2>&1 | tee ./benchmarklogs/latency-charts-nonTLS.log
 
     - name: Generate non-TLS Ops/Sec Charts
       continue-on-error: true
       run: |
-        python scripts/opssec-charts.py combined_all_results.md nonTLS 2>&1 | tee ./benchmarklogs/opssec-charts-nonTLS.log 
+        python scripts/opssec-charts.py combined_all_results.md nonTLS --redis_io_threads ${{ inputs.redis_io_threads }} --keydb_server_threads ${{ inputs.keydb_server_threads }} --valkey_io_threads ${{ inputs.valkey_io_threads }} --requests ${{ inputs.requests }} --clients ${{ inputs.clients }} --pipeline ${{ inputs.pipeline }} --data_size ${{ inputs.data_size }} 2>&1 | tee ./benchmarklogs/opssec-charts-nonTLS.log
 
     - name: Generate TLS Latency Charts
       continue-on-error: true
       run: |
-        python scripts/latency-charts.py combined_all_results_tls.md TLS 2>&1 | tee ./benchmarklogs/latency-charts-TLS.log 
+        python scripts/latency-charts.py combined_all_results_tls.md TLS --redis_io_threads ${{ inputs.redis_io_threads }} --keydb_server_threads ${{ inputs.keydb_server_threads }} --valkey_io_threads ${{ inputs.valkey_io_threads }} --requests ${{ inputs.requests }} --clients ${{ inputs.clients }} --pipeline ${{ inputs.pipeline }} --data_size ${{ inputs.data_size }} 2>&1 | tee ./benchmarklogs/latency-charts-TLS.log
 
     - name: Generate TLS Ops/Sec Charts
       continue-on-error: true
       run: |
-        python scripts/opssec-charts.py combined_all_results_tls.md TLS 2>&1 | tee ./benchmarklogs/opssec-charts-TLS.log 
+        python scripts/opssec-charts.py combined_all_results_tls.md TLS --redis_io_threads ${{ inputs.redis_io_threads }} --keydb_server_threads ${{ inputs.keydb_server_threads }} --valkey_io_threads ${{ inputs.valkey_io_threads }} --requests ${{ inputs.requests }} --clients ${{ inputs.clients }} --pipeline ${{ inputs.pipeline }} --data_size ${{ inputs.data_size }} 2>&1 | tee ./benchmarklogs/opssec-charts-TLS.log
 
     - name: Capture Versions for Benchmark Report
       continue-on-error: true
