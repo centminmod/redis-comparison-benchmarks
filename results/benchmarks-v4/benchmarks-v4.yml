@@ -1386,19 +1386,21 @@ jobs:
       run: |
         echo "=== Generating Advanced Benchmark Charts ==="
         
-        # Check if input files exist
+        # Check if input files exist and show their structure
         if [ -f "combined_all_results.md" ]; then
           echo "✅ Found combined_all_results.md"
+          echo "First 20 lines:"
+          head -20 combined_all_results.md
         else
           echo "❌ combined_all_results.md not found"
-          ls -la combined_all_results.md || true
         fi
         
         if [ -f "combined_all_results_tls.md" ]; then
-          echo "✅ Found combined_all_results_tls.md"  
+          echo "✅ Found combined_all_results_tls.md"
+          echo "First 20 lines:"
+          head -20 combined_all_results_tls.md
         else
           echo "❌ combined_all_results_tls.md not found"
-          ls -la combined_all_results_tls.md || true
         fi
         
         # Generate non-TLS advanced charts
