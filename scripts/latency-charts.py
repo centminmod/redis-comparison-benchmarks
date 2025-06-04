@@ -182,10 +182,10 @@ def plot_latency_chart_single(all_data, metric_key, title_suffix, ylabel, out_fi
     arr = np.array(vals)
 
     x = np.arange(len(EXPECTED_LABELS))
-    width = 0.15
-    offsets = [-1.5 * width, -0.5 * width, 0.5 * width, 1.5 * width]
+    width = 0.12  # Reduced from 0.15 to make bars thinner
+    offsets = [-2.0 * width, -0.7 * width, 0.7 * width, 2.0 * width]  # Increased spacing
 
-    fig, ax = plt.subplots(figsize=(24, 10))
+    fig, ax = plt.subplots(figsize=(26, 10))  # Slightly wider figure
 
     DBS_WITH_THREADS = [f"Redis io-threads {redis_io_threads}", f"KeyDB io-threads {keydb_server_threads}", f"Dragonfly proactor_threads {dragonfly_proactor_threads}", f"Valkey io-threads {valkey_io_threads}"]
 
@@ -204,7 +204,7 @@ def plot_latency_chart_single(all_data, metric_key, title_suffix, ylabel, out_fi
     for i, db in enumerate(DBS):
         for j, height in enumerate(arr[i]):
             if height > 0:
-                ax.annotate(f"{height:.2f}", xy=(x[j] + offsets[i], height), xytext=(0, 4), textcoords="offset points", ha="center", va="bottom", fontsize=8)
+                ax.annotate(f"{height:.2f}", xy=(x[j] + offsets[i], height), xytext=(0, 8), textcoords="offset points", ha="center", va="bottom", fontsize=8)  # Increased offset from 4 to 8
 
     plt.tight_layout()
     print(f"[DEBUG] Saving plot to {out_filename}")
@@ -220,7 +220,7 @@ def plot_latency_chart_grid(all_data, metric_key, title_suffix, ylabel, out_file
     thread_counts = ["1 Thread", "2 Threads", "4 Threads", "8 Threads"]
     operations = ["Sets", "Gets", "Totals"]
     
-    fig, axes = plt.subplots(2, 2, figsize=(16, 12))
+    fig, axes = plt.subplots(2, 2, figsize=(18, 12))  # Slightly wider
     axes = axes.flatten()
     
     DBS_WITH_THREADS = [f"Redis io-threads {redis_io_threads}", f"KeyDB io-threads {keydb_server_threads}", f"Dragonfly proactor_threads {dragonfly_proactor_threads}", f"Valkey io-threads {valkey_io_threads}"]
@@ -230,8 +230,8 @@ def plot_latency_chart_grid(all_data, metric_key, title_suffix, ylabel, out_file
     for idx, thread_count in enumerate(thread_counts):
         ax = axes[idx]
         x = np.arange(len(operations))
-        width = 0.2
-        offsets = [-1.5 * width, -0.5 * width, 0.5 * width, 1.5 * width]
+        width = 0.15  # Reduced from 0.2
+        offsets = [-2.0 * width, -0.7 * width, 0.7 * width, 2.0 * width]  # Increased spacing
         
         for i, db in enumerate(DBS):
             values = []
@@ -243,7 +243,7 @@ def plot_latency_chart_grid(all_data, metric_key, title_suffix, ylabel, out_file
             
             for j, height in enumerate(values):
                 if height > 0:
-                    ax.annotate(f"{height:.2f}", xy=(x[j] + offsets[i], height), xytext=(0, 3), textcoords="offset points", ha="center", va="bottom", fontsize=9)
+                    ax.annotate(f"{height:.2f}", xy=(x[j] + offsets[i], height), xytext=(0, 6), textcoords="offset points", ha="center", va="bottom", fontsize=9)  # Increased offset from 3 to 6
         
         ax.set_title(f"{thread_count}", fontsize=14, fontweight='bold')
         ax.set_ylabel(ylabel, fontsize=12)
