@@ -152,7 +152,7 @@ def setup_style():
     return colors
 
 def create_operations_scaling_chart(df, colors, tls_suffix, output_dir):
-    """Chart 1: Operations Performance Scaling Line Chart with Data Labels"""
+    """Chart 1: Operations Performance Scaling Line Chart with Better Positioned Data Labels"""
     if df.empty:
         print("DataFrame is empty, skipping operations scaling chart")
         return
@@ -165,8 +165,13 @@ def create_operations_scaling_chart(df, colors, tls_suffix, output_dir):
     
     plt.figure(figsize=(12, 8))
     
-    # Calculate offset angles for label positioning to avoid overlap
-    label_offsets = {0: (0, 20), 1: (-15, 15), 2: (15, 15), 3: (0, -15)}
+    # Enhanced offset patterns to avoid overlap - larger offsets and more variation
+    label_offsets = {
+        0: (0, 25),     # Redis
+        1: (-20, 20),   # KeyDB  
+        2: (20, 20),    # Dragonfly
+        3: (0, -20)     # Valkey
+    }
     
     for idx, db in enumerate(totals_df['Database'].unique()):
         db_data = totals_df[totals_df['Database'] == db].sort_values('Threads')
@@ -175,12 +180,12 @@ def create_operations_scaling_chart(df, colors, tls_suffix, output_dir):
                     marker='o', linewidth=3, markersize=8, 
                     color=colors.get(db, '#666666'), label=db)
             
-            # Add data labels with offset positioning
-            offset = label_offsets.get(idx, (0, 20))
+            # Add data labels with enhanced offset positioning and smaller font
+            offset = label_offsets.get(idx, (0, 25))
             for x, y in zip(db_data['Threads'], db_data['Ops_sec']):
                 plt.annotate(f'{y:,.0f}', (x, y), textcoords="offset points", 
-                           xytext=offset, ha='center', fontsize=9, fontweight='bold',
-                           bbox=dict(boxstyle='round,pad=0.3', facecolor='white', alpha=0.9, edgecolor='gray'))
+                           xytext=offset, ha='center', fontsize=7, fontweight='bold',  # Smaller font
+                           bbox=dict(boxstyle='round,pad=0.2', facecolor='white', alpha=0.9, edgecolor='gray'))
     
     plt.xlabel('Thread Count', fontsize=14, fontweight='bold')
     plt.ylabel('Operations per Second', fontsize=14, fontweight='bold')
@@ -195,7 +200,7 @@ def create_operations_scaling_chart(df, colors, tls_suffix, output_dir):
     print(f"Created: advcharts-scaling{tls_suffix}.png")
 
 def create_grouped_comparison_chart(df, colors, tls_suffix, output_dir):
-    """Chart 2: Database Comparison by Thread Count Grouped Bar Chart with Data Labels"""
+    """Chart 2: Database Comparison by Thread Count Grouped Bar Chart with Wider Spacing"""
     if df.empty:
         print("DataFrame is empty, skipping grouped comparison chart")
         return
@@ -212,7 +217,7 @@ def create_grouped_comparison_chart(df, colors, tls_suffix, output_dir):
     databases = sorted(totals_df['Database'].unique())
     
     x = np.arange(len(threads))
-    width = 0.18  # Slightly wider bars
+    width = 0.15  # Much wider spacing between bars
     
     for i, db in enumerate(databases):
         db_data = []
@@ -225,13 +230,12 @@ def create_grouped_comparison_chart(df, colors, tls_suffix, output_dir):
         
         bars = ax.bar(x + i * width, db_data, width, label=db, color=colors.get(db, '#666666'), alpha=0.8)
         
-        # Add data labels on bars with rotation for better fit
+        # Add data labels on bars - NO ROTATION, just better spacing
         for j, bar in enumerate(bars):
             height = bar.get_height()
             if height > 0:
-                ax.text(bar.get_x() + bar.get_width()/2., height + max(db_data) * 0.01,
-                       f'{height:,.0f}', ha='center', va='bottom', fontsize=8, fontweight='bold',
-                       rotation=0 if height < max(db_data) * 0.8 else 90)
+                ax.text(bar.get_x() + bar.get_width()/2., height + max(db_data) * 0.02,
+                       f'{height:,.0f}', ha='center', va='bottom', fontsize=8, fontweight='bold')
     
     ax.set_xlabel('Thread Count', fontsize=14, fontweight='bold')
     ax.set_ylabel('Operations per Second', fontsize=14, fontweight='bold')
@@ -291,7 +295,7 @@ def create_latency_throughput_scatter(df, colors, tls_suffix, output_dir):
     print(f"Created: advcharts-tradeoff{tls_suffix}.png")
 
 def create_cache_efficiency_chart(df, colors, tls_suffix, output_dir):
-    """Chart 4: Cache Efficiency - Hit Rate Percentage and Absolute Values with Fixed Colors"""
+    """Chart 4: Cache Efficiency - Hit Rate Percentage and Absolute Values with Fixed Colors and Spacing"""
     if df.empty:
         print("DataFrame is empty, skipping cache efficiency chart")
         return
@@ -307,9 +311,9 @@ def create_cache_efficiency_chart(df, colors, tls_suffix, output_dir):
     threads = sorted(gets_df['Threads'].unique())
     databases = sorted(gets_df['Database'].unique())
     
-    # Chart 1: Hit Rate Percentage
+    # Chart 1: Hit Rate Percentage - WIDER BAR SPACING
     x = np.arange(len(threads))
-    width = 0.18  # Wider spacing between bars
+    width = 0.15  # Much wider spacing between bars
     max_hit_rate = 0
     
     for i, db in enumerate(databases):
@@ -327,12 +331,12 @@ def create_cache_efficiency_chart(df, colors, tls_suffix, output_dir):
         
         bars = ax1.bar(x + i * width, hit_rates, width, label=db, color=colors.get(db, '#666666'), alpha=0.8)
         
-        # Add data labels on bars with better spacing
+        # Add data labels on bars with much better spacing
         for j, bar in enumerate(bars):
             height = bar.get_height()
             if height > 0:
-                ax1.text(bar.get_x() + bar.get_width()/2., height + max_hit_rate * 0.05,
-                        f'{height:.3f}%', ha='center', va='bottom', fontsize=9, fontweight='bold')
+                ax1.text(bar.get_x() + bar.get_width()/2., height + max_hit_rate * 0.08,
+                        f'{height:.3f}%', ha='center', va='bottom', fontsize=8, fontweight='bold')
     
     ax1.set_xlabel('Thread Count', fontsize=12, fontweight='bold')
     ax1.set_ylabel('Cache Hit Rate (%)', fontsize=12, fontweight='bold')
@@ -341,17 +345,16 @@ def create_cache_efficiency_chart(df, colors, tls_suffix, output_dir):
     ax1.set_xticklabels(threads)
     ax1.legend(fontsize=10)
     ax1.grid(True, alpha=0.3, axis='y')
-    ax1.set_ylim(0, max_hit_rate * 1.3 if max_hit_rate > 0 else 1)
+    ax1.set_ylim(0, max_hit_rate * 1.4 if max_hit_rate > 0 else 1)
     
-    # Chart 2: Absolute Values - FIXED COLORS AND LEGEND
+    # Chart 2: Absolute Values - FIXED COLORS BY DATABASE
     x2 = np.arange(len(databases))
-    width2 = 0.12  # Wider spacing
+    width2 = 0.15  # Wider spacing
     
-    # Plot by database (x-axis) and thread count (grouped bars)
+    # Plot by database and thread - each database gets its own color for all thread counts
     for i, thread in enumerate(threads):
         hits_data = []
         gets_data = []
-        bar_colors = []
         
         for db in databases:
             db_thread_data = gets_df[(gets_df['Database'] == db) & (gets_df['Threads'] == thread)]
@@ -361,29 +364,35 @@ def create_cache_efficiency_chart(df, colors, tls_suffix, output_dir):
             else:
                 hits_data.append(0)
                 gets_data.append(0)
-            bar_colors.append(colors.get(db, '#666666'))
         
         # Plot total gets as light background bars
         ax2.bar(x2 + i * width2, gets_data, width2, 
                label=f'{thread}T Total Gets', alpha=0.3, color='lightgray', edgecolor='black')
         
-        # Plot hits as colored foreground bars
-        bars2 = ax2.bar(x2 + i * width2, hits_data, width2, 
-                       label=f'{thread}T Hits', color=bar_colors, alpha=0.8, edgecolor='black')
-        
-        # Add data labels for hits (only if > 0) with better positioning
-        for j, (bar, hits, gets) in enumerate(zip(bars2, hits_data, gets_data)):
+        # Plot hits with DATABASE-SPECIFIC COLORS
+        for j, (db, hits, gets) in enumerate(zip(databases, hits_data, gets_data)):
             if hits > 0:
-                # Position label above the hit bar
-                ax2.text(bar.get_x() + bar.get_width()/2., hits + max(gets_data) * 0.015,
+                bar = ax2.bar(x2[j] + i * width2, hits, width2, 
+                             color=colors.get(db, '#666666'), alpha=0.8, edgecolor='black')
+                
+                # Add data label
+                ax2.text(x2[j] + i * width2, hits + max(gets_data) * 0.02,
                         f'{hits:.0f}', ha='center', va='bottom', fontsize=8, fontweight='bold')
+    
+    # Create custom legend for hits showing database colors
+    import matplotlib.patches as mpatches
+    legend_elements = []
+    for thread in threads:
+        legend_elements.append(mpatches.Patch(color='lightgray', alpha=0.3, label=f'{thread}T Total Gets'))
+    for db in databases:
+        legend_elements.append(mpatches.Patch(color=colors.get(db, '#666666'), alpha=0.8, label=f'{db} Hits'))
     
     ax2.set_xlabel('Database', fontsize=12, fontweight='bold')
     ax2.set_ylabel('Operations per Second', fontsize=12, fontweight='bold')
     ax2.set_title('Cache Hits vs Total Gets (Absolute Values)', fontsize=14, fontweight='bold')
     ax2.set_xticks(x2 + width2 * 1.5)
     ax2.set_xticklabels(databases)
-    ax2.legend(bbox_to_anchor=(1.05, 1), loc='upper left', fontsize=9)
+    ax2.legend(handles=legend_elements, bbox_to_anchor=(1.05, 1), loc='upper left', fontsize=9)
     ax2.grid(True, alpha=0.3, axis='y')
     ax2.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f'{x:,.0f}'))
     
@@ -394,7 +403,7 @@ def create_cache_efficiency_chart(df, colors, tls_suffix, output_dir):
     print(f"Created: advcharts-cache{tls_suffix}.png")
 
 def create_simple_latency_chart(df, colors, tls_suffix, output_dir):
-    """Chart 5: Simple Latency Comparison Chart with Data Labels"""
+    """Chart 5: Simple Latency Comparison Chart with Enhanced Data Label Positioning"""
     if df.empty:
         print("DataFrame is empty, skipping latency chart")
         return
@@ -409,8 +418,13 @@ def create_simple_latency_chart(df, colors, tls_suffix, output_dir):
     
     threads = sorted(totals_df['Threads'].unique())
     
-    # Calculate offset positions to avoid overlap
-    db_offsets = {0: (0, 15), 1: (15, 10), 2: (-15, 10), 3: (0, -15)}
+    # Enhanced offset positions to avoid overlap - more spread out
+    db_offsets = {
+        0: (0, 20),      # Redis
+        1: (25, 15),     # KeyDB  
+        2: (-25, 15),    # Dragonfly
+        3: (0, -20)      # Valkey
+    }
     
     # Average Latency Chart
     for idx, db in enumerate(totals_df['Database'].unique()):
@@ -420,11 +434,11 @@ def create_simple_latency_chart(df, colors, tls_suffix, output_dir):
                     marker='o', linewidth=3, markersize=8,
                     color=colors.get(db, '#666666'), label=db)
             
-            # Add data labels with offset positioning
-            offset = db_offsets.get(idx, (0, 15))
+            # Add data labels with enhanced offset positioning and smaller font
+            offset = db_offsets.get(idx, (0, 20))
             for x, y in zip(db_data['Threads'], db_data['Avg_Latency']):
                 ax1.annotate(f'{y:.2f}', (x, y), textcoords="offset points", 
-                           xytext=offset, ha='center', fontsize=9, fontweight='bold',
+                           xytext=offset, ha='center', fontsize=7, fontweight='bold',  # Smaller font
                            bbox=dict(boxstyle='round,pad=0.2', facecolor='white', alpha=0.8))
     
     ax1.set_xlabel('Thread Count', fontsize=12, fontweight='bold')
@@ -442,11 +456,11 @@ def create_simple_latency_chart(df, colors, tls_suffix, output_dir):
                     marker='s', linewidth=3, markersize=8,
                     color=colors.get(db, '#666666'), label=db)
             
-            # Add data labels with offset positioning
-            offset = db_offsets.get(idx, (0, 15))
+            # Add data labels with enhanced offset positioning and smaller font
+            offset = db_offsets.get(idx, (0, 20))
             for x, y in zip(db_data['Threads'], db_data['p99_Latency']):
                 ax2.annotate(f'{y:.2f}', (x, y), textcoords="offset points", 
-                           xytext=offset, ha='center', fontsize=9, fontweight='bold',
+                           xytext=offset, ha='center', fontsize=7, fontweight='bold',  # Smaller font
                            bbox=dict(boxstyle='round,pad=0.2', facecolor='white', alpha=0.8))
     
     ax2.set_xlabel('Thread Count', fontsize=12, fontweight='bold')
