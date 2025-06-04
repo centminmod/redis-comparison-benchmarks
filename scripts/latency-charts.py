@@ -5,6 +5,7 @@ import argparse
 import matplotlib.pyplot as plt
 import numpy as np
 import sys
+import os
 
 # Updated to include 4 threads
 EXPECTED_LABELS = [
@@ -192,12 +193,12 @@ def plot_latency_chart_single(all_data, metric_key, title_suffix, ylabel, out_fi
         ax.bar(x + offsets[i], arr[i], width, label=db_label)
 
     title_parts = ["Redis vs KeyDB vs Dragonfly vs Valkey – Memtier Benchmarks (4 vCPU VM)", f"(requests:{requests} clients:{clients} pipeline:{pipeline} data_size:{data_size})", "(lower is better) by George Liu"]
-    ax.set_title("\n".join(title_parts), fontsize=20, fontweight='bold', pad=20)
-    ax.set_ylabel(ylabel, fontsize=16, fontweight='semibold')
+    ax.set_title("\n".join(title_parts), fontsize=17, fontweight='bold', pad=20)
+    ax.set_ylabel(ylabel, fontsize=12, fontweight='semibold')
     ax.grid(axis='y', linestyle='--', linewidth=0.5, alpha=0.7)
     ax.set_xticks(x)
-    ax.set_xticklabels(EXPECTED_LABELS, rotation=35, ha="right", fontsize=11)
-    ax.legend(fontsize=12, bbox_to_anchor=(1.02, 1), loc='upper left')
+    ax.set_xticklabels(EXPECTED_LABELS, rotation=35, ha="right", fontsize=8)
+    ax.legend(fontsize=8, bbox_to_anchor=(1.02, 1), loc='upper left')
     ax.tick_params(axis='y', labelsize=13)
 
     for i, db in enumerate(DBS):
@@ -284,8 +285,11 @@ if __name__ == "__main__":
     print(f"[DEBUG] Running latency-charts.py with layout='{args.layout}'")
     data = parse_markdown(args.md_path)
 
+    # Ensure benchmarklogs directory exists
+    os.makedirs("benchmarklogs", exist_ok=True)
+
     for metric_key, ylabel in [("avg", "Average Latency (ms)"), ("p50", "p50 Latency (ms)"), ("p99", "p99 Latency (ms)")]:
-        out_filename = f"latency-{args.prefix}-{metric_key}-{args.layout}.png"
+        out_filename = f"benchmarklogs/latency-{args.prefix}-{metric_key}-{args.layout}.png"
         print(f"[DEBUG] Output filename will be: {out_filename}")
         
         if args.layout == "grid":
