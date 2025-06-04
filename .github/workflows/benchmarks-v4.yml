@@ -172,6 +172,7 @@ jobs:
 
     - name: Update Dragonfly Configuration for non-TLS
       run: |
+        sed -i "s|--proactor_threads=2|--proactor_threads=4|" Dockerfile-dragonfly
         echo "--proactor_threads=4" >> dragonfly-tls.conf
         echo "--dbfilename=''" >> dragonfly-tls.conf
 
@@ -208,6 +209,7 @@ jobs:
     
     - name: Update Dragonfly Configuration for TLS
       run: |
+        sed -i "s|--proactor_threads=2|--proactor_threads=4|" Dockerfile-dragonfly-tls
         echo "--proactor_threads=4" >> dragonfly-tls.conf
         echo "--port=6392" >> dragonfly-tls.conf
         echo "--tls_cert_file=/tls/test.crt" >> dragonfly-tls.conf
