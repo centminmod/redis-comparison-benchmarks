@@ -1040,6 +1040,10 @@ jobs:
         # Generate TLS advanced charts  
         echo "=== Generating TLS Advanced Charts ==="
         python scripts/benchmark_charts.py --tls --input-dir . --output-dir benchmarklogs 2>&1 | tee ./benchmarklogs/advanced-charts-TLS.log
+
+        # Generate stacked comparison chart (requires both datasets)
+        echo "=== Generating Stacked Comparison Chart ==="
+        python scripts/benchmark_charts.py --non-tls --tls --input-dir . --output-dir benchmarklogs 2>&1 | tee ./benchmarklogs/advanced-charts-stacked.log
         
         # List generated chart files
         echo "=== Generated Chart Files ==="

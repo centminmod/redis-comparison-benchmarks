@@ -1394,6 +1394,10 @@ jobs:
         
         echo "=== Generating TLS Advanced Charts ==="
         python scripts/benchmark_charts.py --tls --input-dir . --output-dir benchmarklogs 2>&1 | tee ./benchmarklogs/advanced-charts-TLS.log
+
+        # Generate stacked comparison chart (requires both datasets)
+        echo "=== Generating Stacked Comparison Chart ==="
+        python scripts/benchmark_charts.py --non-tls --tls --input-dir . --output-dir benchmarklogs 2>&1 | tee ./benchmarklogs/advanced-charts-stacked.log
         
         echo "=== Generated Chart Files ==="
         ls -la benchmarklogs/advcharts-*.png || echo "No advanced chart files found"
