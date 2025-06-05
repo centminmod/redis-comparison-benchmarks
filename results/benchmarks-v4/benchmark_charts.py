@@ -666,7 +666,7 @@ def create_stacked_comparison_chart(df_non_tls, df_tls, colors, output_dir):
         print("No 'Totals' data found in either dataset, skipping stacked comparison chart")
         return
     
-    fig, ax = plt.subplots(figsize=(16, 10))
+    fig, ax = plt.subplots(figsize=(18, 10))
     
     # Get all databases and threads from both datasets
     all_databases = set()
@@ -683,11 +683,18 @@ def create_stacked_comparison_chart(df_non_tls, df_tls, colors, output_dir):
     databases = sorted(list(all_databases))
     threads = sorted(list(all_threads))
     
+    # Create positions for each thread count with proper spacing
     x = np.arange(len(threads))
-    width = 0.35
+    width = 0.18  # Narrower bars for better separation
+    spacing = 0.02  # Small gap between bars
     
     for i, db in enumerate(databases):
-        # Get non-TLS data
+        # Calculate positions for this database's bars
+        # Center the group of bars around each thread position
+        offset = (i - (len(databases) - 1) / 2) * (width + spacing)
+        bar_positions = x + offset
+        
+        # Get non-TLS and TLS data for this database
         non_tls_data = []
         tls_data = []
         
@@ -709,36 +716,33 @@ def create_stacked_comparison_chart(df_non_tls, df_tls, colors, output_dir):
             non_tls_data.append(non_tls_val)
             tls_data.append(tls_val)
         
-        # Calculate positions for each database
-        bar_positions = x + (i - len(databases)/2 + 0.5) * width
-        
         # Create stacked bars
         bars1 = ax.bar(bar_positions, non_tls_data, width, 
                       label=f'{db} Non-TLS', color=colors.get(db, '#666666'), alpha=0.8)
         bars2 = ax.bar(bar_positions, tls_data, width, bottom=non_tls_data,
-                      label=f'{db} TLS', color=colors.get(db, '#666666'), alpha=0.5, 
+                      label=f'{db} TLS', color=colors.get(db, '#666666'), alpha=0.6, 
                       hatch='///')
         
-        # Add data labels
+        # Add data labels with better positioning
         for j, (bar1, bar2, non_tls_val, tls_val) in enumerate(zip(bars1, bars2, non_tls_data, tls_data)):
-            # Non-TLS label (bottom section)
-            if non_tls_val > 0:
+            # Non-TLS label (bottom section) - only if value is significant
+            if non_tls_val > 5000:  # Only show label if value is large enough
                 ax.text(bar1.get_x() + bar1.get_width()/2., non_tls_val/2,
                        f'{non_tls_val:,.0f}', ha='center', va='center', 
-                       fontsize=7, fontweight='bold', rotation=90)
+                       fontsize=6, fontweight='bold', rotation=90)
             
-            # TLS label (top section)
-            if tls_val > 0:
+            # TLS label (top section) - only if value is significant
+            if tls_val > 5000:  # Only show label if value is large enough
                 ax.text(bar2.get_x() + bar2.get_width()/2., non_tls_val + tls_val/2,
                        f'{tls_val:,.0f}', ha='center', va='center', 
-                       fontsize=7, fontweight='bold', rotation=90, color='white')
+                       fontsize=6, fontweight='bold', rotation=90, color='white')
             
             # Total label above stack
             total = non_tls_val + tls_val
             if total > 0:
-                ax.text(bar1.get_x() + bar1.get_width()/2., total + max(non_tls_data + tls_data) * 0.02,
+                ax.text(bar1.get_x() + bar1.get_width()/2., total + max([sum(x) for x in zip(non_tls_data, tls_data)]) * 0.01,
                        f'{total:,.0f}', ha='center', va='bottom', 
-                       fontsize=8, fontweight='bold')
+                       fontsize=7, fontweight='bold')
     
     ax.set_xlabel('Thread Count', fontsize=14, fontweight='bold')
     ax.set_ylabel('Operations per Second', fontsize=14, fontweight='bold')
@@ -746,13 +750,14 @@ def create_stacked_comparison_chart(df_non_tls, df_tls, colors, output_dir):
     ax.set_xticks(x)
     ax.set_xticklabels(threads)
     
-    # Create custom legend
+    # Create custom legend with better organization
     legend_elements = []
     for db in databases:
         legend_elements.append(plt.Rectangle((0,0),1,1, facecolor=colors.get(db, '#666666'), alpha=0.8, label=f'{db} Non-TLS'))
-        legend_elements.append(plt.Rectangle((0,0),1,1, facecolor=colors.get(db, '#666666'), alpha=0.5, hatch='///', label=f'{db} TLS'))
+        legend_elements.append(plt.Rectangle((0,0),1,1, facecolor=colors.get(db, '#666666'), alpha=0.6, hatch='///', label=f'{db} TLS'))
     
-    ax.legend(handles=legend_elements, bbox_to_anchor=(1.05, 1), loc='upper left', fontsize=10)
+    # Place legend outside the plot area
+    ax.legend(handles=legend_elements, bbox_to_anchor=(1.02, 1), loc='upper left', fontsize=9, ncol=1)
     ax.grid(True, alpha=0.3, axis='y')
     ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f'{x:,.0f}'))
     
