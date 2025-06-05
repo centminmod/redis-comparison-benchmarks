@@ -295,7 +295,7 @@ def create_latency_throughput_scatter(df, colors, tls_suffix, output_dir):
     print(f"Created: advcharts-tradeoff{tls_suffix}.png")
 
 def create_cache_efficiency_chart(df, colors, tls_suffix, output_dir):
-    """Chart 4: Cache Efficiency - Hit Rate Percentage and Absolute Values with Proper Spacing and Colors"""
+    """Chart 4: Cache Efficiency - Hit Rate Percentage and Absolute Values with Vertical Labels and Zero Handling"""
     if df.empty:
         print("DataFrame is empty, skipping cache efficiency chart")
         return
@@ -311,10 +311,10 @@ def create_cache_efficiency_chart(df, colors, tls_suffix, output_dir):
     threads = sorted(gets_df['Threads'].unique())
     databases = sorted(gets_df['Database'].unique())
     
-    # Chart 1: Hit Rate Percentage - PROPER SPACING BETWEEN BARS
+    # Chart 1: Hit Rate Percentage - WIDER SPACING WITH VERTICAL LABELS
     x = np.arange(len(threads))
-    width = 0.12  # Bar width
-    spacing = 0.02  # Space between individual bars
+    width = 0.08  # Narrower bars for more spacing
+    spacing = 0.04  # Wider spacing between bars
     max_hit_rate = 0
     
     for i, db in enumerate(databases):
@@ -330,16 +330,22 @@ def create_cache_efficiency_chart(df, colors, tls_suffix, output_dir):
             else:
                 hit_rates.append(0)
         
-        # Position bars with spacing: x + (i * (width + spacing))
+        # Position bars with wider spacing
         bar_positions = x + (i * (width + spacing))
         bars = ax1.bar(bar_positions, hit_rates, width, label=db, color=colors.get(db, '#666666'), alpha=0.8)
         
-        # Add data labels on bars with proper spacing
+        # Add VERTICAL data labels on bars
         for j, bar in enumerate(bars):
             height = bar.get_height()
             if height > 0:
-                ax1.text(bar.get_x() + bar.get_width()/2., height + max_hit_rate * 0.1,
-                        f'{height:.3f}%', ha='center', va='bottom', fontsize=8, fontweight='bold')
+                ax1.text(bar.get_x() + bar.get_width()/2., height + max_hit_rate * 0.02,
+                        f'{height:.3f}%', ha='center', va='bottom', fontsize=7, fontweight='bold',
+                        rotation=90)  # VERTICAL LABELS
+            else:
+                # Show "0%" for zero values
+                ax1.text(bar.get_x() + bar.get_width()/2., max_hit_rate * 0.01,
+                        '0%', ha='center', va='bottom', fontsize=7, fontweight='bold',
+                        rotation=90, alpha=0.6)
     
     ax1.set_xlabel('Thread Count', fontsize=12, fontweight='bold')
     ax1.set_ylabel('Cache Hit Rate (%)', fontsize=12, fontweight='bold')
@@ -351,12 +357,12 @@ def create_cache_efficiency_chart(df, colors, tls_suffix, output_dir):
     ax1.set_xticklabels(threads)
     ax1.legend(fontsize=10)
     ax1.grid(True, alpha=0.3, axis='y')
-    ax1.set_ylim(0, max_hit_rate * 1.5 if max_hit_rate > 0 else 1)
+    ax1.set_ylim(0, max_hit_rate * 1.3 if max_hit_rate > 0 else 0.1)
     
-    # Chart 2: Absolute Values - FIXED APPROACH WITH PROPER SPACING AND COLORS
+    # Chart 2: Absolute Values - HANDLE ZERO VALUES PROPERLY
     x2 = np.arange(len(databases))
-    width2 = 0.12  # Bar width
-    spacing2 = 0.02  # Space between bars
+    width2 = 0.08  # Narrower bars
+    spacing2 = 0.04  # Wider spacing
     
     # Get max values for scaling
     all_gets = []
@@ -392,17 +398,23 @@ def create_cache_efficiency_chart(df, colors, tls_suffix, output_dir):
         ax2.bar(bar_positions, gets_data, width2, 
                label=f'{thread}T Total Gets', alpha=0.3, color='lightgray', edgecolor='black')
         
-        # Plot hits as colored foreground bars using database-specific colors
+        # Plot hits for ALL databases (including zero values)
         for j, (db, hits, gets) in enumerate(zip(databases, hits_data, gets_data)):
-            if hits > 0:
-                ax2.bar(bar_positions[j], hits, width2, 
-                       color=colors.get(db, '#666666'), alpha=0.8, edgecolor='black')
+            if gets > 0:  # Only plot if there are actual gets operations
+                # Plot hit bar (even if hits = 0)
+                hit_bar = ax2.bar(bar_positions[j], hits, width2, 
+                                 color=colors.get(db, '#666666'), alpha=0.8, edgecolor='black')
                 
-                # Add data label for hits
-                ax2.text(bar_positions[j], hits + max_gets * 0.02,
-                        f'{hits:.0f}', ha='center', va='bottom', fontsize=8, fontweight='bold')
+                # Add data label - show even for zero values
+                if hits > 0:
+                    ax2.text(bar_positions[j], hits + max_gets * 0.015,
+                            f'{hits:.0f}', ha='center', va='bottom', fontsize=7, fontweight='bold')
+                else:
+                    # Show "0" for zero hits but position it just above the x-axis
+                    ax2.text(bar_positions[j], max_gets * 0.01,
+                            '0', ha='center', va='bottom', fontsize=7, fontweight='bold', alpha=0.6)
     
-    # Create a cleaner legend showing thread counts and database hit colors
+    # Create a cleaner legend
     import matplotlib.patches as mpatches
     legend_elements = []
     
@@ -410,7 +422,7 @@ def create_cache_efficiency_chart(df, colors, tls_suffix, output_dir):
     for thread in threads:
         legend_elements.append(mpatches.Patch(color='lightgray', alpha=0.3, label=f'{thread}T Total Gets'))
     
-    # Add separator
+    # Add separator line
     legend_elements.append(mpatches.Patch(color='white', alpha=0, label=''))
     
     # Add database-specific hit legends

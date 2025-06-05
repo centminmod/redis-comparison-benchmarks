@@ -1,16 +1,16 @@
-Last updated: Thu Jun  5 00:11:37 UTC 2025
-Workflow run: 51
-Commit SHA: 86828eca9cdf673b79badbf1466b113090c64510
+Last updated: Thu Jun  5 01:02:12 UTC 2025
+Workflow run: 52
+Commit SHA: 0afc174d4dc3549a5db854e013c28fa2819afd80
 Benchmark Config:
-  Requests: 200
-  Clients: 10
+  Requests: 2000
+  Clients: 100
   Pipeline: 1
   Data Size: 4
   Key Range: 1-1000000
   Intrinsinc Latency: 1
 Server Configs:
-Redis IO Threads: 3
-KeyDB Server Threads: 3
+Redis IO Threads: 4
+KeyDB Server Threads: 4
 KeyDB Min Clients Per Thread: 50
 Dragonfly Proactor Threads: 3
 Valkey IO Threads: 1
