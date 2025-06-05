@@ -1,11 +1,11 @@
-Last updated: Thu Jun  5 01:02:12 UTC 2025
-Workflow run: 52
-Commit SHA: 0afc174d4dc3549a5db854e013c28fa2819afd80
+Last updated: Thu Jun  5 01:30:58 UTC 2025
+Workflow run: 53
+Commit SHA: 82dbc8e4716a5e08c48007313360131a9cedb83b
 Benchmark Config:
   Requests: 2000
   Clients: 100
   Pipeline: 1
-  Data Size: 4
+  Data Size: 1024
   Key Range: 1-1000000
   Intrinsinc Latency: 1
 Server Configs:
