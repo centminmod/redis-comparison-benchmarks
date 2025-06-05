@@ -1509,13 +1509,39 @@ jobs:
         echo "✅ Docker containers cleaned up"
 
   cleanup-runner:
-    name: Cleanup Azure VM
+    name: Cleanup Azure VM and GitHub Runner
     needs: [provision-runner, benchmark]
     if: ${{ always() }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Remove runner from GitHub
+        continue-on-error: true
+        run: |
+          VM_NAME="${{ needs.provision-runner.outputs.vm-name }}"
+          echo "🗑️  Removing runner from GitHub: ${VM_NAME}"
+          
+          # Get runner ID
+          RUNNER_ID=$(curl -s -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.PAT_GITHUB }}" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/runners" \
+            | jq -r '.runners[] | select(.name == "'${VM_NAME}'") | .id')
+          
+          if [ "$RUNNER_ID" != "null" ] && [ -n "$RUNNER_ID" ]; then
+            echo "Found runner ID: $RUNNER_ID"
+            
+            # Delete runner from GitHub
+            curl -X DELETE \
+              -H "Accept: application/vnd.github+json" \
+              -H "Authorization: Bearer ${{ secrets.PAT_GITHUB }}" \
+              "https://api.github.com/repos/${{ github.repository }}/actions/runners/${RUNNER_ID}"
+            
+            echo "✅ Runner removed from GitHub"
+          else
+            echo "⚠️  Runner not found in GitHub (may have already been removed)"
+          fi
 
       - name: Delete Azure VM
         run: |
