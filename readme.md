@@ -1,6 +1,6 @@
 # Redis vs KeyDB vs Dragonfly vs Valkey Performance Comparison
 
-[![Benchmark Redis vs KeyDB vs Dragonfly vs Valkey](https://github.com/centminmod/redis-comparison-benchmarks/actions/workflows/benchmarks.yml/badge.svg)](https://github.com/centminmod/redis-comparison-benchmarks/actions/workflows/benchmarks.yml)
+[![v1 Benchmark Redis vs KeyDB vs Dragonfly vs Valkey](https://github.com/centminmod/redis-comparison-benchmarks/actions/workflows/benchmarks.yml/badge.svg)](https://github.com/centminmod/redis-comparison-benchmarks/actions/workflows/benchmarks.yml) [![v4 Benchmark Redis vs KeyDB vs Dragonfly vs Valkey](https://github.com/centminmod/redis-comparison-benchmarks/actions/workflows/benchmarks-v4.yml/badge.svg)](https://github.com/centminmod/redis-comparison-benchmarks/actions/workflows/benchmarks-v4.yml)
 
 ## Summary
 
