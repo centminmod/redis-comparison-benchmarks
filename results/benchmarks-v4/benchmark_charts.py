@@ -295,7 +295,7 @@ def create_latency_throughput_scatter(df, colors, tls_suffix, output_dir):
     print(f"Created: advcharts-tradeoff{tls_suffix}.png")
 
 def create_cache_efficiency_chart(df, colors, tls_suffix, output_dir):
-    """Chart 4: Cache Efficiency - Hit Rate Percentage and Absolute Values with Fixed Colors and Spacing"""
+    """Chart 4: Cache Efficiency - Hit Rate Percentage and Absolute Values with Proper Spacing and Colors"""
     if df.empty:
         print("DataFrame is empty, skipping cache efficiency chart")
         return
@@ -311,9 +311,10 @@ def create_cache_efficiency_chart(df, colors, tls_suffix, output_dir):
     threads = sorted(gets_df['Threads'].unique())
     databases = sorted(gets_df['Database'].unique())
     
-    # Chart 1: Hit Rate Percentage - WIDER BAR SPACING
+    # Chart 1: Hit Rate Percentage - PROPER SPACING BETWEEN BARS
     x = np.arange(len(threads))
-    width = 0.15  # Much wider spacing between bars
+    width = 0.12  # Bar width
+    spacing = 0.02  # Space between individual bars
     max_hit_rate = 0
     
     for i, db in enumerate(databases):
@@ -329,29 +330,48 @@ def create_cache_efficiency_chart(df, colors, tls_suffix, output_dir):
             else:
                 hit_rates.append(0)
         
-        bars = ax1.bar(x + i * width, hit_rates, width, label=db, color=colors.get(db, '#666666'), alpha=0.8)
+        # Position bars with spacing: x + (i * (width + spacing))
+        bar_positions = x + (i * (width + spacing))
+        bars = ax1.bar(bar_positions, hit_rates, width, label=db, color=colors.get(db, '#666666'), alpha=0.8)
         
-        # Add data labels on bars with much better spacing
+        # Add data labels on bars with proper spacing
         for j, bar in enumerate(bars):
             height = bar.get_height()
             if height > 0:
-                ax1.text(bar.get_x() + bar.get_width()/2., height + max_hit_rate * 0.08,
+                ax1.text(bar.get_x() + bar.get_width()/2., height + max_hit_rate * 0.1,
                         f'{height:.3f}%', ha='center', va='bottom', fontsize=8, fontweight='bold')
     
     ax1.set_xlabel('Thread Count', fontsize=12, fontweight='bold')
     ax1.set_ylabel('Cache Hit Rate (%)', fontsize=12, fontweight='bold')
     ax1.set_title('Cache Hit Rate by Thread Count', fontsize=14, fontweight='bold')
-    ax1.set_xticks(x + width * 1.5)
+    
+    # Center the x-tick labels between grouped bars
+    group_centers = x + (len(databases) - 1) * (width + spacing) / 2
+    ax1.set_xticks(group_centers)
     ax1.set_xticklabels(threads)
     ax1.legend(fontsize=10)
     ax1.grid(True, alpha=0.3, axis='y')
-    ax1.set_ylim(0, max_hit_rate * 1.4 if max_hit_rate > 0 else 1)
+    ax1.set_ylim(0, max_hit_rate * 1.5 if max_hit_rate > 0 else 1)
     
-    # Chart 2: Absolute Values - FIXED COLORS BY DATABASE
+    # Chart 2: Absolute Values - FIXED APPROACH WITH PROPER SPACING AND COLORS
     x2 = np.arange(len(databases))
-    width2 = 0.15  # Wider spacing
+    width2 = 0.12  # Bar width
+    spacing2 = 0.02  # Space between bars
     
-    # Plot by database and thread - each database gets its own color for all thread counts
+    # Get max values for scaling
+    all_gets = []
+    all_hits = []
+    
+    for thread in threads:
+        for db in databases:
+            db_thread_data = gets_df[(gets_df['Database'] == db) & (gets_df['Threads'] == thread)]
+            if not db_thread_data.empty:
+                all_gets.append(db_thread_data['Ops_sec'].iloc[0])
+                all_hits.append(db_thread_data['Hits_sec'].iloc[0])
+    
+    max_gets = max(all_gets) if all_gets else 1
+    
+    # Plot each thread count as a separate series
     for i, thread in enumerate(threads):
         hits_data = []
         gets_data = []
@@ -365,32 +385,45 @@ def create_cache_efficiency_chart(df, colors, tls_suffix, output_dir):
                 hits_data.append(0)
                 gets_data.append(0)
         
+        # Position bars with spacing
+        bar_positions = x2 + (i * (width2 + spacing2))
+        
         # Plot total gets as light background bars
-        ax2.bar(x2 + i * width2, gets_data, width2, 
+        ax2.bar(bar_positions, gets_data, width2, 
                label=f'{thread}T Total Gets', alpha=0.3, color='lightgray', edgecolor='black')
         
-        # Plot hits with DATABASE-SPECIFIC COLORS
+        # Plot hits as colored foreground bars using database-specific colors
         for j, (db, hits, gets) in enumerate(zip(databases, hits_data, gets_data)):
             if hits > 0:
-                bar = ax2.bar(x2[j] + i * width2, hits, width2, 
-                             color=colors.get(db, '#666666'), alpha=0.8, edgecolor='black')
+                ax2.bar(bar_positions[j], hits, width2, 
+                       color=colors.get(db, '#666666'), alpha=0.8, edgecolor='black')
                 
-                # Add data label
-                ax2.text(x2[j] + i * width2, hits + max(gets_data) * 0.02,
+                # Add data label for hits
+                ax2.text(bar_positions[j], hits + max_gets * 0.02,
                         f'{hits:.0f}', ha='center', va='bottom', fontsize=8, fontweight='bold')
     
-    # Create custom legend for hits showing database colors
+    # Create a cleaner legend showing thread counts and database hit colors
     import matplotlib.patches as mpatches
     legend_elements = []
+    
+    # Add thread count legends for total gets
     for thread in threads:
         legend_elements.append(mpatches.Patch(color='lightgray', alpha=0.3, label=f'{thread}T Total Gets'))
+    
+    # Add separator
+    legend_elements.append(mpatches.Patch(color='white', alpha=0, label=''))
+    
+    # Add database-specific hit legends
     for db in databases:
         legend_elements.append(mpatches.Patch(color=colors.get(db, '#666666'), alpha=0.8, label=f'{db} Hits'))
     
     ax2.set_xlabel('Database', fontsize=12, fontweight='bold')
     ax2.set_ylabel('Operations per Second', fontsize=12, fontweight='bold')
     ax2.set_title('Cache Hits vs Total Gets (Absolute Values)', fontsize=14, fontweight='bold')
-    ax2.set_xticks(x2 + width2 * 1.5)
+    
+    # Center the x-tick labels between grouped bars
+    group_centers2 = x2 + (len(threads) - 1) * (width2 + spacing2) / 2
+    ax2.set_xticks(group_centers2)
     ax2.set_xticklabels(databases)
     ax2.legend(handles=legend_elements, bbox_to_anchor=(1.05, 1), loc='upper left', fontsize=9)
     ax2.grid(True, alpha=0.3, axis='y')
