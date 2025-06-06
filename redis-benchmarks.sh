@@ -204,8 +204,8 @@ appendonly no
 EOF
 
     # Update Dragonfly Dockerfiles
-    sed -i "s|--proactor_threads=2|--proactor_threads=$DRAGONFLY_PROACTOR_THREADS|" Dockerfile-dragonfly
-    sed -i "s|--proactor_threads=2|--proactor_threads=$DRAGONFLY_PROACTOR_THREADS|" Dockerfile-dragonfly-tls
+    sed -i "s|--proactor_threads=3|--proactor_threads=$DRAGONFLY_PROACTOR_THREADS|" Dockerfile-dragonfly
+    sed -i "s|--proactor_threads=3|--proactor_threads=$DRAGONFLY_PROACTOR_THREADS|" Dockerfile-dragonfly-tls
 }
 
 # Check container status
