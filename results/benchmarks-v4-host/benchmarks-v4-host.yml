@@ -255,7 +255,7 @@ jobs:
       uses: docker/build-push-action@v6
       with:
         context: .
-        file: ./Dockerfile-dragonfly
+        file: ./Dockerfile-dragonfly-host
         load: true
         tags: dragonfly:latest
 
@@ -271,7 +271,7 @@ jobs:
       uses: docker/build-push-action@v6
       with:
         context: .
-        file: ./Dockerfile-redis-tls
+        file: ./Dockerfile-redis-tls-host
         load: true
         tags: redis-tls:latest
     
@@ -279,7 +279,7 @@ jobs:
       uses: docker/build-push-action@v6
       with:
         context: .
-        file: ./Dockerfile-keydb-tls
+        file: ./Dockerfile-keydb-tls-host
         load: true
         tags: keydb-tls:latest
     
@@ -295,7 +295,7 @@ jobs:
       uses: docker/build-push-action@v6
       with:
         context: .
-        file: ./Dockerfile-valkey-tls
+        file: ./Dockerfile-valkey-tls-host
         load: true
         tags: valkey-tls:latest
 

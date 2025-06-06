@@ -34,18 +34,18 @@ KeyDB TLS 8 Threads | Totals | 0.00 | 0.00 | 0.00 | -nan | 0.00700 | 0.00700 | 0
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | Dragonfly TLS 1 Thread | Type | Ops/sec | Hits/sec | Misses/sec | Avg Latency | p50 Latency | p99 Latency | p99.9 Latency | KB/sec |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-Dragonfly TLS 1 Thread | Sets | 2035.25 | --- | --- | 3.97151 | 3.47100 | 7.00700 | 139.26300 | 2130.64 |
-Dragonfly TLS 1 Thread | Gets | 30528.78 | 329.39 | 30199.39 | 3.28187 | 3.40700 | 6.04700 | 7.39100 | 1493.18 |
-Dragonfly TLS 1 Thread | Totals | 32564.03 | 329.39 | 30199.39 | 3.32497 | 3.42300 | 6.04700 | 7.61500 | 3623.82 |
-Dragonfly TLS 2 Threads | Sets | 2864.98 | --- | --- | 5.88006 | 4.47900 | 11.07100 | 311.29500 | 2999.26 |
-Dragonfly TLS 2 Threads | Gets | 42974.77 | 1334.40 | 41640.38 | 4.53274 | 4.41500 | 10.23900 | 11.45500 | 2976.05 |
-Dragonfly TLS 2 Threads | Totals | 45839.76 | 1334.40 | 41640.38 | 4.61695 | 4.44700 | 10.30300 | 11.90300 | 5975.31 |
-Dragonfly TLS 4 Threads | Sets | 5266.38 | --- | --- | 6.33541 | 4.79900 | 11.51900 | 348.15900 | 5513.20 |
-Dragonfly TLS 4 Threads | Gets | 78995.67 | 4843.49 | 74152.18 | 4.63283 | 4.73500 | 10.04700 | 13.11900 | 7870.49 |
-Dragonfly TLS 4 Threads | Totals | 84262.05 | 4843.49 | 74152.18 | 4.73924 | 4.73500 | 10.11100 | 14.46300 | 13383.69 |
-Dragonfly TLS 8 Threads | Sets | 4782.75 | --- | --- | 15.83334 | 10.17500 | 45.31100 | 659.45500 | 5006.91 |
-Dragonfly TLS 8 Threads | Gets | 71741.21 | 8521.61 | 63219.60 | 12.76550 | 10.11100 | 41.98300 | 46.84700 | 11286.73 |
-Dragonfly TLS 8 Threads | Totals | 76523.96 | 8521.61 | 63219.60 | 12.95724 | 10.11100 | 41.98300 | 48.89500 | 16293.64 |
+Dragonfly TLS 1 Thread | Sets | 2029.34 | --- | --- | 3.90076 | 3.15100 | 7.29500 | 141.31100 | 2124.45 |
+Dragonfly TLS 1 Thread | Gets | 30440.09 | 320.15 | 30119.94 | 3.20012 | 3.11900 | 6.84700 | 7.39100 | 1480.53 |
+Dragonfly TLS 1 Thread | Totals | 32469.42 | 320.15 | 30119.94 | 3.24391 | 3.11900 | 6.84700 | 7.48700 | 3604.98 |
+Dragonfly TLS 2 Threads | Sets | 3178.01 | --- | --- | 5.28517 | 4.15900 | 10.75100 | 225.27900 | 3326.96 |
+Dragonfly TLS 2 Threads | Gets | 47670.13 | 1479.43 | 46190.70 | 4.18788 | 4.09500 | 9.34300 | 11.71100 | 3300.44 |
+Dragonfly TLS 2 Threads | Totals | 50848.13 | 1479.43 | 46190.70 | 4.25646 | 4.09500 | 9.40700 | 12.54300 | 6627.39 |
+Dragonfly TLS 4 Threads | Sets | 4961.90 | --- | --- | 6.38412 | 5.21500 | 13.69500 | 280.57500 | 5194.46 |
+Dragonfly TLS 4 Threads | Gets | 74428.55 | 4538.65 | 69889.90 | 5.06082 | 5.15100 | 11.39100 | 14.52700 | 7390.55 |
+Dragonfly TLS 4 Threads | Totals | 79390.46 | 4538.65 | 69889.90 | 5.14352 | 5.15100 | 11.45500 | 15.74300 | 12585.01 |
+Dragonfly TLS 8 Threads | Sets | 4299.75 | --- | --- | 14.35474 | 11.45500 | 36.60700 | 667.64700 | 4501.27 |
+Dragonfly TLS 8 Threads | Gets | 64496.26 | 7686.10 | 56810.15 | 11.31411 | 11.32700 | 27.64700 | 43.77500 | 10172.08 |
+Dragonfly TLS 8 Threads | Totals | 68796.01 | 7686.10 | 56810.15 | 11.50415 | 11.39100 | 27.90300 | 50.17500 | 14673.35 |
 | Databases | Type | Ops/sec | Hits/sec | Misses/sec | Avg Latency | p50 Latency | p99 Latency | p99.9 Latency | KB/sec |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | Valkey TLS 1 Thread | Type | Ops/sec | Hits/sec | Misses/sec | Avg Latency | p50 Latency | p99 Latency | p99.9 Latency | KB/sec |
