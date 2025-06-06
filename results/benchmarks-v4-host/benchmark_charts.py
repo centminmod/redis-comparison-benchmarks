@@ -217,7 +217,7 @@ def create_grouped_comparison_chart(df, colors, tls_suffix, output_dir):
     databases = sorted(totals_df['Database'].unique())
     
     x = np.arange(len(threads))
-    width = 0.15  # Much wider spacing between bars
+    width = 0.15
     
     for i, db in enumerate(databases):
         db_data = []
@@ -230,7 +230,6 @@ def create_grouped_comparison_chart(df, colors, tls_suffix, output_dir):
         
         bars = ax.bar(x + i * width, db_data, width, label=db, color=colors.get(db, '#666666'), alpha=0.8)
         
-        # Add data labels on bars - NO ROTATION, just better spacing
         for j, bar in enumerate(bars):
             height = bar.get_height()
             if height > 0:
@@ -242,7 +241,7 @@ def create_grouped_comparison_chart(df, colors, tls_suffix, output_dir):
     ax.set_title(f'Database Performance Comparison by Thread Count{tls_suffix}', fontsize=16, fontweight='bold')
     ax.set_xticks(x + width * 1.5)
     ax.set_xticklabels(threads)
-    ax.legend(fontsize=12, frameon=True, fancybox=True, shadow=True)
+    ax.legend(loc='upper left', fontsize=12, frameon=True, fancybox=True, shadow=True)  # Changed to upper left
     ax.grid(True, alpha=0.3, axis='y')
     ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f'{x:,.0f}'))
     plt.tight_layout()
@@ -658,7 +657,6 @@ def create_stacked_comparison_chart(df_non_tls, df_tls, colors, output_dir):
         print("Both DataFrames are empty, skipping stacked comparison chart")
         return
     
-    # Get totals data from both datasets
     totals_non_tls = df_non_tls[df_non_tls['Type'] == 'Totals'] if not df_non_tls.empty else pd.DataFrame()
     totals_tls = df_tls[df_tls['Type'] == 'Totals'] if not df_tls.empty else pd.DataFrame()
     
@@ -668,7 +666,6 @@ def create_stacked_comparison_chart(df_non_tls, df_tls, colors, output_dir):
     
     fig, ax = plt.subplots(figsize=(18, 10))
     
-    # Get all databases and threads from both datasets
     all_databases = set()
     all_threads = set()
     
@@ -683,30 +680,24 @@ def create_stacked_comparison_chart(df_non_tls, df_tls, colors, output_dir):
     databases = sorted(list(all_databases))
     threads = sorted(list(all_threads))
     
-    # Create positions for each thread count with proper spacing
     x = np.arange(len(threads))
-    width = 0.18  # Narrower bars for better separation
-    spacing = 0.02  # Small gap between bars
+    width = 0.18
+    spacing = 0.02
     
     for i, db in enumerate(databases):
-        # Calculate positions for this database's bars
-        # Center the group of bars around each thread position
         offset = (i - (len(databases) - 1) / 2) * (width + spacing)
         bar_positions = x + offset
         
-        # Get non-TLS and TLS data for this database
         non_tls_data = []
         tls_data = []
         
         for thread in threads:
-            # Non-TLS values
             if not totals_non_tls.empty:
                 non_tls_thread_data = totals_non_tls[(totals_non_tls['Database'] == db) & (totals_non_tls['Threads'] == thread)]
                 non_tls_val = non_tls_thread_data['Ops_sec'].iloc[0] if not non_tls_thread_data.empty else 0
             else:
                 non_tls_val = 0
             
-            # TLS values
             if not totals_tls.empty:
                 tls_thread_data = totals_tls[(totals_tls['Database'] == db) & (totals_tls['Threads'] == thread)]
                 tls_val = tls_thread_data['Ops_sec'].iloc[0] if not tls_thread_data.empty else 0
@@ -716,27 +707,22 @@ def create_stacked_comparison_chart(df_non_tls, df_tls, colors, output_dir):
             non_tls_data.append(non_tls_val)
             tls_data.append(tls_val)
         
-        # Create stacked bars
         bars1 = ax.bar(bar_positions, non_tls_data, width, 
                       label=f'{db} Non-TLS', color=colors.get(db, '#666666'), alpha=0.8)
         bars2 = ax.bar(bar_positions, tls_data, width, bottom=non_tls_data,
-                      label=f'{db} TLS', color=colors.get(db, '#666666'), alpha=0.5)  # REMOVED hatch='///'
+                      label=f'{db} TLS', color=colors.get(db, '#666666'), alpha=0.5)
         
-        # Add data labels with better positioning
         for j, (bar1, bar2, non_tls_val, tls_val) in enumerate(zip(bars1, bars2, non_tls_data, tls_data)):
-            # Non-TLS label (bottom section) - only if value is significant
-            if non_tls_val > 5000:  # Only show label if value is large enough
+            if non_tls_val > 5000:
                 ax.text(bar1.get_x() + bar1.get_width()/2., non_tls_val/2,
                        f'{non_tls_val:,.0f}', ha='center', va='center', 
                        fontsize=6, fontweight='bold')
             
-            # TLS label (top section) - only if value is significant
-            if tls_val > 5000:  # Only show label if value is large enough
+            if tls_val > 5000:
                 ax.text(bar2.get_x() + bar2.get_width()/2., non_tls_val + tls_val/2,
                        f'{tls_val:,.0f}', ha='center', va='center', 
                        fontsize=6, fontweight='bold', color='white')
             
-            # Total label above stack
             total = non_tls_val + tls_val
             if total > 0:
                 ax.text(bar1.get_x() + bar1.get_width()/2., total + max([sum(x) for x in zip(non_tls_data, tls_data)]) * 0.01,
@@ -749,14 +735,12 @@ def create_stacked_comparison_chart(df_non_tls, df_tls, colors, output_dir):
     ax.set_xticks(x)
     ax.set_xticklabels(threads)
     
-    # Create custom legend with better organization
     legend_elements = []
     for db in databases:
         legend_elements.append(plt.Rectangle((0,0),1,1, facecolor=colors.get(db, '#666666'), alpha=0.8, label=f'{db} Non-TLS'))
-        legend_elements.append(plt.Rectangle((0,0),1,1, facecolor=colors.get(db, '#666666'), alpha=0.5, label=f'{db} TLS'))  # REMOVED hatch='///'
+        legend_elements.append(plt.Rectangle((0,0),1,1, facecolor=colors.get(db, '#666666'), alpha=0.5, label=f'{db} TLS'))
 
-    # Place legend outside the plot area
-    ax.legend(handles=legend_elements, bbox_to_anchor=(1.02, 1), loc='upper left', fontsize=9, ncol=1)
+    ax.legend(handles=legend_elements, loc='upper left', fontsize=9, ncol=1, frameon=True, fancybox=True, shadow=True)  # Changed to upper left
     ax.grid(True, alpha=0.3, axis='y')
     ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f'{x:,.0f}'))
     
