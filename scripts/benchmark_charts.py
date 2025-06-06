@@ -729,13 +729,13 @@ def create_stacked_comparison_chart(df_non_tls, df_tls, colors, output_dir):
             if non_tls_val > 5000:  # Only show label if value is large enough
                 ax.text(bar1.get_x() + bar1.get_width()/2., non_tls_val/2,
                        f'{non_tls_val:,.0f}', ha='center', va='center', 
-                       fontsize=6, fontweight='bold', rotation=90)
+                       fontsize=6, fontweight='bold')
             
             # TLS label (top section) - only if value is significant
             if tls_val > 5000:  # Only show label if value is large enough
                 ax.text(bar2.get_x() + bar2.get_width()/2., non_tls_val + tls_val/2,
                        f'{tls_val:,.0f}', ha='center', va='center', 
-                       fontsize=6, fontweight='bold', rotation=90, color='white')
+                       fontsize=6, fontweight='bold', color='white')
             
             # Total label above stack
             total = non_tls_val + tls_val
