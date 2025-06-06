@@ -4,164 +4,219 @@
 
 ## Summary
 
-This comprehensive benchmark compares four leading Redis-compatible databases: **Redis**, **KeyDB**, **Dragonfly**, and **Valkey** across various threading scenarios on a 4 vCPU system Azure VPS server with 16GB of memory GitHub Actions Ubuntu hosted runner. Tests used [memtier_benchmark](https://github.com/RedisLabs/memtier_benchmark).
+This **v5 host-networked benchmark** compares four Redis-compatible engines - **Redis**, **KeyDB**, **Dragonfly**, and **Valkey** - on a 4 vCPU, 16 GB GitHub Actions Ubuntu runner. Each database runs in Docker **host** network mode (no NAT overhead), pinned to CPUs 0–3, and configured with 4 I/O threads (or proactors).
 
-Previous test comparison results without Valkey can be read [here](readme-v1.md).
+- [memtier_benchmark](https://github.com/RedisLabs/memtier_benchmark) (1:15 SET:GET, 512 B payload, Gaussian 3 M-key distribution)  
+- Client threads = 1, 2, 4, 8  
+- Clients/thread = 100, Requests/thread = 5 000, Pipeline = 1  
 
-### Versions Tested
+**Key points**  
+- Prior Docker NAT-networked tests (see [readme-v2.md]) revealed a Valkey bug: `io-threads >1` regressed in performance.
+- In this host-networked v5 test, that bug is resolved for Valkey which now scales properly with multiple I/O threads `io-threads >1`.  
 
-* Redis 8.0.2
-* KeyDB 6.3.4
-* Dragonfly 1.30.3
-* Valkey 8.1.1
+Previous benchmarks:  
+• v1 (Redis vs KeyDB vs Dragonfly): [readme-v1.md]  
+• v2 (added Valkey, NAT-networked): [readme-v2.md]
 
-### Key Findings
+## Host-Networked 4-Thread Benchmarks (v5)
 
-#### 1. Throughput Analysis (Ops/Sec)
+> **Environment:** GitHub Actions Azure Hosted runners with Ubuntu (4 vCPU, 16 GB RAM), Docker host network, CPU-pinning
+> **Test tool:** `memtier_benchmark`  
+> **Parameters:**  
+> • Threads = 4  
+> • Clients/thread = 100  
+> • Requests/thread = 5 000  
+> • Ratio = 1:15 SET:GET  
+> • Data size = 512 Bytes  
+> • Keyspace = 1…3 000 000 (Gaussian)  
+> • IO-threads/Proactor = 4 
+> • Full test results, charts are [here](/results/benchmarks-v5-host-4t-jun7-2025/)
 
-**Single Thread Performance (1 Thread):**
-- **Redis**: \~60,061 ops/sec (baseline performance)
-- **KeyDB**: \~55,986 ops/sec (slightly lower than Redis)
-- **Dragonfly**: \~46,627 ops/sec (lowest single-thread performance)
-- **Valkey**: \~47,628 ops/sec (similar to Dragonfly)
+---
 
-**Multi-Thread Scaling (2 Threads):**
-- **Redis**: \~63,403 ops/sec (minimal scaling)
-- **KeyDB**: \~60,201 ops/sec (good scaling)
-- **Dragonfly**: \~59,616 ops/sec (significant improvement)
-- **Valkey**: \~50,067 ops/sec (moderate scaling)
+## 1. Benchmark Commands
 
-**Medium Concurrency (4 Threads):**
-- **Redis**: \~63,373 ops/sec (maintains peak performance)
-- **KeyDB**: \~59,679 ops/sec (slight performance drop)
-- **Dragonfly**: \~65,196 ops/sec (achieves highest throughput)
-- **Valkey**: \~50,642 ops/sec (consistent with 2-thread performance)
-
-**High Concurrency (8 Threads):**
-- **Redis**: \~60,019 ops/sec (performance degrades)
-- **KeyDB**: \~53,205 ops/sec (notable performance drop)
-- **Dragonfly**: \~53,341 ops/sec (consistent performance)
-- **Valkey**: \~45,262 ops/sec (lowest at high concurrency)
-
-#### 2. Latency Analysis
-
-**Average Latency Performance:**
-- **Redis**: Excellent low-latency performance (1.66ms-13.30ms range)
-- **KeyDB**: Competitive latency (1.79ms-14.99ms range)
-- **Dragonfly**: Higher latency but consistent (2.39ms-14.96ms range)
-- **Valkey**: Highest latency across all scenarios (2.10ms-17.60ms range)
-
-**P99 Latency Characteristics:**
-- **Redis**: Superior P99 latency control (2.78ms-34.56ms)
-- **KeyDB**: Good P99 performance (4.16ms-41.98ms)
-- **Dragonfly**: Moderate P99 latency (4.83ms-42.50ms)
-- **Valkey**: Highest P99 latency (4.38ms-48.90ms)
-
-#### 3. Threading Behavior Analysis
-
-**Optimal Thread Counts by Database:**
-- **Redis**: Peak performance at 1-2 threads, degrades with higher concurrency
-- **KeyDB**: Best performance at 2-4 threads, good multi-threading support
-- **Dragonfly**: Consistent across all thread counts. Suspect need VM/servers with more than 8+ CPU threads available for better performance.
-- **Valkey**: Best at 1-2 threads, struggles with high concurrency. Suspect need VM/servers with more than 8+ CPU threads available for better performance.
-
-### Performance Recommendations
-
-#### Redis
-- **Best for**: Single-threaded applications requiring ultra-low latency
-- **Sweet spot**: 1-2 threads
-- **Pros**: Excellent single-thread performance, mature ecosystem, predictable behavior
-- **Cons**: Limited multi-threading benefits, performance degradation at high concurrency
-
-#### KeyDB
-- **Best for**: Multi-threaded applications with moderate concurrency requirements
-- **Sweet spot**: 2-4 threads
-- **Pros**: Good multi-threading support, Redis compatibility, balanced performance
-- **Cons**: Performance drops significantly at very high concurrency (8+ threads)
-
-#### Dragonfly
-- **Best for**: High-concurrency applications requiring consistent performance
-- **Sweet spot**: 4-8 threads
-- **Pros**: Excellent scaling characteristics, consistent performance across thread counts
-- **Cons**: Higher baseline latency, lower single-thread performance. Suspect need VM/servers with more than 8+ CPU threads available for better performance.
-
-#### Valkey
-- **Best for**: Applications prioritizing Redis compatibility over raw performance
-- **Sweet spot**: 1-2 threads
-- **Pros**: Redis fork with active development, good single-thread performance
-- **Cons**: Highest latency overall, poor scaling beyond 2 threads. Suspect need VM/servers with more than 8+ CPU threads available for better performance.
-
-## Detailed Benchmark Results
-
-### Non-TLS Performance Comparison
-
-![Throughput Comparison](charts/ops-nonTLS.png)
-
-![Average Latency Comparison](charts/latency-nonTLS-avg.png)
-
-![P50 Latency Comparison](charts/latency-nonTLS-p50.png)
-
-![P99 Latency Comparison](charts/latency-nonTLS-p99.png)
-
-### Complete Benchmark Data
-
-| Database | Threads | Type | Ops/sec | Avg Latency (ms) | p50 Latency (ms) | p99 Latency (ms) |
-|----------|---------|------|---------|------------------|------------------|------------------|
-| Redis | 1 | Totals | 60,061 | 1.66 | 1.66 | 2.78 |
-| Redis | 2 | Totals | 63,403 | 3.14 | 3.02 | 7.01 |
-| Redis | 4 | Totals | 63,373 | 6.31 | 6.02 | 14.46 |
-| Redis | 8 | Totals | 60,019 | 13.30 | 12.54 | 34.56 |
-| KeyDB | 1 | Totals | 55,986 | 1.79 | 1.73 | 4.16 |
-| KeyDB | 2 | Totals | 60,201 | 3.32 | 3.17 | 7.99 |
-| KeyDB | 4 | Totals | 59,679 | 6.69 | 6.24 | 16.77 |
-| KeyDB | 8 | Totals | 53,205 | 14.99 | 13.95 | 41.98 |
-| Dragonfly | 1 | Totals | 46,627 | 2.39 | 2.43 | 4.83 |
-| Dragonfly | 2 | Totals | 59,616 | 3.35 | 3.17 | 7.87 |
-| Dragonfly | 4 | Totals | 65,196 | 6.63 | 6.14 | 17.41 |
-| Dragonfly | 8 | Totals | 53,341 | 14.96 | 13.95 | 42.50 |
-| Valkey | 1 | Totals | 47,628 | 2.10 | 1.95 | 4.38 |
-| Valkey | 2 | Totals | 50,067 | 4.00 | 3.76 | 8.90 |
-| Valkey | 4 | Totals | 50,642 | 7.90 | 7.30 | 19.46 |
-| Valkey | 8 | Totals | 45,262 | 17.60 | 16.38 | 48.90 |
-
-## Test Configuration
-
-### Memtier Benchmark Parameters
+### 1.1 Non-TLS
 ```bash
-memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p PORT --protocol=redis 
-  -t THREADS --distinct-client-seed --hide-histogram --requests=2000 
-  --clients=100 --pipeline=1 --data-size=384 --key-pattern=G:G 
-  --key-minimum=1 --key-maximum=1000000 --key-median=500000 --key-stddev=166667
+memtier_benchmark \
+  -s 127.0.0.1 --protocol=redis -p <port> \
+  --ratio=1:15 --clients=100 --requests=5000 \
+  --pipeline=1 --data-size=512 \
+  --key-pattern=G:G --key-minimum=1 --key-maximum=3000000 \
+  --key-median=1500000 --key-stddev=500000 \
+  -t 4 --distinct-client-seed --hide-histogram
 ```
 
-### Test Environment
-- **Platform**: GitHub Actions Ubuntu Latest (4 vCPU VM)
-- **Test Pattern**: 1:15 SET:GET ratio (simulating typical cache usage)
-- **Data Size**: 384 bytes per operation
-- **Key Distribution**: Gaussian distribution over 1M key space
-- **Pipeline**: Disabled (pipeline=1) for realistic PHP/application usage
+### 1.2 TLS
+```bash
+memtier_benchmark \
+  -s 127.0.0.1 --protocol=redis -p <tls-port> --tls \
+  --cert=test.crt --key=test.key --cacert=ca.crt --tls-skip-verify \
+  --ratio=1:15 --clients=100 --requests=5000 \
+  --pipeline=1 --data-size=512 \
+  --key-pattern=G:G --key-minimum=1 --key-maximum=3000000 \
+  --key-median=1500000 --key-stddev=500000 \
+  -t 4 --distinct-client-seed --hide-histogram
+```
 
-### Database Configurations
+---
 
-Settings used were for optimal results for respective database servers on 4 vCPU VM instance server.
+## 2. Multi-Thread Summary
 
-- **Redis**: `io-threads 2`, `io-threads-do-reads yes`. Setting IO threads to 4, results in lower performance.
-- **KeyDB**: `io-threads 2`, `io-threads-do-reads yes`. Setting IO threads to 4, results in lower performance.
-- **Dragonfly**: `--proactor_threads=4`
-- **Valkey**: `io-threads 2`, `io-threads-do-reads yes`. Setting IO threads to 4, results in lower performance.
-- **All databases**: Persistence disabled for pure performance testing
+![Stacked non-TLS vs TLS](/results/benchmarks-v5-host-4t-jun7-2025/advcharts-comparison-stack.png)
 
-## Conclusion
+### 2.1 Throughput & Avg Latency (Non-TLS)
 
-The benchmark results reveal distinct performance characteristics for each database:
+![Stacked non-TLS](/results/benchmarks-v5-host-4t-jun7-2025/advcharts-comparison.png)
 
-1. **Redis** remains the gold standard for single-threaded, low-latency applications. Redis 8.0 has improved performance over Redis 7.2.
-2. **KeyDB** offers the best balance of multi-threading support and Redis compatibility
-3. **Dragonfly** excels in high-concurrency scenarios with consistent scaling. Dragonfly seems to scale better at 8+ CPU threads.
-4. **Valkey** provides Redis compatibility but with performance trade-offs. Valkey I suspect, like Dragonfly will perform better with more CPU threads available.
+![Latency non-TLS](/results/benchmarks-v5-host-4t-jun7-2025/advcharts-latency-dist.png)
 
-Choose based on your specific requirements:
-- **Low latency, single-threaded**: Redis
-- **Balanced multi-threading**: KeyDB  
-- **High concurrency scaling**: Dragonfly
-- **Redis compatibility with active development**: Valkey
+Github Hosted runners using Azure VM instances have 4 vCPU threads, so expected that 4 thread results were fastest. With 8 thread results showing the performance when there are no enough vCPU threads to service the load.
+
+| Threads | Redis ops/s (avg lat) | KeyDB ops/s (avg lat) | Dragonfly ops/s (avg lat) | Valkey ops/s (avg lat) |
+|-------:|----------------------:|----------------------:|--------------------------:|-----------------------:|
+| **1**   | 61,112 (1.64 ms)     | 66,443 (1.50 ms)     | 53,113 (2.06 ms)         | 56,000 (1.79 ms)      |
+| **2**   | 121,315 (1.65 ms)    | 102,536 (1.94 ms)    | 90,426 (2.70 ms)         | 68,335 (3.06 ms)      |
+| **4**   | 125,524 (3.18 ms)    | 114,455 (3.51 ms)    | 119,615 (3.39 ms)        | 98,119 (4.15 ms)      |
+| **8**   | 124,294 (6.52 ms)    | 111,217 (7.25 ms)    | 112,402 (7.30 ms)        | 104,091 (7.90 ms)     |
+
+### 2.2 Throughput & Avg Latency (TLS)
+
+![Stacked TLS](/results/benchmarks-v5-host-4t-jun7-2025/advcharts-comparison-tls.png)
+
+![Latency TLS](/results/benchmarks-v5-host-4t-jun7-2025/advcharts-latency-dist-tls.png)
+
+Github Hosted runners using Azure VM instances have 4 vCPU threads, so expected that 4 thread results were fastest. With 8 thread results showing the performance when there are no enough vCPU threads to service the load.
+
+| Threads | Redis-TLS ops/s (avg lat) | KeyDB-TLS ops/s (avg lat) | Dragonfly-TLS ops/s (avg lat) | Valkey-TLS ops/s (avg lat) |
+|-------:|--------------------------:|--------------------------:|------------------------------:|---------------------------:|
+| **1**   | 45,867 (2.21 ms)         | 48,303 (2.07 ms)         | 34,756 (3.08 ms)             | 40,158 (2.55 ms)          |
+| **2**   | 80,255 (2.50 ms)         | 75,470 (2.65 ms)         | 56,065 (4.02 ms)             | 47,790 (4.33 ms)          |
+| **4**   | 83,563 (4.85 ms)         | 79,803 (4.92 ms)         | 79,232 (4.87 ms)             | 68,654 (6.17 ms)          |
+| **8**   | 69,775 (11.75 ms)        | 68,785 (11.69 ms)        | 66,637 (11.98 ms)            | 69,007 (11.73 ms)         |
+
+---
+
+## 3. Cache Efficiency @ 4 Threads
+
+![Cache Efficiency (Non-TLS)](/results/benchmarks-v5-host-4t-jun7-2025/advcharts-cache-tls.png)  
+
+*Non-TLS: all hit-rates ~5.15 %; absolute hits ∝ throughput*
+
+![Cache Efficiency (TLS)](/results/benchmarks-v5-host-4t-jun7-2025/advcharts-cache.png)  
+
+*TLS: hit-rates unchanged, hits/s ↓ ~30 % across engines*
+
+> **Insight:** Low hit-rate stems from large, random keyspace. Differences in hits/s map directly to raw throughput and TLS overhead.
+
+---
+
+## 4. Performance Heatmaps @ 4 Threads
+
+| Metric           | Winner        | Comment                                             |
+|:-----------------|:--------------|:----------------------------------------------------|
+| **Throughput**   | Redis (125 524) & Dragonfly (119 615) | Redis edges out by ~5 %       |
+| **Avg Latency**  | Redis (3.18 ms)                   | Dragonfly 3.39 ms; Valkey highest at 4.15 ms |
+| **p99 Latency**  | Redis (7.65 ms) & Dragonfly (8.19 ms) | KeyDB/Valkey ~10 ms      |
+| **p99.9 Latency**| Redis (16.19 ms)                  | Dragonfly/KeyDB ~17.9 ms; Valkey ~24.2 ms |
+
+> **Note:** TLS multiplies latency ~1.5–2×, throughput ↓30 %, but relative ranking remains.
+
+### 4.1 Non-TLS
+
+![Heatmap Non-TLS](/results/benchmarks-v5-host-4t-jun7-2025/advcharts-heatmap-tls.png)
+
+### 4.2 TLS
+
+![Heatmap TLS](/results/benchmarks-v5-host-4t-jun7-2025/advcharts-heatmap.png)
+
+---
+
+## 5. Radar Profiles @ 4 Threads
+
+**Axes (normalized):**  
+- Throughput ↑  
+- Low Latency (inverted ↑)  
+- Cache Hit Rate ↑  
+- Consistency (p99.9 inverted ↑)
+
+| Engine      | Strengths                                    | Weaknesses                    |
+|:------------|:---------------------------------------------|:-------------------------------|
+| **Redis**      | Peak throughput & consistency, best latency   | Cache hit rate optimization    |
+| **Dragonfly**  | Balanced performance, good scaling            | Moderate latency performance   |
+| **KeyDB**      | Strong single-thread, good TLS resilience    | Higher tail latencies          |
+| **Valkey**     | Improved multi-threading support             | Highest latencies overall      |
+
+### 5.1 Non-TLS
+
+![Radar Non-TLS](/results/benchmarks-v5-host-4t-jun7-2025/advcharts-radar.png)
+
+### 5.2 TLS  
+
+![Radar TLS](/results/benchmarks-v5-host-4t-jun7-2025/advcharts-radar-tls.png)
+
+---
+
+## 6. Performance Analysis Summary
+
+### 6.1 Scalability (1→4 Threads Non-TLS)
+| Engine      | 1T ops/s | 4T ops/s | Uplift |
+|:------------|---------:|---------:|-------:|
+| Redis       |   61,112 |  125,524 | +105%  |
+| Dragonfly   |   53,113 |  119,615 | +125%  |
+| KeyDB       |   66,443 |  114,455 | +72%   |
+| Valkey      |   56,000 |   98,119 | +75%   |
+
+**Key Insights:**
+- **Dragonfly** shows the best scalability with +125% improvement from 1→4 threads
+- **Redis** demonstrates strong scaling at +105% despite starting from a mid-range baseline
+- **KeyDB** and **Valkey** show more modest scaling improvements around +72-75%
+- All databases show diminishing returns beyond 4 threads due to 4-vCPU host limitations
+
+### 6.2 Latency Breakdown (4-Thread Non-TLS)
+| Engine      | Avg (ms) | p50 (ms) | p99 (ms) | p99.9 (ms) |
+|:------------|---------:|---------:|---------:|-----------:|
+| Redis       | 3.18     | 3.04     | 7.65     | 16.19      |
+| Dragonfly   | 3.39     | 3.52     | 8.19     | 17.92      |
+| KeyDB       | 3.51     | 3.23     | 10.37    | 17.92      |
+| Valkey      | 4.15     | 3.99     | 10.05    | 24.19      |
+
+**Key Insights:**
+- **Redis** provides the most consistent low-latency performance across all percentiles
+- **Dragonfly** offers competitive average latency with slightly higher tail latencies
+- **Valkey** shows the highest latencies, particularly at p99.9 (+49% vs Redis)
+
+### 6.3 TLS Performance Impact (4-Thread Comparison)
+| Engine      | Non-TLS ops/s | TLS ops/s | Throughput Impact | Latency Impact |
+|:------------|-------------:|-----------:|------------------:|---------------:|
+| Redis       |      125,524 |     83,563 | -33.4%            | +52% (1.5×)    |
+| KeyDB       |      114,455 |     79,803 | -30.3%            | +40% (1.4×)    |
+| Dragonfly   |      119,615 |     79,232 | -33.8%            | +44% (1.4×)    |
+| Valkey      |       98,119 |     68,654 | -30.0%            | +49% (1.5×)    |
+
+**TLS Overhead Summary:**
+- **Throughput** degradation: 30–34% across all engines
+- **Average latency** increase: 1.4–1.5× (40-52% higher)
+- **KeyDB** shows the most TLS-resilient performance with lowest throughput impact
+- **Tail latencies** remain within acceptable ranges for typical caching workloads
+
+### 6.4 Winner by Category
+- **Peak Throughput (Non-TLS):** Redis (125,524 ops/s)
+- **Peak Throughput (TLS):** Redis (83,563 ops/s)
+- **Best Scalability:** Dragonfly (+125% improvement)
+- **Lowest Latency:** Redis (3.18ms avg, 7.65ms p99)
+- **TLS Resilience:** KeyDB (-30.3% throughput, +40% latency)
+- **Single Thread Champion:** KeyDB (66,443 ops/s)
+
+---
+
+## 7. Recommendations
+
+| Engine      | Best for                                        | Thread Sweet Spot |
+|:------------|:-------------------------------------------------|:------------------|
+| **Redis**      | Ultra-low latency, peak throughput, predictable SLA | 1–4 threads       |
+| **Dragonfly**  | Maximum multi-core scalability, throughput growth   | 2–4 threads       |
+| **KeyDB**      | Single-thread performance + Redis compatibility      | 1–4 threads       |
+| **Valkey**     | Redis-fork projects with moderate scaling needs     | 2–4 threads       |
+
+> For TLS workloads, budget ~30–35% more CPU and expect ~1.4–1.5× higher latencies.
