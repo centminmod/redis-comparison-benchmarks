@@ -15,8 +15,8 @@ This **v5 host-networked benchmark** compares four Redis-compatible engines - **
 - In this host-networked v5 test, that bug is resolved for Valkey which now scales properly with multiple I/O threads `io-threads >1`.  
 
 Previous benchmarks:  
-• v1 [Redis vs KeyDB vs Dragonfly](readme-v1.md)
-• v2 [added Valkey, NAT-networked](readme-v2.md)
+* v1 [Redis vs KeyDB vs Dragonfly](readme-v1.md)
+* v2 [added Valkey, NAT-networked](readme-v2.md)
 
 ## Host-Networked 4-Thread Benchmarks (v5)
 
