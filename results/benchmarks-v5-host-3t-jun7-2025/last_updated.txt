@@ -1,0 +1,16 @@
+Last updated: Fri Jun  6 22:14:10 UTC 2025
+Thread Variant: 3
+Workflow run: 9
+Commit SHA: 8c97c50a8add4219a62df32539875c446eb147ce
+Benchmark Config:
+  Requests: 5000
+  Clients: 100
+  Pipeline: 1
+  Data Size: 512
+  Key Range: 1-3000000
+  Intrinsic Latency: 5
+Server Configs:
+Redis IO Threads: 3
+KeyDB Server Threads: 3
+Dragonfly Proactor Threads: 3
+Valkey IO Threads: 3
