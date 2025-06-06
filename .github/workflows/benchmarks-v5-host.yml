@@ -1,4 +1,4 @@
-name: v5 Host Network Benchmark Redis vs KeyDB vs Dragonfly vs Valkey - Multi-Thread Tests
+name: v5 Matrix Host Network Benchmark Redis vs KeyDB vs Dragonfly vs Valkey - Multi-Thread Tests
 
 on:
   workflow_dispatch:
