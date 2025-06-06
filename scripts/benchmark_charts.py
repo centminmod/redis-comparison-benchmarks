@@ -720,8 +720,7 @@ def create_stacked_comparison_chart(df_non_tls, df_tls, colors, output_dir):
         bars1 = ax.bar(bar_positions, non_tls_data, width, 
                       label=f'{db} Non-TLS', color=colors.get(db, '#666666'), alpha=0.8)
         bars2 = ax.bar(bar_positions, tls_data, width, bottom=non_tls_data,
-                      label=f'{db} TLS', color=colors.get(db, '#666666'), alpha=0.6, 
-                      hatch='///')
+                      label=f'{db} TLS', color=colors.get(db, '#666666'), alpha=0.5)  # REMOVED hatch='///'
         
         # Add data labels with better positioning
         for j, (bar1, bar2, non_tls_val, tls_val) in enumerate(zip(bars1, bars2, non_tls_data, tls_data)):
@@ -754,8 +753,8 @@ def create_stacked_comparison_chart(df_non_tls, df_tls, colors, output_dir):
     legend_elements = []
     for db in databases:
         legend_elements.append(plt.Rectangle((0,0),1,1, facecolor=colors.get(db, '#666666'), alpha=0.8, label=f'{db} Non-TLS'))
-        legend_elements.append(plt.Rectangle((0,0),1,1, facecolor=colors.get(db, '#666666'), alpha=0.6, hatch='///', label=f'{db} TLS'))
-    
+        legend_elements.append(plt.Rectangle((0,0),1,1, facecolor=colors.get(db, '#666666'), alpha=0.5, label=f'{db} TLS'))  # REMOVED hatch='///'
+
     # Place legend outside the plot area
     ax.legend(handles=legend_elements, bbox_to_anchor=(1.02, 1), loc='upper left', fontsize=9, ncol=1)
     ax.grid(True, alpha=0.3, axis='y')
