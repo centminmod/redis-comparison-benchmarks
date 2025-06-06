@@ -1251,22 +1251,22 @@ jobs:
     - name: Generate non-TLS Latency Charts
       continue-on-error: true
       run: |
-        python scripts/latency-charts.py combined_all_results.md nonTLS --redis_io_threads ${{ matrix.variant.redis_io_threads }} --keydb_server_threads ${{ matrix.variant.keydb_server_threads }} --dragonfly_proactor_threads ${{ matrix.variant.dragonfly_proactor_threads }} --valkey_io_threads ${{ matrix.variant.valkey_io_threads }} --requests ${{ inputs.requests }} --clients ${{ inputs.clients }} --pipeline ${{ inputs.pipeline }} --data_size ${{ inputs.data_size }} 2>&1 | tee ./benchmarklogs-${{ matrix.variant.threads }}t/latency-charts-nonTLS.log
+        python scripts/latency-charts-matrix.py combined_all_results.md nonTLS "./benchmarklogs-${{ matrix.variant.threads }}t" --redis_io_threads ${{ matrix.variant.redis_io_threads }} --keydb_server_threads ${{ matrix.variant.keydb_server_threads }} --dragonfly_proactor_threads ${{ matrix.variant.dragonfly_proactor_threads }} --valkey_io_threads ${{ matrix.variant.valkey_io_threads }} --requests ${{ inputs.requests }} --clients ${{ inputs.clients }} --pipeline ${{ inputs.pipeline }} --data_size ${{ inputs.data_size }} 2>&1 | tee ./benchmarklogs-${{ matrix.variant.threads }}t/latency-charts-nonTLS.log
 
     - name: Generate non-TLS Ops/Sec Charts
       continue-on-error: true
       run: |
-        python scripts/opssec-charts.py combined_all_results.md nonTLS --redis_io_threads ${{ matrix.variant.redis_io_threads }} --keydb_server_threads ${{ matrix.variant.keydb_server_threads }} --dragonfly_proactor_threads ${{ matrix.variant.dragonfly_proactor_threads }} --valkey_io_threads ${{ matrix.variant.valkey_io_threads }} --requests ${{ inputs.requests }} --clients ${{ inputs.clients }} --pipeline ${{ inputs.pipeline }} --data_size ${{ inputs.data_size }} 2>&1 | tee ./benchmarklogs-${{ matrix.variant.threads }}t/opssec-charts-nonTLS.log
+        python scripts/opssec-charts-matrix.py combined_all_results.md nonTLS "./benchmarklogs-${{ matrix.variant.threads }}t" --redis_io_threads ${{ matrix.variant.redis_io_threads }} --keydb_server_threads ${{ matrix.variant.keydb_server_threads }} --dragonfly_proactor_threads ${{ matrix.variant.dragonfly_proactor_threads }} --valkey_io_threads ${{ matrix.variant.valkey_io_threads }} --requests ${{ inputs.requests }} --clients ${{ inputs.clients }} --pipeline ${{ inputs.pipeline }} --data_size ${{ inputs.data_size }} 2>&1 | tee ./benchmarklogs-${{ matrix.variant.threads }}t/opssec-charts-nonTLS.log
 
     - name: Generate TLS Latency Charts
       continue-on-error: true
       run: |
-        python scripts/latency-charts.py combined_all_results_tls.md TLS --redis_io_threads ${{ matrix.variant.redis_io_threads }} --keydb_server_threads ${{ matrix.variant.keydb_server_threads }} --dragonfly_proactor_threads ${{ matrix.variant.dragonfly_proactor_threads }} --valkey_io_threads ${{ matrix.variant.valkey_io_threads }} --requests ${{ inputs.requests }} --clients ${{ inputs.clients }} --pipeline ${{ inputs.pipeline }} --data_size ${{ inputs.data_size }} 2>&1 | tee ./benchmarklogs-${{ matrix.variant.threads }}t/latency-charts-TLS.log
+        python scripts/latency-charts-matrix.py combined_all_results_tls.md TLS "./benchmarklogs-${{ matrix.variant.threads }}t" --redis_io_threads ${{ matrix.variant.redis_io_threads }} --keydb_server_threads ${{ matrix.variant.keydb_server_threads }} --dragonfly_proactor_threads ${{ matrix.variant.dragonfly_proactor_threads }} --valkey_io_threads ${{ matrix.variant.valkey_io_threads }} --requests ${{ inputs.requests }} --clients ${{ inputs.clients }} --pipeline ${{ inputs.pipeline }} --data_size ${{ inputs.data_size }} 2>&1 | tee ./benchmarklogs-${{ matrix.variant.threads }}t/latency-charts-TLS.log
 
     - name: Generate TLS Ops/Sec Charts
       continue-on-error: true
       run: |
-        python scripts/opssec-charts.py combined_all_results_tls.md TLS --redis_io_threads ${{ matrix.variant.redis_io_threads }} --keydb_server_threads ${{ matrix.variant.keydb_server_threads }} --dragonfly_proactor_threads ${{ matrix.variant.dragonfly_proactor_threads }} --valkey_io_threads ${{ matrix.variant.valkey_io_threads }} --requests ${{ inputs.requests }} --clients ${{ inputs.clients }} --pipeline ${{ inputs.pipeline }} --data_size ${{ inputs.data_size }} 2>&1 | tee ./benchmarklogs-${{ matrix.variant.threads }}t/opssec-charts-TLS.log 
+        python scripts/opssec-charts-matrix.py combined_all_results_tls.md TLS "./benchmarklogs-${{ matrix.variant.threads }}t" --redis_io_threads ${{ matrix.variant.redis_io_threads }} --keydb_server_threads ${{ matrix.variant.keydb_server_threads }} --dragonfly_proactor_threads ${{ matrix.variant.dragonfly_proactor_threads }} --valkey_io_threads ${{ matrix.variant.valkey_io_threads }} --requests ${{ inputs.requests }} --clients ${{ inputs.clients }} --pipeline ${{ inputs.pipeline }} --data_size ${{ inputs.data_size }} 2>&1 | tee ./benchmarklogs-${{ matrix.variant.threads }}t/opssec-charts-TLS.log
 
     - name: Capture Versions for Benchmark Report
       continue-on-error: true
