@@ -3,4 +3,4 @@ FROM docker.dragonflydb.io/dragonflydb/dragonfly:latest
 # Expose the default port
 EXPOSE 6381
 
-CMD [ "dragonfly", "--proactor_threads=3" ]
+CMD [ "dragonfly", "--proactor_threads=4" ]
