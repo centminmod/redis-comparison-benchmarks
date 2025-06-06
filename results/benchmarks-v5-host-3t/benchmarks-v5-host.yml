@@ -1143,50 +1143,50 @@ jobs:
     - name: Combine Redis Benchmark MD Table
       continue-on-error: true
       run: |
-        python scripts/combine_markdown_results.py "./benchmarklogs-${{ matrix.variant.threads }}t/redis_benchmarks_1threads.md ./benchmarklogs-${{ matrix.variant.threads }}t/redis_benchmarks_2threads.md ./benchmarklogs-${{ matrix.variant.threads }}t/redis_benchmarks_4threads.md ./benchmarklogs-${{ matrix.variant.threads }}t/redis_benchmarks_8threads.md" redis
+        python scripts/combine_markdown_results_matrix.py "./benchmarklogs-${{ matrix.variant.threads }}t/redis_benchmarks_1threads.md ./benchmarklogs-${{ matrix.variant.threads }}t/redis_benchmarks_2threads.md ./benchmarklogs-${{ matrix.variant.threads }}t/redis_benchmarks_4threads.md ./benchmarklogs-${{ matrix.variant.threads }}t/redis_benchmarks_8threads.md" redis "./benchmarklogs-${{ matrix.variant.threads }}t"
         cat ./benchmarklogs-${{ matrix.variant.threads }}t/combined_redis_results.md 
 
     - name: Combine KeyDB Benchmark MD Table
       continue-on-error: true
       run: |
-        python scripts/combine_markdown_results.py "./benchmarklogs-${{ matrix.variant.threads }}t/keydb_benchmarks_1threads.md ./benchmarklogs-${{ matrix.variant.threads }}t/keydb_benchmarks_2threads.md ./benchmarklogs-${{ matrix.variant.threads }}t/keydb_benchmarks_4threads.md ./benchmarklogs-${{ matrix.variant.threads }}t/keydb_benchmarks_8threads.md" keydb
+        python scripts/combine_markdown_results_matrix.py "./benchmarklogs-${{ matrix.variant.threads }}t/keydb_benchmarks_1threads.md ./benchmarklogs-${{ matrix.variant.threads }}t/keydb_benchmarks_2threads.md ./benchmarklogs-${{ matrix.variant.threads }}t/keydb_benchmarks_4threads.md ./benchmarklogs-${{ matrix.variant.threads }}t/keydb_benchmarks_8threads.md" keydb "./benchmarklogs-${{ matrix.variant.threads }}t"
         cat ./benchmarklogs-${{ matrix.variant.threads }}t/combined_keydb_results.md 
 
     - name: Combine Dragonfly Benchmark MD Table
       continue-on-error: true
       run: |
-        python scripts/combine_markdown_results.py "./benchmarklogs-${{ matrix.variant.threads }}t/dragonfly_benchmarks_1threads.md ./benchmarklogs-${{ matrix.variant.threads }}t/dragonfly_benchmarks_2threads.md ./benchmarklogs-${{ matrix.variant.threads }}t/dragonfly_benchmarks_4threads.md ./benchmarklogs-${{ matrix.variant.threads }}t/dragonfly_benchmarks_8threads.md" dragonfly
+        python scripts/combine_markdown_results_matrix.py "./benchmarklogs-${{ matrix.variant.threads }}t/dragonfly_benchmarks_1threads.md ./benchmarklogs-${{ matrix.variant.threads }}t/dragonfly_benchmarks_2threads.md ./benchmarklogs-${{ matrix.variant.threads }}t/dragonfly_benchmarks_4threads.md ./benchmarklogs-${{ matrix.variant.threads }}t/dragonfly_benchmarks_8threads.md" dragonfly "./benchmarklogs-${{ matrix.variant.threads }}t"
         cat ./benchmarklogs-${{ matrix.variant.threads }}t/combined_dragonfly_results.md 
 
     - name: Combine Valkey Benchmark MD Table
       continue-on-error: true
       run: |
-        python scripts/combine_markdown_results.py "./benchmarklogs-${{ matrix.variant.threads }}t/valkey_benchmarks_1threads.md ./benchmarklogs-${{ matrix.variant.threads }}t/valkey_benchmarks_2threads.md ./benchmarklogs-${{ matrix.variant.threads }}t/valkey_benchmarks_4threads.md ./benchmarklogs-${{ matrix.variant.threads }}t/valkey_benchmarks_8threads.md" valkey
+        python scripts/combine_markdown_results_matrix.py "./benchmarklogs-${{ matrix.variant.threads }}t/valkey_benchmarks_1threads.md ./benchmarklogs-${{ matrix.variant.threads }}t/valkey_benchmarks_2threads.md ./benchmarklogs-${{ matrix.variant.threads }}t/valkey_benchmarks_4threads.md ./benchmarklogs-${{ matrix.variant.threads }}t/valkey_benchmarks_8threads.md" valkey "./benchmarklogs-${{ matrix.variant.threads }}t"
         cat ./benchmarklogs-${{ matrix.variant.threads }}t/combined_valkey_results.md 
 
     - name: Combine Redis TLS Benchmark MD Table
       continue-on-error: true
       run: |
-        python scripts/combine_markdown_results.py "./benchmarklogs-${{ matrix.variant.threads }}t/redis_benchmarks_1threads_tls.md ./benchmarklogs-${{ matrix.variant.threads }}t/redis_benchmarks_2threads_tls.md ./benchmarklogs-${{ matrix.variant.threads }}t/redis_benchmarks_4threads_tls.md ./benchmarklogs-${{ matrix.variant.threads }}t/redis_benchmarks_8threads_tls.md" "redis-tls"
+        python scripts/combine_markdown_results_matrix.py "./benchmarklogs-${{ matrix.variant.threads }}t/redis_benchmarks_1threads_tls.md ./benchmarklogs-${{ matrix.variant.threads }}t/redis_benchmarks_2threads_tls.md ./benchmarklogs-${{ matrix.variant.threads }}t/redis_benchmarks_4threads_tls.md ./benchmarklogs-${{ matrix.variant.threads }}t/redis_benchmarks_8threads_tls.md" "redis-tls" "./benchmarklogs-${{ matrix.variant.threads }}t"
         cat ./benchmarklogs-${{ matrix.variant.threads }}t/combined_redis-tls_results.md 
 
     - name: Combine KeyDB TLS Benchmark MD Table
       continue-on-error: true
       run: |
-        python scripts/combine_markdown_results.py "./benchmarklogs-${{ matrix.variant.threads }}t/keydb_benchmarks_1threads_tls.md ./benchmarklogs-${{ matrix.variant.threads }}t/keydb_benchmarks_2threads_tls.md ./benchmarklogs-${{ matrix.variant.threads }}t/keydb_benchmarks_4threads_tls.md ./benchmarklogs-${{ matrix.variant.threads }}t/keydb_benchmarks_8threads_tls.md" "keydb-tls"
+        python scripts/combine_markdown_results_matrix.py "./benchmarklogs-${{ matrix.variant.threads }}t/keydb_benchmarks_1threads_tls.md ./benchmarklogs-${{ matrix.variant.threads }}t/keydb_benchmarks_2threads_tls.md ./benchmarklogs-${{ matrix.variant.threads }}t/keydb_benchmarks_4threads_tls.md ./benchmarklogs-${{ matrix.variant.threads }}t/keydb_benchmarks_8threads_tls.md" "keydb-tls" "./benchmarklogs-${{ matrix.variant.threads }}t"
         cat ./benchmarklogs-${{ matrix.variant.threads }}t/combined_keydb-tls_results.md 
 
     - name: Combine Dragonfly TLS Benchmark MD Table
       continue-on-error: true
       run: |
-        python scripts/combine_markdown_results.py "./benchmarklogs-${{ matrix.variant.threads }}t/dragonfly_benchmarks_1threads_tls.md ./benchmarklogs-${{ matrix.variant.threads }}t/dragonfly_benchmarks_2threads_tls.md ./benchmarklogs-${{ matrix.variant.threads }}t/dragonfly_benchmarks_4threads_tls.md ./benchmarklogs-${{ matrix.variant.threads }}t/dragonfly_benchmarks_8threads_tls.md" "dragonfly-tls"
+        python scripts/combine_markdown_results_matrix.py "./benchmarklogs-${{ matrix.variant.threads }}t/dragonfly_benchmarks_1threads_tls.md ./benchmarklogs-${{ matrix.variant.threads }}t/dragonfly_benchmarks_2threads_tls.md ./benchmarklogs-${{ matrix.variant.threads }}t/dragonfly_benchmarks_4threads_tls.md ./benchmarklogs-${{ matrix.variant.threads }}t/dragonfly_benchmarks_8threads_tls.md" "dragonfly-tls" "./benchmarklogs-${{ matrix.variant.threads }}t"
         cat ./benchmarklogs-${{ matrix.variant.threads }}t/combined_dragonfly-tls_results.md 
 
     - name: Combine Valkey TLS Benchmark MD Table
       continue-on-error: true
       run: |
-        python scripts/combine_markdown_results.py "./benchmarklogs-${{ matrix.variant.threads }}t/valkey_benchmarks_1threads_tls.md ./benchmarklogs-${{ matrix.variant.threads }}t/valkey_benchmarks_2threads_tls.md ./benchmarklogs-${{ matrix.variant.threads }}t/valkey_benchmarks_4threads_tls.md ./benchmarklogs-${{ matrix.variant.threads }}t/valkey_benchmarks_8threads_tls.md" "valkey-tls"
-        cat ./benchmarklogs-${{ matrix.variant.threads }}t/combined_valkey-tls_results.md 
+        python scripts/combine_markdown_results_matrix.py "./benchmarklogs-${{ matrix.variant.threads }}t/valkey_benchmarks_1threads_tls.md ./benchmarklogs-${{ matrix.variant.threads }}t/valkey_benchmarks_2threads_tls.md ./benchmarklogs-${{ matrix.variant.threads }}t/valkey_benchmarks_4threads_tls.md ./benchmarklogs-${{ matrix.variant.threads }}t/valkey_benchmarks_8threads_tls.md" "valkey-tls" "./benchmarklogs-${{ matrix.variant.threads }}t"
+        cat ./benchmarklogs-${{ matrix.variant.threads }}t/combined_valkey-tls_results.md
 
     - name: Combine benchmark Markdown results
       continue-on-error: true
@@ -1380,6 +1380,7 @@ jobs:
         cp ./scripts/latency-charts.py results/benchmarks-v5-host-${{ matrix.variant.threads }}t/
         cp ./scripts/opssec-charts.py results/benchmarks-v5-host-${{ matrix.variant.threads }}t/
         cp ./scripts/combine_markdown_results.py results/benchmarks-v5-host-${{ matrix.variant.threads }}t/
+        cp ./scripts/combine_markdown_results_matrix.py results/benchmarks-v5-host-${{ matrix.variant.threads }}t/
         cp ./scripts/parse_memtier_to_md.py results/benchmarks-v5-host-${{ matrix.variant.threads }}t/
         cp ./scripts/benchmark_charts.py results/benchmarks-v5-host-${{ matrix.variant.threads }}t/
         cp ./docker-compose.yml results/benchmarks-v5-host-${{ matrix.variant.threads }}t/

@@ -11,11 +11,11 @@
 | Key Maximum | 1000000 |
 | Ratio | 1:15 (Read:Write) |
 | Key Pattern | G:G (Gaussian) |
-| Intrinsic Latency | 1 |
+| Intrinsic Latency | 5 |
 | Redis IO Threads | 3 |
 | KeyDB Server Threads | 3 |
 | Dragonfly Proactor Threads | 3 |
 | Valkey IO Threads | 3 |
 
-Run Date: Fri Jun  6 08:00:48 UTC 2025
-Workflow Run: 2
+Run Date: Fri Jun  6 08:26:56 UTC 2025
+Workflow Run: 3
