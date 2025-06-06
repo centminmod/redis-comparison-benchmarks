@@ -657,13 +657,13 @@ process_results() {
 }
 
 # Generate charts
-# Generate charts
 generate_charts() {
     echo "==== Generating Charts ===="
     
-    if command -v python3 &> /dev/null && python3 -c "import matplotlib" 2>/dev/null; then
+    if command -v python3 &> /dev/null && python3 -c "import matplotlib" 2>/dev/null; then    
+        # Generate basic charts (existing functionality)
         if [ -f "./combined_all_results.md" ]; then
-            echo "Generating non-TLS charts..."
+            echo "Generating basic non-TLS charts..."
             python scripts/latency-charts.py combined_all_results.md nonTLS \
                 --redis_io_threads "$REDIS_IO_THREADS" \
                 --keydb_server_threads "$KEYDB_SERVER_THREADS" \
@@ -672,7 +672,7 @@ generate_charts() {
                 --requests "$BENCHMARK_REQUESTS" \
                 --clients "$BENCHMARK_CLIENTS" \
                 --pipeline "$BENCHMARK_PIPELINE" \
-                --data_size "$BENCHMARK_DATA_SIZE" || echo "Chart generation failed"
+                --data_size "$BENCHMARK_DATA_SIZE" || echo "Basic chart generation failed"
             
             python scripts/opssec-charts.py combined_all_results.md nonTLS \
                 --redis_io_threads "$REDIS_IO_THREADS" \
@@ -682,11 +682,11 @@ generate_charts() {
                 --requests "$BENCHMARK_REQUESTS" \
                 --clients "$BENCHMARK_CLIENTS" \
                 --pipeline "$BENCHMARK_PIPELINE" \
-                --data_size "$BENCHMARK_DATA_SIZE" || echo "Chart generation failed"
+                --data_size "$BENCHMARK_DATA_SIZE" || echo "Basic chart generation failed"
         fi
         
         if [ -f "./combined_all_results_tls.md" ]; then
-            echo "Generating TLS charts..."
+            echo "Generating basic TLS charts..."
             python scripts/latency-charts.py combined_all_results_tls.md TLS \
                 --redis_io_threads "$REDIS_IO_THREADS" \
                 --keydb_server_threads "$KEYDB_SERVER_THREADS" \
@@ -707,8 +707,87 @@ generate_charts() {
                 --pipeline "$BENCHMARK_PIPELINE" \
                 --data_size "$BENCHMARK_DATA_SIZE" || echo "TLS chart generation failed"
         fi
+        
+        # Generate advanced charts (new functionality matching workflow)
+        echo "==== Generating Advanced Benchmark Charts ===="
+
+        # Clean up combined files by removing unwanted rows (matching workflow behavior)
+        if [ -f "./combined_all_results.md" ]; then
+            echo "Cleaning combined_all_results.md..."
+            sed -i '/| ---------------------------------------------------------------------------------------------------------------------------- |/d' combined_all_results.md
+            sed -i '/| Waits |/d' combined_all_results.md
+        fi
+        
+        if [ -f "./combined_all_results_tls.md" ]; then
+            echo "Cleaning combined_all_results_tls.md..."
+            sed -i '/| ---------------------------------------------------------------------------------------------------------------------------- |/d' combined_all_results_tls.md
+            sed -i '/| Waits |/d' combined_all_results_tls.md
+        fi
+        
+        # Check if input files exist and show their structure
+        if [ -f "combined_all_results.md" ]; then
+            echo "✅ Found combined_all_results.md"
+            echo "First 10 lines:"
+            head -10 combined_all_results.md
+        else
+            echo "❌ combined_all_results.md not found"
+        fi
+        
+        if [ -f "combined_all_results_tls.md" ]; then
+            echo "✅ Found combined_all_results_tls.md"
+            echo "First 10 lines:"
+            head -10 combined_all_results_tls.md
+        else
+            echo "❌ combined_all_results_tls.md not found"
+        fi
+        
+        # Generate non-TLS advanced charts
+        if [ -f "combined_all_results.md" ]; then
+            echo "=== Generating non-TLS Advanced Charts ==="
+            if python scripts/benchmark_charts.py --non-tls --input-dir . --output-dir benchmarklogs 2>&1 | tee ./benchmarklogs/advanced-charts-nonTLS.log; then
+                echo "✅ Non-TLS advanced charts generated successfully"
+            else
+                echo "❌ Non-TLS advanced charts generation failed"
+            fi
+        fi
+        
+        # Generate TLS advanced charts  
+        if [ -f "combined_all_results_tls.md" ]; then
+            echo "=== Generating TLS Advanced Charts ==="
+            if python scripts/benchmark_charts.py --tls --input-dir . --output-dir benchmarklogs 2>&1 | tee ./benchmarklogs/advanced-charts-TLS.log; then
+                echo "✅ TLS advanced charts generated successfully"
+            else
+                echo "❌ TLS advanced charts generation failed"
+            fi
+        fi
+
+        # Generate stacked comparison chart (requires both datasets)
+        if [ -f "combined_all_results.md" ] && [ -f "combined_all_results_tls.md" ]; then
+            echo "=== Generating Stacked Comparison Chart ==="
+            if python scripts/benchmark_charts.py --non-tls --tls --input-dir . --output-dir benchmarklogs 2>&1 | tee ./benchmarklogs/advanced-charts-stacked.log; then
+                echo "✅ Stacked comparison chart generated successfully"
+            else
+                echo "❌ Stacked comparison chart generation failed"
+            fi
+        else
+            echo "⚠️  Skipping stacked comparison chart - need both TLS and non-TLS results"
+        fi
+        
+        # List all generated chart files
+        echo "=== Generated Chart Files ==="
+        echo "Basic charts:"
+        ls -la *.png 2>/dev/null || echo "No basic chart files found"
+        echo ""
+        echo "Advanced charts:"
+        ls -la benchmarklogs/advcharts-*.png 2>/dev/null || echo "No advanced chart files found"
+        echo ""
+        echo "Chart logs:"
+        ls -la benchmarklogs/*charts*.log 2>/dev/null || echo "No chart log files found"
+        
+        echo "✅ All chart generation completed"
     else
         echo "Python3 or matplotlib not available, skipping chart generation"
+        echo "To install: pip install pandas matplotlib seaborn numpy"
     fi
 }
 
@@ -807,7 +886,9 @@ main() {
     echo "  - ./benchmarklogs/ (individual results)"
     echo "  - ./combined_all_results.md (non-TLS summary)"
     echo "  - ./combined_all_results_tls.md (TLS summary)"
-    echo "  - *.png (charts, if generated)"
+    echo "  - *.png (basic charts, if generated)"
+    echo "  - ./benchmarklogs/advcharts-*.png (advanced charts, if generated)"
+    echo "  - ./benchmarklogs/*charts*.log (chart generation logs)"
     
     if [ "$CLEANUP" = [nN] ]; then
         echo ""
@@ -1188,6 +1269,13 @@ case "${1:-}" in
         echo "  BENCHMARK_CLIENTS=N           Number of clients (default: 100)"
         echo "  BENCHMARK_PIPELINE=N          Pipeline depth (default: 1)"
         echo "  BENCHMARK_DATA_SIZE=N         Data size in bytes (default: 384)"
+        echo ""
+        echo "Chart Generation:"
+        echo "  Requires: pip install pandas matplotlib seaborn numpy"
+        echo "  Basic charts: latency-*.png, ops-*.png"
+        echo "  Advanced charts: benchmarklogs/advcharts-*.png"
+        echo "  Includes: scaling, comparison, latency distribution, cache efficiency,"
+        echo "           performance radar, heatmap dashboard, and stacked comparison"
         echo ""
         echo "Port Configuration:"
         echo "  Redis: $REDIS_HOST_PORT, KeyDB: $KEYDB_HOST_PORT, Dragonfly: $DRAGONFLY_HOST_PORT, Valkey: $VALKEY_HOST_PORT"
