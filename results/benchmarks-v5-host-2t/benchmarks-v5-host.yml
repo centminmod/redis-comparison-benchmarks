@@ -1,4 +1,4 @@
-name: v5 Host Network Benchmark Redis vs KeyDB vs Dragonfly vs Valkey - Multi-Thread Tests
+name: v5 Matrix Host Network Benchmark Redis vs KeyDB vs Dragonfly vs Valkey - Multi-Thread Tests
 
 on:
   workflow_dispatch:
@@ -7,7 +7,7 @@ on:
       requests:
         description: 'Number of requests per thread'
         required: false
-        default: '2000'
+        default: '5000'
         type: string
       clients:
         description: 'Number of clients per thread'
@@ -22,12 +22,12 @@ on:
       data_size:
         description: 'Data size in bytes'
         required: false
-        default: '1024'
+        default: '512'
         type: string
       key_maximum:
         description: 'Maximum key value'
         required: false
-        default: '1000000'
+        default: '3000000'
         type: string
       intrinsic_latency:
         description: 'intrinsic latency value'
