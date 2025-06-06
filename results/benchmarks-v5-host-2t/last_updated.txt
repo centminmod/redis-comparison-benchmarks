@@ -1,5 +1,5 @@
-Last updated: Fri Jun  6 20:38:00 UTC 2025
-Thread Variant: 1
+Last updated: Fri Jun  6 20:35:18 UTC 2025
+Thread Variant: 2
 Workflow run: 7
 Commit SHA: e93293ca50babfb8a2ea9439248a2e6e26484f34
 Benchmark Config:
@@ -10,7 +10,7 @@ Benchmark Config:
   Key Range: 1-1000000
   Intrinsic Latency: 1
 Server Configs:
-Redis IO Threads: 1
-KeyDB Server Threads: 1
-Dragonfly Proactor Threads: 1
-Valkey IO Threads: 1
+Redis IO Threads: 2
+KeyDB Server Threads: 2
+Dragonfly Proactor Threads: 2
+Valkey IO Threads: 2
