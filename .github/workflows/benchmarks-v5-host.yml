@@ -1484,19 +1484,17 @@ jobs:
               cp "$artifact"/*.png "results/benchmarks-v5-host-${thread_variant}t/" 2>/dev/null || echo "Warning: chart files not found"
               
               # Create metadata file
-              cat > "results/benchmarks-v5-host-${thread_variant}t/last_updated.txt" << EOF
-Last updated: $(date -u)
-Thread Variant: ${thread_variant}
-Workflow run: ${{ github.run_number }}
-Commit SHA: ${{ github.sha }}
-Benchmark Config:
-  Requests: ${{ inputs.requests || '2000' }}
-  Clients: ${{ inputs.clients || '100' }}
-  Pipeline: ${{ inputs.pipeline || '1' }}
-  Data Size: ${{ inputs.data_size || '1024' }}
-  Key Range: ${KEY_MINIMUM}-${{ inputs.key_maximum || '1000000' }}
-  Intrinsic Latency: ${{ inputs.intrinsic_latency || '5' }}
-EOF
+              echo "Last updated: $(date -u)" > "results/benchmarks-v5-host-${thread_variant}t/last_updated.txt"
+              echo "Thread Variant: ${thread_variant}" >> "results/benchmarks-v5-host-${thread_variant}t/last_updated.txt"
+              echo "Workflow run: ${{ github.run_number }}" >> "results/benchmarks-v5-host-${thread_variant}t/last_updated.txt"
+              echo "Commit SHA: ${{ github.sha }}" >> "results/benchmarks-v5-host-${thread_variant}t/last_updated.txt"
+              echo "Benchmark Config:" >> "results/benchmarks-v5-host-${thread_variant}t/last_updated.txt"
+              echo "  Requests: ${{ inputs.requests || '2000' }}" >> "results/benchmarks-v5-host-${thread_variant}t/last_updated.txt"
+              echo "  Clients: ${{ inputs.clients || '100' }}" >> "results/benchmarks-v5-host-${thread_variant}t/last_updated.txt"
+              echo "  Pipeline: ${{ inputs.pipeline || '1' }}" >> "results/benchmarks-v5-host-${thread_variant}t/last_updated.txt"
+              echo "  Data Size: ${{ inputs.data_size || '1024' }}" >> "results/benchmarks-v5-host-${thread_variant}t/last_updated.txt"
+              echo "  Key Range: ${KEY_MINIMUM}-${{ inputs.key_maximum || '1000000' }}" >> "results/benchmarks-v5-host-${thread_variant}t/last_updated.txt"
+              echo "  Intrinsic Latency: ${{ inputs.intrinsic_latency || '5' }}" >> "results/benchmarks-v5-host-${thread_variant}t/last_updated.txt"
             fi
             
             echo "✅ Completed organizing thread variant: ${thread_variant}t"
