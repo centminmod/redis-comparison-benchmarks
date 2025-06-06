@@ -1434,10 +1434,12 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Download all artifacts
+    - name: Download benchmark artifacts only
       uses: actions/download-artifact@v4
       with:
         path: ./artifacts
+        pattern: benchmark_v5_artifacts_*
+        merge-multiple: false
 
     - name: List downloaded artifacts
       run: |
