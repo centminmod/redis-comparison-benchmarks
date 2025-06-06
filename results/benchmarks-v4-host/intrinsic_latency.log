@@ -1,0 +1,79 @@
+=== Intrinsic Latency Tests ===
+Test Duration: 1 seconds
+Timestamp: Fri Jun  6 03:16:30 UTC 2025
+
+
+>>> Container-side intrinsic latency inside: redis
+Command: docker exec redis redis-cli --intrinsic-latency 1
+---
+Max latency so far: 1 microseconds.
+Max latency so far: 15 microseconds.
+Max latency so far: 63 microseconds.
+
+17157918 total runs (avg latency: 0.0583 microseconds / 58.28 nanoseconds per run).
+Worst run took 1081x longer than the average latency.
+✅ redis intrinsic latency test completed
+
+
+>>> Container-side intrinsic latency inside: keydb
+Command: docker exec keydb redis-cli --intrinsic-latency 1
+---
+Max latency so far: 1 microseconds.
+Max latency so far: 112 microseconds.
+
+17069849 total runs (avg latency: 0.0586 microseconds / 58.58 nanoseconds per run).
+Worst run took 1912x longer than the average latency.
+✅ keydb intrinsic latency test completed
+
+
+>>> Container-side intrinsic latency inside: dragonfly
+Command: docker exec dragonfly redis-cli --intrinsic-latency 1
+---
+Error response from daemon: container a1fb677bb21a856cd527300e4eab4a7847d909afd828c49085ca791ed743f800 is not running
+✅ dragonfly intrinsic latency test completed
+
+
+>>> Container-side intrinsic latency inside: valkey
+Command: docker exec valkey redis-cli --intrinsic-latency 1
+---
+Max latency so far: 1 microseconds.
+Max latency so far: 59 microseconds.
+
+17198191 total runs (avg latency: 0.0581 microseconds / 58.15 nanoseconds per run).
+Worst run took 1015x longer than the average latency.
+✅ valkey intrinsic latency test completed
+
+
+>>> Container-side intrinsic latency inside: redis-tls
+Command: docker exec redis-tls redis-cli --intrinsic-latency 1
+---
+Error response from daemon: container 7b64447849799175c3c9cc573f1212cd83fc3cb5a7efc14478b7a7513b091ac8 is not running
+✅ redis-tls intrinsic latency test completed
+
+
+>>> Container-side intrinsic latency inside: keydb-tls
+Command: docker exec keydb-tls redis-cli --intrinsic-latency 1
+---
+Error response from daemon: container 5c8cae67cf3b77434e710fbe2eb5dce68d334a7f402f72b0df3e0af4cd533244 is not running
+✅ keydb-tls intrinsic latency test completed
+
+
+>>> Container-side intrinsic latency inside: dragonfly-tls
+Command: docker exec dragonfly-tls redis-cli --intrinsic-latency 1
+---
+Max latency so far: 1 microseconds.
+Max latency so far: 19 microseconds.
+Max latency so far: 74 microseconds.
+
+17226152 total runs (avg latency: 0.0581 microseconds / 58.05 nanoseconds per run).
+Worst run took 1275x longer than the average latency.
+✅ dragonfly-tls intrinsic latency test completed
+
+
+>>> Container-side intrinsic latency inside: valkey-tls
+Command: docker exec valkey-tls redis-cli --intrinsic-latency 1
+---
+Error response from daemon: container 292fd2c0fae1b7177052377e5902eee0b47fbd1c6df6f27c3b685b975500936c is not running
+✅ valkey-tls intrinsic latency test completed
+
+=== Intrinsic Latency Tests Complete ===
