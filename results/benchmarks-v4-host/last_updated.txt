@@ -1,13 +1,13 @@
-Last updated: Fri Jun  6 06:22:17 UTC 2025
-Workflow run: 9
-Commit SHA: 3628e18124ae806bf7a8cce2680736f1730f7ec8
+Last updated: Fri Jun  6 07:16:19 UTC 2025
+Workflow run: 10
+Commit SHA: 89de5f4494b5294d310c2be6de04d0947bf8d955
 Benchmark Config:
-  Requests: 2000
-  Clients: 100
+  Requests: 5000
+  Clients: 200
   Pipeline: 1
   Data Size: 1024
-  Key Range: 1-1000000
-  Intrinsinc Latency: 5
+  Key Range: 1-300000
+  Intrinsinc Latency: 1
 Server Configs:
 Redis IO Threads: 4
 KeyDB Server Threads: 4
