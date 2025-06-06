@@ -18,4 +18,4 @@ RUN chmod 0755 /tls
 # Expose the default KeyDB port (same as Redis)
 EXPOSE 6391
 
-CMD [ "keydb-server", "/etc/keydb/keydb.conf", "--port=6391" ]
+CMD [ "keydb-server", "/etc/keydb/keydb.conf", "--tls-port=6391" ]
