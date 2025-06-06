@@ -1362,16 +1362,9 @@ jobs:
         
         echo "✅ Advanced benchmark charts generation completed" 
 
-    - name: Commit Thread-Specific Benchmark Results to Repository
+    - name: Prepare Thread-Specific Results Directory
       continue-on-error: true
       run: |
-        # Configure git
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"  
-
-        # Fetch latest changes
-        git fetch origin
-        
         # Create thread-specific results directory structure
         mkdir -p results/benchmarks-v5-host-${{ matrix.variant.threads }}t
         
@@ -1416,22 +1409,159 @@ jobs:
         echo "KeyDB Server Threads: ${{ matrix.variant.keydb_server_threads }}" >> results/benchmarks-v5-host-${{ matrix.variant.threads }}t/last_updated.txt
         echo "Dragonfly Proactor Threads: ${{ matrix.variant.dragonfly_proactor_threads }}" >> results/benchmarks-v5-host-${{ matrix.variant.threads }}t/last_updated.txt
         echo "Valkey IO Threads: ${{ matrix.variant.valkey_io_threads }}" >> results/benchmarks-v5-host-${{ matrix.variant.threads }}t/last_updated.txt
+
+    - name: Upload Thread-Specific Benchmark Logs and Charts
+      uses: actions/upload-artifact@v4
+      with:
+        name: benchmark_v5_artifacts_${{ matrix.variant.threads }}t
+        path: |
+          benchmarklogs-${{ matrix.variant.threads }}t/**
+          combined_all_results.md
+          combined_all_results_tls.md
+          results/benchmarks-v5-host-${{ matrix.variant.threads }}t/**
+
+    - name: Cleanup
+      run: |
+        docker stop redis keydb dragonfly valkey redis-tls keydb-tls dragonfly-tls valkey-tls 2>/dev/null || true
+
+  commit-results:
+    needs: benchmark
+    runs-on: ubuntu-24.04
+    if: always() && (needs.benchmark.result == 'success' || needs.benchmark.result == 'failure')
+    env:
+      KEY_MINIMUM: 1
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: ./artifacts
+
+    - name: List downloaded artifacts
+      run: |
+        echo "=== Downloaded Artifacts ==="
+        ls -la ./artifacts/
+        echo ""
+        for artifact in ./artifacts/benchmark_v5_artifacts_*; do
+          if [ -d "$artifact" ]; then
+            echo "=== Contents of $artifact ==="
+            ls -la "$artifact" | head -20
+            echo ""
+          fi
+        done
+
+    - name: Organize results by thread variant
+      run: |
+        echo "=== Organizing Results by Thread Variant ==="
+        
+        for artifact in ./artifacts/benchmark_v5_artifacts_*; do
+          if [ -d "$artifact" ]; then
+            # Extract thread variant from artifact name (e.g., benchmark_v5_artifacts_4t -> 4)
+            thread_variant=$(basename "$artifact" | sed 's/benchmark_v5_artifacts_//' | sed 's/t$//')
+            echo "Processing thread variant: ${thread_variant}t"
+            
+            # Create results directory
+            mkdir -p "results/benchmarks-v5-host-${thread_variant}t"
+            
+            # Copy results directory if it exists in artifact
+            if [ -d "$artifact/results/benchmarks-v5-host-${thread_variant}t" ]; then
+              echo "Copying from artifact results directory..."
+              cp -r "$artifact/results/benchmarks-v5-host-${thread_variant}t/"* "results/benchmarks-v5-host-${thread_variant}t/"
+            else
+              echo "No pre-built results directory found, building from artifact contents..."
+              
+              # Copy workflow and script files
+              cp ./.github/workflows/benchmarks-v5-host.yml "results/benchmarks-v5-host-${thread_variant}t/" 2>/dev/null || echo "Warning: workflow file not found"
+              cp ./scripts/*.py "results/benchmarks-v5-host-${thread_variant}t/" 2>/dev/null || echo "Warning: script files not found"
+              cp ./docker-compose.yml "results/benchmarks-v5-host-${thread_variant}t/" 2>/dev/null || echo "Warning: docker-compose.yml not found"
+              cp ./Dockerfile-* "results/benchmarks-v5-host-${thread_variant}t/" 2>/dev/null || echo "Warning: Dockerfiles not found"
+              
+              # Copy benchmark results and charts from artifact
+              cp "$artifact"/benchmarklogs-${thread_variant}t/* "results/benchmarks-v5-host-${thread_variant}t/" 2>/dev/null || echo "Warning: benchmarklogs not found"
+              cp "$artifact"/*.md "results/benchmarks-v5-host-${thread_variant}t/" 2>/dev/null || echo "Warning: markdown files not found"
+              cp "$artifact"/*.png "results/benchmarks-v5-host-${thread_variant}t/" 2>/dev/null || echo "Warning: chart files not found"
+              
+              # Create metadata file
+              cat > "results/benchmarks-v5-host-${thread_variant}t/last_updated.txt" << EOF
+Last updated: $(date -u)
+Thread Variant: ${thread_variant}
+Workflow run: ${{ github.run_number }}
+Commit SHA: ${{ github.sha }}
+Benchmark Config:
+  Requests: ${{ inputs.requests || '2000' }}
+  Clients: ${{ inputs.clients || '100' }}
+  Pipeline: ${{ inputs.pipeline || '1' }}
+  Data Size: ${{ inputs.data_size || '1024' }}
+  Key Range: ${KEY_MINIMUM}-${{ inputs.key_maximum || '1000000' }}
+  Intrinsic Latency: ${{ inputs.intrinsic_latency || '5' }}
+EOF
+            fi
+            
+            echo "✅ Completed organizing thread variant: ${thread_variant}t"
+            echo "Results directory contents:"
+            ls -la "results/benchmarks-v5-host-${thread_variant}t/" | head -10
+            echo ""
+          fi
+        done
+
+    - name: Verify organized results
+      run: |
+        echo "=== Final Results Directory Structure ==="
+        ls -la results/
+        echo ""
+        
+        for dir in results/benchmarks-v5-host-*t/; do
+          if [ -d "$dir" ]; then
+            echo "=== Contents of $dir ==="
+            ls -la "$dir" | head -15
+            echo ""
+          fi
+        done
+
+    - name: Commit All Thread-Specific Results
+      continue-on-error: true
+      run: |
+        echo "=== Starting Git Operations ==="
+        
+        # Configure git
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        
+        # Fetch latest changes
+        echo "Fetching latest changes..."
+        git fetch origin
+        
+        # Check current status
+        echo "Git status before pull:"
+        git status
+        
+        # Pull latest changes
+        echo "Pulling latest changes..."
+        git pull origin ${{ github.ref_name }}
         
         # Stage all changes
-        git add results/benchmarks-v5-host-${{ matrix.variant.threads }}t/
+        echo "Staging changes..."
+        git add results/benchmarks-v5-host-*t/
+        
+        # Check what's staged
+        echo "Staged changes:"
+        git diff --staged --name-only
         
         # Check if there are changes to commit
         if git diff --staged --quiet; then
           echo "No changes to commit"
         else
-          # Commit changes
-          git commit -m "Update benchmark v5 results for ${{ matrix.variant.threads }} threads from workflow run #${{ github.run_number }}
+          echo "Committing changes..."
           
-          - Thread variant: ${{ matrix.variant.threads }}
-          - Redis IO threads: ${{ matrix.variant.redis_io_threads }}
-          - KeyDB server threads: ${{ matrix.variant.keydb_server_threads }}
-          - Dragonfly proactor threads: ${{ matrix.variant.dragonfly_proactor_threads }}
-          - Valkey IO threads: ${{ matrix.variant.valkey_io_threads }}
+          # Get list of thread variants for commit message
+          thread_variants=$(ls results/ | grep benchmarks-v5-host- | sed 's/benchmarks-v5-host-//' | tr '\n' ' ' | sed 's/ $//')
+          
+          # Create comprehensive commit message
+          git commit -m "Update benchmark v5 results for all thread variants from workflow run #${{ github.run_number }}
+          
+          Thread variants: ${thread_variants}
           - Updated benchmark results for Redis, KeyDB, Dragonfly, and Valkey
           - Generated charts for latency and ops/sec metrics
           - Both TLS and non-TLS configurations tested
@@ -1441,29 +1571,33 @@ jobs:
           - Run: ${{ github.run_number }}
           - SHA: ${{ github.sha }}"
           
-          # Try to push, if it fails due to new commits, pull and retry
-          if ! git push origin HEAD; then
-            echo "Push failed, pulling latest changes and retrying..."
-            
-            # Pull with rebase to keep our commit on top
-            git pull --rebase origin ${{ github.ref_name }}
-            
-            # Try push again
-            git push origin HEAD
-          fi
+          # Push with retry logic
+          echo "Pushing changes..."
+          for i in {1..3}; do
+            if git push origin HEAD; then
+              echo "✅ Successfully pushed on attempt $i"
+              break
+            else
+              echo "Push failed on attempt $i, retrying..."
+              if [ $i -lt 3 ]; then
+                echo "Fetching and rebasing..."
+                git fetch origin
+                git rebase origin/${{ github.ref_name }}
+                sleep $((i * 2))
+              else
+                echo "❌ Failed to push after 3 attempts"
+                exit 1
+              fi
+            fi
+          done
           
-          echo "✅ Thread-specific benchmark results committed and pushed to results/benchmarks-v5-host-${{ matrix.variant.threads }}t/"
-        fi  
+          echo "✅ All thread-specific benchmark results committed and pushed successfully!"
+        fi
 
-    - name: Upload Thread-Specific Benchmark Logs and Charts
-      uses: actions/upload-artifact@v4
-      with:
-        name: benchmark_v5_artifacts_${{ matrix.variant.threads }}t
-        path: |
-          benchmarklogs-${{ matrix.variant.threads }}t/**
-          combined_all_results.md
-          combined_all_results_tls.md 
-
-    - name: Cleanup
+    - name: Summary
       run: |
-        docker stop redis keydb dragonfly valkey redis-tls keydb-tls dragonfly-tls valkey-tls 2>/dev/null || true
+        echo "=== Commit Job Summary ==="
+        echo "Successfully processed and committed results for thread variants:"
+        ls results/ | grep benchmarks-v5-host- | sed 's/benchmarks-v5-host-/  - /'
+        echo ""
+        echo "Workflow run #${{ github.run_number }} completed successfully!"
