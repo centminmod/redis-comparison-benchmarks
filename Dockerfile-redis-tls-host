@@ -18,4 +18,4 @@ RUN chmod 0755 /tls
 # Expose the default Redis port
 EXPOSE 6390
 
-CMD [ "redis-server", "/usr/local/etc/redis/redis.conf", "--tls-port=6390" ]
+CMD [ "redis-server", "/usr/local/etc/redis/redis.conf" ]

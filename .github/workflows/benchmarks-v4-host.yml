@@ -193,6 +193,7 @@ jobs:
       run: |
         echo "io-threads ${{ inputs.redis_io_threads || '4' }}" >> redis-tls.conf
         echo "io-threads-do-reads yes" >> redis-tls.conf
+        echo "port 0" >> redis-tls.conf
         echo "tls-port 6390" >> redis-tls.conf
         echo "tls-cert-file /tls/test.crt" >> redis-tls.conf
         echo "tls-key-file /tls/test.key" >> redis-tls.conf
@@ -206,6 +207,7 @@ jobs:
         echo "min-clients-per-thread 50" >> keydb-tls.conf
         echo "server-threads ${{ inputs.keydb_server_threads || '2' }}" >> keydb-tls.conf
         echo "io-threads-do-reads yes" >> keydb-tls.conf
+        echo "port 0" >> keydb-tls.conf
         echo "tls-port 6391" >> keydb-tls.conf
         echo "tls-cert-file /tls/test.crt" >> keydb-tls.conf
         echo "tls-key-file /tls/test.key" >> keydb-tls.conf
@@ -227,6 +229,7 @@ jobs:
       run: |
         echo "io-threads ${{ inputs.valkey_io_threads || '4' }}" >> valkey-tls.conf
         echo "io-threads-do-reads yes" >> valkey-tls.conf
+        echo "port 0" >> valkey-tls.conf
         echo "tls-port 6393" >> valkey-tls.conf
         echo "tls-cert-file /tls/test.crt" >> valkey-tls.conf
         echo "tls-key-file /tls/test.key" >> valkey-tls.conf
