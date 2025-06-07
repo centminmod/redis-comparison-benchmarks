@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 """
-Enhanced PHP Redis Benchmark Charts Generator
-Creates comprehensive charts from PHP-based WordPress Redis test results
-Compatible with enhanced RedisTestBase.php output format
+Enhanced PHP Redis Benchmark Charts Generator with Statistical Analysis
+Creates comprehensive charts from PHP-based WordPress Redis test results with 5-run statistics
 """
 
 import pandas as pd
@@ -18,13 +17,13 @@ from datetime import datetime
 import warnings
 warnings.filterwarnings('ignore')
 
-class PHPRedisChartsGenerator:
+class EnhancedPHPRedisChartsGenerator:
     def __init__(self, results_dir, output_dir):
         self.results_dir = Path(results_dir)
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(exist_ok=True)
         
-        # Set up plotting style
+        # Enhanced styling
         plt.style.use('default')
         self.colors = {
             'Redis': '#E74C3C',
@@ -33,21 +32,29 @@ class PHPRedisChartsGenerator:
             'Valkey': '#8E44AD'
         }
         
+        self.quality_colors = {
+            'excellent': '#2ECC71',  # Green
+            'good': '#F1C40F',       # Yellow
+            'fair': '#E67E22',       # Orange
+            'poor': '#E74C3C'        # Red
+        }
+        
         # Chart configuration
         self.dpi = 300
         self.bbox_inches = 'tight'
         
     def load_test_results(self):
-        """Load all JSON test results with enhanced metadata handling"""
+        """Load all JSON test results with enhanced statistical metadata handling"""
         results = {}
         metadata = {}
+        raw_data = {}
         
         print(f"Loading results from {self.results_dir}...")
         
         json_files = list(self.results_dir.glob("*.json"))
         if not json_files:
             print(f"No JSON files found in {self.results_dir}")
-            return {}, {}
+            return {}, {}, {}
             
         for json_file in json_files:
             try:
@@ -56,29 +63,29 @@ class PHPRedisChartsGenerator:
                 
                 test_name = data.get('test_name', 'Unknown Test')
                 
-                # Handle both old and new JSON format
+                # Handle both aggregated and raw results
+                if '_raw' in json_file.name:
+                    # Raw iterations data
+                    raw_data[test_name] = data
+                    continue
+                
+                # Regular aggregated results
                 if 'results' in data:
-                    # New enhanced format
                     if test_name not in results:
                         results[test_name] = []
                     results[test_name].extend(data['results'])
                     
-                    # Store metadata
+                    # Enhanced metadata with statistical info
                     metadata[test_name] = {
                         'timestamp': data.get('timestamp'),
                         'php_version': data.get('php_version'),
                         'test_configuration': data.get('test_configuration', {}),
-                        'results_count': data.get('results_count', len(data['results']))
+                        'test_methodology': data.get('test_methodology', {}),
+                        'results_count': data.get('results_count', len(data['results'])),
+                        'thread_variant': data.get('thread_variant', 'unknown'),
+                        'thread_config': data.get('thread_config', {})
                     }
-                else:
-                    # Legacy format - treat entire data as results
-                    if test_name not in results:
-                        results[test_name] = []
-                    if isinstance(data, list):
-                        results[test_name].extend(data)
-                    else:
-                        results[test_name].append(data)
-                        
+                
                 print(f"Loaded {len(data.get('results', [data]))} results from {json_file.name}")
                 
             except Exception as e:
@@ -89,125 +96,14 @@ class PHPRedisChartsGenerator:
         for test_name, test_results in results.items():
             print(f"  {test_name}: {len(test_results)} results")
             
-        return results, metadata
+        return results, metadata, raw_data
 
-    def create_performance_comparison_chart(self, results, metadata):
-        """Enhanced performance comparison chart with conditional TLS handling"""
+    def create_statistical_performance_chart(self, results, metadata):
+        """Enhanced performance chart with error bars and quality indicators"""
         if not results:
             print("No results to chart")
             return
             
-        # Check if we have any TLS results across all test types
-        has_tls_data = False
-        for test_data in results.values():
-            if any(r.get('tls', False) for r in test_data):
-                has_tls_data = True
-                break
-        
-        print(f"TLS data detected: {has_tls_data}")
-        
-        # Calculate subplot dimensions
-        test_count = len(results)
-        if test_count == 1:
-            fig_size = (12, 8)
-            subplot_dims = (1, 1)
-        elif test_count <= 4:
-            fig_size = (20, 12)
-            subplot_dims = (2, 2)
-        else:
-            fig_size = (24, 16)
-            subplot_dims = (3, 2)
-            
-        fig, axes = plt.subplots(*subplot_dims, figsize=fig_size)
-        if test_count == 1:
-            axes = [axes]
-        elif test_count <= 4:
-            axes = axes.flatten()
-        else:
-            axes = axes.flatten()
-            
-        # Get overall metadata for title
-        first_test = next(iter(metadata.values())) if metadata else {}
-        php_version = first_test.get('php_version', 'Unknown')
-        test_timestamp = first_test.get('timestamp', '')
-        
-        tls_status = "with TLS" if has_tls_data else "non-TLS only"
-        fig.suptitle(f'WordPress Redis Tests - Performance Comparison ({tls_status})\nPHP {php_version} - {test_timestamp[:10]}', 
-                    fontsize=16, fontweight='bold')
-        
-        databases = ['Redis', 'KeyDB', 'Dragonfly', 'Valkey']
-        
-        for i, (test_name, test_data) in enumerate(results.items()):
-            if i >= len(axes):
-                break
-                
-            ax = axes[i]
-            
-            # Separate TLS and non-TLS results
-            non_tls_data = [r for r in test_data if not r.get('tls', False)]
-            tls_data = [r for r in test_data if r.get('tls', False)]
-            
-            x = np.arange(len(databases))
-            
-            # Determine chart layout based on TLS data availability
-            if has_tls_data and tls_data:
-                # Show both TLS and non-TLS
-                width = 0.35
-                non_tls_ops = [next((r['ops_per_sec'] for r in non_tls_data if r['database'] == db), 0) for db in databases]
-                tls_ops = [next((r['ops_per_sec'] for r in tls_data if r['database'] == db), 0) for db in databases]
-                
-                bars1 = ax.bar(x - width/2, non_tls_ops, width, label='Non-TLS', alpha=0.8, color='lightblue')
-                bars2 = ax.bar(x + width/2, tls_ops, width, label='TLS', alpha=0.8, color='lightcoral')
-                bars_list = [bars1, bars2]
-            else:
-                # Show only non-TLS (centered bars)
-                width = 0.6
-                non_tls_ops = [next((r['ops_per_sec'] for r in non_tls_data if r['database'] == db), 0) for db in databases]
-                
-                bars1 = ax.bar(x, non_tls_ops, width, label='Non-TLS', alpha=0.8, color='lightblue')
-                bars_list = [bars1]
-            
-            # Enhanced title with test metadata
-            test_meta = metadata.get(test_name, {})
-            config = test_meta.get('test_configuration', {})
-            flush_status = config.get('flush_before_test', False)
-            title = test_name.replace('WordPress ', '')
-            if flush_status:
-                title += ' (DB Flushed)'
-                
-            ax.set_title(title, fontsize=12, fontweight='bold')
-            ax.set_ylabel('Operations/sec')
-            ax.set_xticks(x)
-            ax.set_xticklabels(databases, rotation=45)
-            ax.legend()
-            ax.grid(axis='y', alpha=0.3)
-            
-            # Add value labels on bars
-            for bars in bars_list:
-                for bar in bars:
-                    height = bar.get_height()
-                    if height > 0:
-                        ax.annotate(f'{int(height)}',
-                                  xy=(bar.get_x() + bar.get_width() / 2, height),
-                                  xytext=(0, 3),
-                                  textcoords="offset points",
-                                  ha='center', va='bottom', fontsize=8)
-        
-        # Hide unused subplots
-        for i in range(test_count, len(axes)):
-            axes[i].set_visible(False)
-        
-        plt.tight_layout()
-        output_file = self.output_dir / 'php_redis_performance_comparison.png'
-        plt.savefig(output_file, dpi=self.dpi, bbox_inches=self.bbox_inches)
-        plt.close()
-        print(f"Generated: {output_file}")
-
-    def create_latency_comparison_chart(self, results, metadata):
-        """Enhanced latency comparison with conditional TLS handling"""
-        if not results:
-            return
-        
         # Check for TLS data
         has_tls_data = False
         for test_data in results.values():
@@ -215,390 +111,423 @@ class PHPRedisChartsGenerator:
                 has_tls_data = True
                 break
         
-        print(f"Latency chart - TLS data detected: {has_tls_data}")
-        
+        # Determine chart layout
         if has_tls_data:
-            fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 8))
+            fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(20, 10))
         else:
-            fig, ax1 = plt.subplots(1, 1, figsize=(12, 8))
+            fig, ax1 = plt.subplots(1, 1, figsize=(12, 10))
             ax2 = None
         
         # Get metadata for title
         first_test = next(iter(metadata.values())) if metadata else {}
         php_version = first_test.get('php_version', 'Unknown')
+        iterations = first_test.get('test_methodology', {}).get('iterations_per_test', 1)
+        thread_variant = first_test.get('thread_variant', 'unknown')
         
         tls_status = "with TLS" if has_tls_data else "non-TLS only"
-        fig.suptitle(f'WordPress Redis Tests - Latency Comparison ({tls_status}) (PHP {php_version})', 
+        fig.suptitle(f'WordPress Redis Tests - Statistical Performance Analysis\n'
+                    f'PHP {php_version} | {iterations} iterations per test | Thread variant: {thread_variant} | {tls_status}', 
                     fontsize=16, fontweight='bold')
         
         databases = ['Redis', 'KeyDB', 'Dragonfly', 'Valkey']
         
-        # Collect latency data
-        all_avg_latencies = {db: {'non_tls': [], 'tls': []} for db in databases}
-        all_p99_latencies = {db: {'non_tls': [], 'tls': []} for db in databases}
+        # Collect data for non-TLS chart
+        non_tls_ops = []
+        non_tls_errors = []
+        non_tls_qualities = []
         
-        for test_name, test_data in results.items():
-            for result in test_data:
-                db = result['database']
-                if db not in databases:
-                    continue
-                    
-                tls_type = 'tls' if result.get('tls', False) else 'non_tls'
+        for db in databases:
+            db_results = []
+            for test_data in results.values():
+                db_result = next((r for r in test_data if r['database'] == db and not r.get('tls', False)), None)
+                if db_result:
+                    db_results.append(db_result)
+            
+            if db_results:
+                # Use the most recent result or average if multiple tests
+                result = db_results[0] if len(db_results) == 1 else self._average_results(db_results)
+                ops = result['ops_per_sec']
+                error = result.get('ops_per_sec_stddev', 0)
+                quality = result.get('measurement_quality', 'unknown')
                 
-                if 'avg_latency' in result and result['avg_latency'] > 0:
-                    all_avg_latencies[db][tls_type].append(result['avg_latency'])
-                if 'p99_latency' in result and result['p99_latency'] > 0:
-                    all_p99_latencies[db][tls_type].append(result['p99_latency'])
+                non_tls_ops.append(ops)
+                non_tls_errors.append(error)
+                non_tls_qualities.append(quality)
+            else:
+                non_tls_ops.append(0)
+                non_tls_errors.append(0)
+                non_tls_qualities.append('unknown')
         
-        # Plot average latencies
+        # Plot non-TLS results with error bars and quality colors
         x = np.arange(len(databases))
+        bars1 = ax1.bar(x, non_tls_ops, 
+                       yerr=non_tls_errors, 
+                       capsize=5,
+                       color=[self.quality_colors.get(q, '#CCCCCC') for q in non_tls_qualities],
+                       alpha=0.8, 
+                       label='Non-TLS')
         
-        if has_tls_data:
-            width = 0.35
-            avg_non_tls = [np.mean(all_avg_latencies[db]['non_tls']) if all_avg_latencies[db]['non_tls'] else 0 for db in databases]
-            avg_tls = [np.mean(all_avg_latencies[db]['tls']) if all_avg_latencies[db]['tls'] else 0 for db in databases]
-            
-            bars1 = ax1.bar(x - width/2, avg_non_tls, width, label='Non-TLS', alpha=0.8, color='lightblue')
-            bars2 = ax1.bar(x + width/2, avg_tls, width, label='TLS', alpha=0.8, color='lightcoral')
-            bars_list = [bars1, bars2]
-        else:
-            width = 0.6
-            avg_non_tls = [np.mean(all_avg_latencies[db]['non_tls']) if all_avg_latencies[db]['non_tls'] else 0 for db in databases]
-            
-            bars1 = ax1.bar(x, avg_non_tls, width, label='Non-TLS', alpha=0.8, color='lightblue')
-            bars_list = [bars1]
-        
-        ax1.set_title('Average Latency (ms)')
-        ax1.set_ylabel('Latency (ms)')
+        ax1.set_title('Non-TLS Performance with Statistical Error Bars', fontsize=14, fontweight='bold')
+        ax1.set_ylabel('Operations/sec')
         ax1.set_xticks(x)
         ax1.set_xticklabels(databases)
-        ax1.legend()
         ax1.grid(axis='y', alpha=0.3)
         
-        # Add value labels
-        for bars in bars_list:
-            for bar in bars:
-                height = bar.get_height()
-                if height > 0:
-                    ax1.annotate(f'{height:.2f}',
-                               xy=(bar.get_x() + bar.get_width() / 2, height),
-                               xytext=(0, 3),
-                               textcoords="offset points",
-                               ha='center', va='bottom', fontsize=8)
+        # Add value labels with quality indicators
+        for i, (bar, ops, quality) in enumerate(zip(bars1, non_tls_ops, non_tls_qualities)):
+            if ops > 0:
+                quality_symbol = {'excellent': '🟢', 'good': '🟡', 'fair': '🟠', 'poor': '🔴'}.get(quality, '⚪')
+                ax1.annotate(f'{int(ops)}\n{quality_symbol}',
+                           xy=(bar.get_x() + bar.get_width() / 2, ops),
+                           xytext=(0, 10),
+                           textcoords="offset points",
+                           ha='center', va='bottom', fontsize=9, fontweight='bold')
         
-        # Plot P99 latencies only if we have TLS data
+        # Create legend for quality indicators
+        legend_elements = [plt.Rectangle((0,0),1,1, color=color, alpha=0.8, label=f'{quality.title()} (CV {threshold})')
+                          for quality, (color, threshold) in zip(
+                              ['excellent', 'good', 'fair', 'poor'],
+                              [(self.quality_colors['excellent'], '<2%'),
+                               (self.quality_colors['good'], '<5%'),
+                               (self.quality_colors['fair'], '<10%'),
+                               (self.quality_colors['poor'], '≥10%')])]
+        ax1.legend(handles=legend_elements, loc='upper right', title='Measurement Quality')
+        
+        # TLS chart if data available
         if has_tls_data and ax2 is not None:
-            p99_non_tls = [np.mean(all_p99_latencies[db]['non_tls']) if all_p99_latencies[db]['non_tls'] else 0 for db in databases]
-            p99_tls = [np.mean(all_p99_latencies[db]['tls']) if all_p99_latencies[db]['tls'] else 0 for db in databases]
+            tls_ops = []
+            tls_errors = []
+            tls_qualities = []
             
-            bars3 = ax2.bar(x - width/2, p99_non_tls, width, label='Non-TLS', alpha=0.8, color='lightblue')
-            bars4 = ax2.bar(x + width/2, p99_tls, width, label='TLS', alpha=0.8, color='lightcoral')
+            for db in databases:
+                db_results = []
+                for test_data in results.values():
+                    db_result = next((r for r in test_data if r['database'] == db and r.get('tls', False)), None)
+                    if db_result:
+                        db_results.append(db_result)
+                
+                if db_results:
+                    result = db_results[0] if len(db_results) == 1 else self._average_results(db_results)
+                    ops = result['ops_per_sec']
+                    error = result.get('ops_per_sec_stddev', 0)
+                    quality = result.get('measurement_quality', 'unknown')
+                    
+                    tls_ops.append(ops)
+                    tls_errors.append(error)
+                    tls_qualities.append(quality)
+                else:
+                    tls_ops.append(0)
+                    tls_errors.append(0)
+                    tls_qualities.append('unknown')
             
-            ax2.set_title('P99 Latency (ms)')
-            ax2.set_ylabel('Latency (ms)')
+            bars2 = ax2.bar(x, tls_ops, 
+                           yerr=tls_errors, 
+                           capsize=5,
+                           color=[self.quality_colors.get(q, '#CCCCCC') for q in tls_qualities],
+                           alpha=0.8, 
+                           label='TLS')
+            
+            ax2.set_title('TLS Performance with Statistical Error Bars', fontsize=14, fontweight='bold')
+            ax2.set_ylabel('Operations/sec')
             ax2.set_xticks(x)
             ax2.set_xticklabels(databases)
-            ax2.legend()
             ax2.grid(axis='y', alpha=0.3)
             
-            # Add value labels
-            for bars in [bars3, bars4]:
-                for bar in bars:
-                    height = bar.get_height()
-                    if height > 0:
-                        ax2.annotate(f'{height:.2f}',
-                                   xy=(bar.get_x() + bar.get_width() / 2, height),
-                                   xytext=(0, 3),
-                                   textcoords="offset points",
-                                   ha='center', va='bottom', fontsize=8)
+            # Add value labels for TLS
+            for i, (bar, ops, quality) in enumerate(zip(bars2, tls_ops, tls_qualities)):
+                if ops > 0:
+                    quality_symbol = {'excellent': '🟢', 'good': '🟡', 'fair': '🟠', 'poor': '🔴'}.get(quality, '⚪')
+                    ax2.annotate(f'{int(ops)}\n{quality_symbol}',
+                               xy=(bar.get_x() + bar.get_width() / 2, ops),
+                               xytext=(0, 10),
+                               textcoords="offset points",
+                               ha='center', va='bottom', fontsize=9, fontweight='bold')
         
         plt.tight_layout()
-        output_file = self.output_dir / 'php_redis_latency_comparison.png'
+        output_file = self.output_dir / 'php_redis_statistical_performance.png'
         plt.savefig(output_file, dpi=self.dpi, bbox_inches=self.bbox_inches)
         plt.close()
         print(f"Generated: {output_file}")
 
-    def create_database_state_chart(self, results, metadata):
-        """Database state chart with conditional TLS handling"""
+    def create_measurement_reliability_chart(self, results, metadata):
+        """New: Chart showing measurement reliability and consistency"""
         if not results:
             return
             
-        # Check if we have key count data
-        has_key_data = False
-        for test_data in results.values():
-            for result in test_data:
-                if 'initial_key_count' in result or 'final_key_count' in result:
-                    has_key_data = True
-                    break
-            if has_key_data:
-                break
-                
-        if not has_key_data:
-            print("No key count data found, skipping database state chart")
-            return
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 8))
         
-        # Check for TLS data
-        has_tls_data = False
-        for test_data in results.values():
-            if any(r.get('tls', False) for r in test_data):
-                has_tls_data = True
-                break
-            
-        if has_tls_data:
-            fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 8))
-        else:
-            fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 8))
-        
-        # Get metadata for title
+        # Get metadata
         first_test = next(iter(metadata.values())) if metadata else {}
-        flush_enabled = first_test.get('test_configuration', {}).get('flush_before_test', False)
+        iterations = first_test.get('test_methodology', {}).get('iterations_per_test', 1)
+        thread_variant = first_test.get('thread_variant', 'unknown')
         
-        tls_status = "with TLS" if has_tls_data else "non-TLS only"
-        fig.suptitle(f'Database State Analysis ({tls_status}) (Flush: {"Enabled" if flush_enabled else "Disabled"})', 
+        fig.suptitle(f'Measurement Reliability Analysis - {iterations} iterations per test\n'
+                    f'Thread variant: {thread_variant}', 
                     fontsize=16, fontweight='bold')
         
         databases = ['Redis', 'KeyDB', 'Dragonfly', 'Valkey']
         
-        # Collect key count data (combine TLS and non-TLS for state analysis)
-        initial_counts = {db: [] for db in databases}
-        final_counts = {db: [] for db in databases}
-        key_growth = {db: [] for db in databases}
+        # Collect CV data for reliability analysis
+        non_tls_cvs = []
+        tls_cvs = []
+        quality_counts = {'excellent': 0, 'good': 0, 'fair': 0, 'poor': 0}
         
-        for test_name, test_data in results.items():
-            for result in test_data:
-                db = result['database']
-                if db not in databases:
-                    continue
-                    
-                initial = result.get('initial_key_count', 0)
-                final = result.get('final_key_count', 0)
-                
-                initial_counts[db].append(initial)
-                final_counts[db].append(final)
-                key_growth[db].append(final - initial)
+        for db in databases:
+            # Non-TLS CV
+            non_tls_results = []
+            for test_data in results.values():
+                result = next((r for r in test_data if r['database'] == db and not r.get('tls', False)), None)
+                if result:
+                    non_tls_results.append(result)
+            
+            if non_tls_results:
+                result = non_tls_results[0]
+                cv = result.get('ops_per_sec_cv', 0) * 100
+                quality = result.get('measurement_quality', 'unknown')
+                non_tls_cvs.append(cv)
+                if quality in quality_counts:
+                    quality_counts[quality] += 1
+            else:
+                non_tls_cvs.append(0)
+            
+            # TLS CV
+            tls_results = []
+            for test_data in results.values():
+                result = next((r for r in test_data if r['database'] == db and r.get('tls', False)), None)
+                if result:
+                    tls_results.append(result)
+            
+            if tls_results:
+                result = tls_results[0]
+                cv = result.get('ops_per_sec_cv', 0) * 100
+                tls_cvs.append(cv)
+            else:
+                tls_cvs.append(0)
         
-        # Chart 1: Average key counts
+        # Chart 1: Coefficient of Variation comparison
         x = np.arange(len(databases))
         width = 0.35
         
-        avg_initial = [np.mean(initial_counts[db]) if initial_counts[db] else 0 for db in databases]
-        avg_final = [np.mean(final_counts[db]) if final_counts[db] else 0 for db in databases]
+        bars1 = ax1.bar(x - width/2, non_tls_cvs, width, label='Non-TLS', alpha=0.8, color='lightblue')
+        if any(cv > 0 for cv in tls_cvs):
+            bars2 = ax1.bar(x + width/2, tls_cvs, width, label='TLS', alpha=0.8, color='lightcoral')
         
-        bars1 = ax1.bar(x - width/2, avg_initial, width, label='Initial Keys', alpha=0.8, color='lightgray')
-        bars2 = ax1.bar(x + width/2, avg_final, width, label='Final Keys', alpha=0.8, color='lightgreen')
-        
-        ax1.set_title('Average Key Counts')
-        ax1.set_ylabel('Number of Keys')
+        ax1.set_title('Coefficient of Variation (Lower = More Reliable)')
+        ax1.set_ylabel('CV (%)')
         ax1.set_xticks(x)
         ax1.set_xticklabels(databases)
         ax1.legend()
         ax1.grid(axis='y', alpha=0.3)
         
+        # Add threshold lines
+        ax1.axhline(y=2, color='green', linestyle='--', alpha=0.7, label='Excellent (2%)')
+        ax1.axhline(y=5, color='orange', linestyle='--', alpha=0.7, label='Good (5%)')
+        ax1.axhline(y=10, color='red', linestyle='--', alpha=0.7, label='Fair (10%)')
+        
         # Add value labels
-        for bars in [bars1, bars2]:
+        for bars in [bars1] + ([bars2] if any(cv > 0 for cv in tls_cvs) else []):
             for bar in bars:
                 height = bar.get_height()
                 if height > 0:
-                    ax1.annotate(f'{int(height)}',
+                    ax1.annotate(f'{height:.1f}%',
                                xy=(bar.get_x() + bar.get_width() / 2, height),
                                xytext=(0, 3),
                                textcoords="offset points",
-                               ha='center', va='bottom', fontsize=8)
+                               ha='center', va='bottom', fontsize=9)
         
-        # Chart 2: Key growth during tests
-        avg_growth = [np.mean(key_growth[db]) if key_growth[db] else 0 for db in databases]
+        # Chart 2: Quality distribution pie chart
+        quality_labels = [f'{q.title()}\n({count} tests)' for q, count in quality_counts.items() if count > 0]
+        quality_values = [count for count in quality_counts.values() if count > 0]
+        quality_colors_list = [self.quality_colors[q] for q, count in quality_counts.items() if count > 0]
         
-        bars3 = ax2.bar(databases, avg_growth, alpha=0.8, color='orange')
-        
-        ax2.set_title('Average Key Growth During Tests')
-        ax2.set_ylabel('Keys Added')
-        ax2.grid(axis='y', alpha=0.3)
-        
-        # Add value labels
-        for bar in bars3:
-            height = bar.get_height()
-            ax2.annotate(f'{int(height)}',
-                       xy=(bar.get_x() + bar.get_width() / 2, height),
-                       xytext=(0, 3),
-                       textcoords="offset points",
-                       ha='center', va='bottom', fontsize=8)
+        if quality_values:
+            ax2.pie(quality_values, labels=quality_labels, colors=quality_colors_list, 
+                   autopct='%1.1f%%', startangle=90)
+            ax2.set_title('Measurement Quality Distribution')
+        else:
+            ax2.text(0.5, 0.5, 'No quality data available', ha='center', va='center', transform=ax2.transAxes)
+            ax2.set_title('Measurement Quality Distribution')
         
         plt.tight_layout()
-        output_file = self.output_dir / 'php_redis_database_state.png'
+        output_file = self.output_dir / 'php_redis_measurement_reliability.png'
         plt.savefig(output_file, dpi=self.dpi, bbox_inches=self.bbox_inches)
         plt.close()
         print(f"Generated: {output_file}")
 
-    def create_test_specific_charts(self, results, metadata):
-        """Enhanced test-specific charts with conditional TLS handling"""
-        for test_name, test_data in results.items():
-            if not test_data:
-                continue
+    def create_iteration_variance_chart(self, raw_data):
+        """New: Show variance across individual iterations"""
+        if not raw_data:
+            print("No raw data available for iteration analysis")
+            return
+        
+        fig, axes = plt.subplots(2, 2, figsize=(16, 12))
+        axes = axes.flatten()
+        
+        fig.suptitle('Individual Iteration Performance Analysis\n'
+                    'Showing consistency across test iterations', 
+                    fontsize=16, fontweight='bold')
+        
+        databases = ['Redis', 'KeyDB', 'Dragonfly', 'Valkey']
+        
+        for i, db in enumerate(databases):
+            ax = axes[i]
             
-            # Check if this test has TLS data
-            has_tls_data = any(r.get('tls', False) for r in test_data)
-            
-            fig, axes = plt.subplots(2, 2, figsize=(16, 12))
-            
-            # Get test metadata
-            test_meta = metadata.get(test_name, {})
-            config = test_meta.get('test_configuration', {})
-            flush_status = config.get('flush_before_test', False)
-            php_version = test_meta.get('php_version', 'Unknown')
-            
-            tls_status = "with TLS" if has_tls_data else "non-TLS only"
-            fig.suptitle(f'{test_name} - Detailed Results ({tls_status})\nPHP {php_version} | Flush: {"Yes" if flush_status else "No"}', 
-                        fontsize=16, fontweight='bold')
-            
-            databases = ['Redis', 'KeyDB', 'Dragonfly', 'Valkey']
-            
-            # Separate TLS and non-TLS data
-            non_tls_data = [r for r in test_data if not r.get('tls', False)]
-            tls_data = [r for r in test_data if r.get('tls', False)]
-            
-            # Ops/sec comparison
-            ax1 = axes[0, 0]
-            x = np.arange(len(databases))
-            
-            if has_tls_data and tls_data:
-                width = 0.35
-                non_tls_ops = [next((r['ops_per_sec'] for r in non_tls_data if r['database'] == db), 0) for db in databases]
-                tls_ops = [next((r['ops_per_sec'] for r in tls_data if r['database'] == db), 0) for db in databases]
+            # Find raw data for this database
+            for test_name, raw_test_data in raw_data.items():
+                db_data = None
+                if 'databases' in raw_test_data:
+                    for db_key, db_info in raw_test_data['databases'].items():
+                        if db_info['database'] == db and not db_info.get('tls', False):
+                            db_data = db_info
+                            break
                 
-                bars1 = ax1.bar(x - width/2, non_tls_ops, width, label='Non-TLS', alpha=0.8)
-                bars2 = ax1.bar(x + width/2, tls_ops, width, label='TLS', alpha=0.6)
-                bars_list = [bars1, bars2]
+                if db_data and 'iterations' in db_data:
+                    iterations = db_data['iterations']
+                    iteration_nums = [it['iteration'] for it in iterations]
+                    ops_per_sec = [it['ops_per_sec'] for it in iterations]
+                    
+                    # Plot individual iterations
+                    ax.plot(iteration_nums, ops_per_sec, 'o-', alpha=0.7, linewidth=2, markersize=8)
+                    
+                    # Add mean line
+                    mean_ops = np.mean(ops_per_sec)
+                    ax.axhline(y=mean_ops, color='red', linestyle='--', alpha=0.8, 
+                              label=f'Mean: {int(mean_ops)}')
+                    
+                    # Add confidence band
+                    std_ops = np.std(ops_per_sec, ddof=1)
+                    ax.fill_between(iteration_nums, 
+                                  mean_ops - std_ops, mean_ops + std_ops, 
+                                  alpha=0.2, color='gray', label=f'±1σ: ±{int(std_ops)}')
+                    
+                    ax.set_title(f'{db} - Iteration Consistency')
+                    ax.set_xlabel('Iteration Number')
+                    ax.set_ylabel('Operations/sec')
+                    ax.grid(True, alpha=0.3)
+                    ax.legend()
+                    
+                    # Calculate and display CV
+                    cv = (std_ops / mean_ops) * 100 if mean_ops > 0 else 0
+                    ax.text(0.02, 0.98, f'CV: {cv:.1f}%', 
+                           transform=ax.transAxes, fontsize=10, fontweight='bold',
+                           verticalalignment='top', 
+                           bbox=dict(boxstyle='round', facecolor='white', alpha=0.8))
+                    break
             else:
-                width = 0.6
-                non_tls_ops = [next((r['ops_per_sec'] for r in non_tls_data if r['database'] == db), 0) for db in databases]
-                bars1 = ax1.bar(x, non_tls_ops, width, label='Non-TLS', alpha=0.8)
-                bars_list = [bars1]
-            
-            ax1.set_title('Operations per Second')
-            ax1.set_ylabel('Ops/sec')
-            ax1.set_xticks(x)
-            ax1.set_xticklabels(databases)
-            ax1.legend()
-            ax1.grid(axis='y', alpha=0.3)
-            
-            # Add value labels for ops/sec
-            for bars in bars_list:
-                for bar in bars:
-                    height = bar.get_height()
-                    if height > 0:
-                        ax1.annotate(f'{int(height)}',
-                                   xy=(bar.get_x() + bar.get_width() / 2, height),
-                                   xytext=(0, 3),
-                                   textcoords="offset points",
-                                   ha='center', va='bottom', fontsize=8)
-            
-            # Latency comparison
-            ax2 = axes[0, 1]
-            if has_tls_data and tls_data:
-                width = 0.35
-                non_tls_lat = [next((r.get('avg_latency', 0) for r in non_tls_data if r['database'] == db), 0) for db in databases]
-                tls_lat = [next((r.get('avg_latency', 0) for r in tls_data if r['database'] == db), 0) for db in databases]
-                
-                bars3 = ax2.bar(x - width/2, non_tls_lat, width, label='Non-TLS', alpha=0.8)
-                bars4 = ax2.bar(x + width/2, tls_lat, width, label='TLS', alpha=0.6)
-                bars_list_lat = [bars3, bars4]
-            else:
-                width = 0.6
-                non_tls_lat = [next((r.get('avg_latency', 0) for r in non_tls_data if r['database'] == db), 0) for db in databases]
-                bars3 = ax2.bar(x, non_tls_lat, width, label='Non-TLS', alpha=0.8)
-                bars_list_lat = [bars3]
-            
-            ax2.set_title('Average Latency')
-            ax2.set_ylabel('Latency (ms)')
-            ax2.set_xticks(x)
-            ax2.set_xticklabels(databases)
-            ax2.legend()
-            ax2.grid(axis='y', alpha=0.3)
-            
-            # Add value labels for latency
-            for bars in bars_list_lat:
-                for bar in bars:
-                    height = bar.get_height()
-                    if height > 0:
-                        ax2.annotate(f'{height:.3f}',
-                                   xy=(bar.get_x() + bar.get_width() / 2, height),
-                                   xytext=(0, 3),
-                                   textcoords="offset points",
-                                   ha='center', va='bottom', fontsize=8)
-            
-            # Error rate comparison
-            ax3 = axes[1, 0]
-            if has_tls_data and tls_data:
-                width = 0.35
-                non_tls_err = [next((r.get('error_rate', 0) for r in non_tls_data if r['database'] == db), 0) for db in databases]
-                tls_err = [next((r.get('error_rate', 0) for r in tls_data if r['database'] == db), 0) for db in databases]
-                
-                bars5 = ax3.bar(x - width/2, non_tls_err, width, label='Non-TLS', alpha=0.8)
-                bars6 = ax3.bar(x + width/2, tls_err, width, label='TLS', alpha=0.6)
-                bars_list_err = [bars5, bars6]
-            else:
-                width = 0.6
-                non_tls_err = [next((r.get('error_rate', 0) for r in non_tls_data if r['database'] == db), 0) for db in databases]
-                bars5 = ax3.bar(x, non_tls_err, width, label='Non-TLS', alpha=0.8)
-                bars_list_err = [bars5]
-            
-            ax3.set_title('Error Rate')
-            ax3.set_ylabel('Error Rate (%)')
-            ax3.set_xticks(x)
-            ax3.set_xticklabels(databases)
-            ax3.legend()
-            ax3.grid(axis='y', alpha=0.3)
-            
-            # Add value labels for error rate
-            for bars in bars_list_err:
-                for bar in bars:
-                    height = bar.get_height()
-                    if height > 0:
-                        ax3.annotate(f'{height:.2f}',
-                                   xy=(bar.get_x() + bar.get_width() / 2, height),
-                                   xytext=(0, 3),
-                                   textcoords="offset points",
-                                   ha='center', va='bottom', fontsize=8)
-            
-            # Key growth analysis (this part already has labels)
-            ax4 = axes[1, 1]
-            if any('final_key_count' in r for r in test_data):
-                key_growth = []
-                for db in databases:
-                    db_results = [r for r in test_data if r['database'] == db]
-                    if db_results:
-                        avg_growth = np.mean([r.get('final_key_count', 0) - r.get('initial_key_count', 0) 
-                                            for r in db_results])
-                        key_growth.append(avg_growth)
-                    else:
-                        key_growth.append(0)
-                
-                ax4.bar(databases, key_growth, alpha=0.8, color='green')
-                ax4.set_title('Average Key Growth')
-                ax4.set_ylabel('Keys Added')
-                ax4.grid(axis='y', alpha=0.3)
-                
-                # Add value labels
-                for i, height in enumerate(key_growth):
-                    if height != 0:
-                        ax4.annotate(f'{int(height)}',
-                                   xy=(i, height),
-                                   xytext=(0, 3),
-                                   textcoords="offset points",
-                                   ha='center', va='bottom', fontsize=8)
-            else:
-                ax4.text(0.5, 0.5, 'No key count data available', ha='center', va='center', transform=ax4.transAxes)
-                ax4.set_title('Key Growth Data')
-            
-            plt.tight_layout()
-            test_slug = test_name.lower().replace(' ', '_').replace('wordpress', 'wp')
-            output_file = self.output_dir / f'{test_slug}_detailed.png'
-            plt.savefig(output_file, dpi=self.dpi, bbox_inches=self.bbox_inches)
-            plt.close()
-            print(f"Generated: {output_file}")
+                ax.text(0.5, 0.5, f'No raw data\navailable for {db}', 
+                       ha='center', va='center', transform=ax.transAxes)
+                ax.set_title(f'{db} - No Data')
+        
+        plt.tight_layout()
+        output_file = self.output_dir / 'php_redis_iteration_variance.png'
+        plt.savefig(output_file, dpi=self.dpi, bbox_inches=self.bbox_inches)
+        plt.close()
+        print(f"Generated: {output_file}")
 
-    def create_summary_report(self, results, metadata):
-        """Enhanced summary report with conditional TLS handling"""
+    def create_confidence_interval_chart(self, results, metadata):
+        """New: Chart showing confidence intervals for performance measurements"""
+        if not results:
+            return
+            
+        fig, ax = plt.subplots(1, 1, figsize=(14, 10))
+        
+        # Get metadata
+        first_test = next(iter(metadata.values())) if metadata else {}
+        iterations = first_test.get('test_methodology', {}).get('iterations_per_test', 1)
+        thread_variant = first_test.get('thread_variant', 'unknown')
+        
+        fig.suptitle(f'95% Confidence Intervals for Performance Measurements\n'
+                    f'{iterations} iterations per test | Thread variant: {thread_variant}', 
+                    fontsize=16, fontweight='bold')
+        
+        databases = ['Redis', 'KeyDB', 'Dragonfly', 'Valkey']
+        y_positions = []
+        labels = []
+        
+        y_pos = 0
+        for db in databases:
+            # Non-TLS data
+            non_tls_results = []
+            for test_data in results.values():
+                result = next((r for r in test_data if r['database'] == db and not r.get('tls', False)), None)
+                if result:
+                    non_tls_results.append(result)
+            
+            if non_tls_results:
+                result = non_tls_results[0]
+                mean_ops = result['ops_per_sec']
+                ci = result.get('ops_per_sec_confidence_interval_95', {})
+                
+                if isinstance(ci, dict) and 'lower' in ci and 'upper' in ci:
+                    lower = ci['lower']
+                    upper = ci['upper']
+                    margin = ci.get('margin_error', (upper - lower) / 2)
+                    
+                    # Plot confidence interval
+                    ax.errorbar(mean_ops, y_pos, xerr=margin, 
+                              fmt='o', markersize=10, capsize=8, capthick=2,
+                              color=self.colors.get(db, '#666666'), alpha=0.8)
+                    
+                    # Add text annotation
+                    ax.text(mean_ops, y_pos + 0.1, f'{int(mean_ops)}±{int(margin)}', 
+                           ha='center', va='bottom', fontweight='bold')
+                    
+                    y_positions.append(y_pos)
+                    labels.append(f'{db} (Non-TLS)')
+                    y_pos += 1
+            
+            # TLS data if available
+            tls_results = []
+            for test_data in results.values():
+                result = next((r for r in test_data if r['database'] == db and r.get('tls', False)), None)
+                if result:
+                    tls_results.append(result)
+            
+            if tls_results:
+                result = tls_results[0]
+                mean_ops = result['ops_per_sec']
+                ci = result.get('ops_per_sec_confidence_interval_95', {})
+                
+                if isinstance(ci, dict) and 'lower' in ci and 'upper' in ci:
+                    lower = ci['lower']
+                    upper = ci['upper']
+                    margin = ci.get('margin_error', (upper - lower) / 2)
+                    
+                    # Plot confidence interval with different style
+                    ax.errorbar(mean_ops, y_pos, xerr=margin, 
+                              fmt='s', markersize=8, capsize=8, capthick=2,
+                              color=self.colors.get(db, '#666666'), alpha=0.6,
+                              linestyle='--')
+                    
+                    ax.text(mean_ops, y_pos + 0.1, f'{int(mean_ops)}±{int(margin)}', 
+                           ha='center', va='bottom', fontweight='bold')
+                    
+                    y_positions.append(y_pos)
+                    labels.append(f'{db} (TLS)')
+                    y_pos += 1
+        
+        ax.set_yticks(y_positions)
+        ax.set_yticklabels(labels)
+        ax.set_xlabel('Operations per Second')
+        ax.set_ylabel('Database Configuration')
+        ax.grid(True, alpha=0.3)
+        
+        # Add legend
+        from matplotlib.lines import Line2D
+        legend_elements = [
+            Line2D([0], [0], marker='o', color='gray', linestyle='-', markersize=8, label='Non-TLS'),
+            Line2D([0], [0], marker='s', color='gray', linestyle='--', markersize=6, label='TLS')
+        ]
+        ax.legend(handles=legend_elements, loc='lower right')
+        
+        plt.tight_layout()
+        output_file = self.output_dir / 'php_redis_confidence_intervals.png'
+        plt.savefig(output_file, dpi=self.dpi, bbox_inches=self.bbox_inches)
+        plt.close()
+        print(f"Generated: {output_file}")
+
+    def create_enhanced_summary_report(self, results, metadata, raw_data):
+        """Enhanced summary report with statistical analysis"""
         if not results:
             print("No results to summarize")
             return
@@ -614,162 +543,255 @@ class PHPRedisChartsGenerator:
         first_test = next(iter(metadata.values())) if metadata else {}
         php_version = first_test.get('php_version', 'Unknown')
         test_config = first_test.get('test_configuration', {})
+        test_methodology = first_test.get('test_methodology', {})
+        thread_variant = first_test.get('thread_variant', 'unknown')
+        iterations = test_methodology.get('iterations_per_test', 1)
         
         tls_status = "with TLS" if has_tls_data else "non-TLS only"
-        report = f"# WordPress Redis Benchmark Results ({tls_status})\n\n"
+        report = f"# Enhanced WordPress Redis Benchmark Results ({tls_status})\n\n"
         report += f"**Generated:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
         report += f"**PHP Version:** {php_version}\n"
-        report += f"**Test Configuration:**\n"
-        report += f"- Flush Before Test: {'Yes' if test_config.get('flush_before_test') else 'No'}\n"
-        report += f"- TLS Testing: {'Yes' if test_config.get('test_tls') else 'No'}\n"
-        report += f"- TLS Results Found: {'Yes' if has_tls_data else 'No'}\n\n"
+        report += f"**Thread Variant:** {thread_variant}\n"
+        report += f"**Test Methodology:** {iterations} iterations per test with statistical analysis\n\n"
         
-        # Performance summary table
-        report += "## Performance Summary\n\n"
-        report += "| Test | Database | Mode | Ops/sec | Avg Latency (ms) | P99 Latency (ms) | Error Rate (%) | Key Growth |\n"
-        report += "|------|----------|------|---------|------------------|------------------|----------------|------------|\n"
+        # Statistical methodology section
+        report += "## Statistical Methodology\n\n"
+        report += f"- **Iterations per Test:** {iterations}\n"
+        report += f"- **Statistical Measures:** Standard deviation, coefficient of variation, 95% confidence intervals\n"
+        report += f"- **Quality Assessment:** Based on coefficient of variation thresholds\n"
+        if test_methodology.get('iteration_pause_ms'):
+            report += f"- **Iteration Pause:** {test_methodology['iteration_pause_ms']}ms between iterations\n"
+        report += "\n"
+        
+        # Quality thresholds explanation
+        report += "### Measurement Quality Thresholds\n\n"
+        quality_thresholds = test_methodology.get('quality_thresholds', {
+            'excellent': 0.02, 'good': 0.05, 'fair': 0.10
+        })
+        report += f"- **🟢 Excellent:** CV < {quality_thresholds.get('excellent', 0.02)*100:.0f}%\n"
+        report += f"- **🟡 Good:** CV < {quality_thresholds.get('good', 0.05)*100:.0f}%\n"
+        report += f"- **🟠 Fair:** CV < {quality_thresholds.get('fair', 0.10)*100:.0f}%\n"
+        report += f"- **🔴 Poor:** CV ≥ {quality_thresholds.get('fair', 0.10)*100:.0f}%\n\n"
+        
+        # Enhanced performance table
+        report += "## Detailed Performance Results\n\n"
+        headers = [
+            'Database', 'Mode', 'Ops/sec', '±StdDev', 'CV%', 'Quality', 
+            'Latency(ms)', '±StdDev', '95% CI Lower', '95% CI Upper', 'Iterations'
+        ]
+        
+        report += "| " + " | ".join(headers) + " |\n"
+        report += "| " + " | ".join(["---"] * len(headers)) + " |\n"
         
         for test_name, test_data in results.items():
             for result in test_data:
                 mode = "TLS" if result.get('tls', False) else "Non-TLS"
-                key_growth = result.get('final_key_count', 0) - result.get('initial_key_count', 0)
+                ci = result.get('ops_per_sec_confidence_interval_95', {})
                 
-                report += f"| {test_name.replace('WordPress ', '')} | {result['database']} | {mode} | "
-                report += f"{result['ops_per_sec']:.2f} | {result.get('avg_latency', 0):.2f} | "
-                report += f"{result.get('p99_latency', 0):.2f} | {result.get('error_rate', 0):.2f} | {key_growth} |\n"
+                # Quality indicator
+                quality = result.get('measurement_quality', 'unknown')
+                quality_icon = {'excellent': '🟢', 'good': '🟡', 'fair': '🟠', 'poor': '🔴'}.get(quality, '⚪')
+                
+                row = [
+                    result['database'],
+                    mode,
+                    f"{result['ops_per_sec']:.0f}",
+                    f"±{result.get('ops_per_sec_stddev', 0):.0f}",
+                    f"{(result.get('ops_per_sec_cv', 0) * 100):.1f}%",
+                    f"{quality_icon} {quality}",
+                    f"{result['avg_latency']:.3f}",
+                    f"±{result.get('latency_stddev', 0):.3f}",
+                    f"{ci.get('lower', 0):.0f}",
+                    f"{ci.get('upper', 0):.0f}",
+                    str(result.get('iterations_count', iterations))
+                ]
+                
+                report += "| " + " | ".join(row) + " |\n"
         
-        # Top performers analysis
-        report += "\n## Performance Analysis\n\n"
+        # Statistical insights section
+        report += "\n## Statistical Insights\n\n"
         
         all_results = []
         for test_data in results.values():
             all_results.extend(test_data)
         
         if all_results:
-            # Sort by ops/sec
-            sorted_by_ops = sorted(all_results, key=lambda x: x['ops_per_sec'], reverse=True)
+            # Reliability analysis
+            reliable_results = [r for r in all_results if r.get('measurement_quality', 'poor') != 'poor']
+            total_tests = len(all_results)
+            reliable_count = len(reliable_results)
             
-            report += "### Highest Throughput (Top 5)\n\n"
-            for i, result in enumerate(sorted_by_ops[:5]):
-                mode = "TLS" if result.get('tls', False) else "Non-TLS"
-                report += f"{i+1}. **{result['database']} ({mode})**: {result['ops_per_sec']:.2f} ops/sec\n"
+            report += f"### Measurement Reliability\n\n"
+            report += f"- **Total measurements:** {total_tests}\n"
+            report += f"- **Reliable measurements:** {reliable_count}/{total_tests} ({(reliable_count/total_tests)*100:.1f}%)\n"
             
-            # Sort by latency (lowest first)
-            sorted_by_latency = sorted([r for r in all_results if r.get('avg_latency', 0) > 0], 
-                                     key=lambda x: x.get('avg_latency', float('inf')))
+            if reliable_count < total_tests:
+                unreliable_count = total_tests - reliable_count
+                report += f"- **⚠️ Unreliable measurements:** {unreliable_count} (high variability detected)\n"
+                report += f"- **Recommendation:** Consider retesting under controlled conditions\n"
             
-            if sorted_by_latency:
-                report += "\n### Lowest Latency (Top 5)\n\n"
-                for i, result in enumerate(sorted_by_latency[:5]):
+            # Performance rankings
+            if reliable_results:
+                sorted_by_ops = sorted(reliable_results, key=lambda x: x['ops_per_sec'], reverse=True)
+                
+                report += f"\n### Performance Rankings (Reliable Measurements Only)\n\n"
+                for i, result in enumerate(sorted_by_ops[:5]):
                     mode = "TLS" if result.get('tls', False) else "Non-TLS"
-                    report += f"{i+1}. **{result['database']} ({mode})**: {result.get('avg_latency', 0):.2f} ms\n"
+                    quality = result.get('measurement_quality', 'unknown')
+                    quality_icon = {'excellent': '🟢', 'good': '🟡', 'fair': '🟠', 'poor': '🔴'}.get(quality, '⚪')
+                    cv = (result.get('ops_per_sec_cv', 0) * 100)
+                    
+                    report += f"{i+1}. **{result['database']} ({mode})**: {result['ops_per_sec']:.0f} ops/sec "
+                    report += f"({quality_icon} {quality}, CV: {cv:.1f}%)\n"
             
-            # TLS vs Non-TLS comparison if TLS data exists
+            # TLS vs Non-TLS comparison if applicable
             if has_tls_data:
-                report += "\n### TLS vs Non-TLS Performance Impact\n\n"
+                report += f"\n### TLS Performance Impact\n\n"
                 
-                tls_results = [r for r in all_results if r.get('tls', False)]
-                non_tls_results = [r for r in all_results if not r.get('tls', False)]
-                
-                if tls_results and non_tls_results:
-                    for db in ['Redis', 'KeyDB', 'Dragonfly', 'Valkey']:
-                        db_tls = [r for r in tls_results if r['database'] == db]
-                        db_non_tls = [r for r in non_tls_results if r['database'] == db]
+                for db in ['Redis', 'KeyDB', 'Dragonfly', 'Valkey']:
+                    tls_results = [r for r in all_results if r['database'] == db and r.get('tls', False)]
+                    non_tls_results = [r for r in all_results if r['database'] == db and not r.get('tls', False)]
+                    
+                    if tls_results and non_tls_results:
+                        tls_ops = tls_results[0]['ops_per_sec']
+                        non_tls_ops = non_tls_results[0]['ops_per_sec']
+                        impact = ((non_tls_ops - tls_ops) / non_tls_ops) * 100
                         
-                        if db_tls and db_non_tls:
-                            tls_avg_ops = np.mean([r['ops_per_sec'] for r in db_tls])
-                            non_tls_avg_ops = np.mean([r['ops_per_sec'] for r in db_non_tls])
-                            impact = ((non_tls_avg_ops - tls_avg_ops) / non_tls_avg_ops) * 100
-                            
-                            report += f"- **{db}**: {impact:+.1f}% performance impact with TLS "
-                            report += f"({non_tls_avg_ops:.0f} → {tls_avg_ops:.0f} ops/sec)\n"
+                        # Check if difference is significant based on confidence intervals
+                        tls_ci = tls_results[0].get('ops_per_sec_confidence_interval_95', {})
+                        non_tls_ci = non_tls_results[0].get('ops_per_sec_confidence_interval_95', {})
+                        
+                        significant = ""
+                        if tls_ci.get('upper', 0) < non_tls_ci.get('lower', 0):
+                            significant = " (statistically significant)"
+                        elif abs(impact) < 5:
+                            significant = " (minimal impact)"
+                        
+                        report += f"- **{db}**: {impact:+.1f}% performance impact with TLS{significant}\n"
+                        report += f"  - Non-TLS: {non_tls_ops:.0f} ± {non_tls_results[0].get('ops_per_sec_stddev', 0):.0f} ops/sec\n"
+                        report += f"  - TLS: {tls_ops:.0f} ± {tls_results[0].get('ops_per_sec_stddev', 0):.0f} ops/sec\n"
             
-            # Database state analysis
-            if any('initial_key_count' in r for r in all_results):
-                report += "\n### Database State Analysis\n\n"
+            # WordPress-specific analysis
+            report += f"\n### WordPress Performance Estimates\n\n"
+            if reliable_results:
+                best_result = max(reliable_results, key=lambda x: x['ops_per_sec'])
+                best_ops = best_result['ops_per_sec']
+                best_db = best_result['database']
+                best_mode = "TLS" if best_result.get('tls', False) else "Non-TLS"
                 
-                flush_results = [r for r in all_results if r.get('flushed_before_test', False)]
-                no_flush_results = [r for r in all_results if not r.get('flushed_before_test', False)]
+                # Estimate concurrent users and page loads
+                light_pages_per_sec = best_ops / 10   # 10 cache ops per light page
+                heavy_pages_per_sec = best_ops / 50   # 50 cache ops per heavy page
+                concurrent_users = best_ops / 30      # 30 cache ops per user per second
                 
-                if flush_results:
-                    avg_growth_flush = np.mean([r.get('final_key_count', 0) - r.get('initial_key_count', 0) 
-                                              for r in flush_results])
-                    report += f"- Average key growth (with flush): {avg_growth_flush:.1f} keys\n"
-                
-                if no_flush_results:
-                    avg_growth_no_flush = np.mean([r.get('final_key_count', 0) - r.get('initial_key_count', 0) 
-                                                 for r in no_flush_results])
-                    report += f"- Average key growth (without flush): {avg_growth_no_flush:.1f} keys\n"
+                report += f"**Best Performer:** {best_db} ({best_mode}) - {best_ops:.0f} ops/sec\n\n"
+                report += f"**Estimated WordPress Capacity:**\n"
+                report += f"- Light pages: ~{light_pages_per_sec:.0f} pages/sec\n"
+                report += f"- Heavy pages: ~{heavy_pages_per_sec:.0f} pages/sec\n" 
+                report += f"- Concurrent users: ~{concurrent_users:.0f} users (30 ops/user/sec)\n"
+                report += f"- Daily page views: ~{light_pages_per_sec * 86400:.0f} (light pages)\n\n"
         
-        # Test metadata
-        report += "\n## Test Metadata\n\n"
-        for test_name, meta in metadata.items():
-            report += f"### {test_name}\n"
-            report += f"- Results Count: {meta.get('results_count', 'Unknown')}\n"
-            report += f"- Timestamp: {meta.get('timestamp', 'Unknown')}\n"
-            if meta.get('test_configuration'):
-                config = meta['test_configuration']
-                report += f"- Configuration: {config}\n"
-            report += "\n"
+        # Raw data summary if available
+        if raw_data:
+            report += f"\n## Raw Data Analysis\n\n"
+            report += f"Raw iteration data is available for detailed analysis.\n"
+            report += f"Files generated:\n"
+            report += f"- Individual iteration charts showing consistency\n"
+            report += f"- Coefficient of variation analysis\n"
+            report += f"- Statistical confidence intervals\n\n"
         
-        # TLS connection status
-        if not has_tls_data and first_test.get('test_configuration', {}).get('test_tls', False):
-            report += "\n## TLS Connection Issues\n\n"
-            report += "TLS testing was enabled but no successful TLS connections were recorded.\n"
-            report += "This may indicate:\n"
-            report += "- TLS ports are not accessible\n"
-            report += "- TLS certificates are missing or invalid\n"
-            report += "- Server TLS configuration issues\n"
-            report += "- PHP Redis extension TLS compatibility issues\n\n"
+        # Recommendations
+        report += f"\n## Recommendations\n\n"
         
-        output_file = self.output_dir / "php_redis_benchmark_summary.md"
+        if reliable_results:
+            best_db = max(reliable_results, key=lambda x: x['ops_per_sec'])['database']
+            report += f"1. **Database Selection:** {best_db} shows the best performance for WordPress workloads\n"
+        
+        unreliable_count = len([r for r in all_results if r.get('measurement_quality', 'poor') == 'poor'])
+        if unreliable_count > 0:
+            report += f"2. **Testing Environment:** {unreliable_count} measurements showed high variability - consider:\n"
+            report += f"   - Running tests during low system load\n"
+            report += f"   - Increasing iteration count for better statistical power\n"
+            report += f"   - Checking for background processes affecting performance\n"
+        
+        report += f"3. **Production Deployment:** Use these results as baseline for capacity planning\n"
+        report += f"4. **Monitoring:** Implement performance monitoring to validate production results\n"
+        
+        # File output
+        output_file = self.output_dir / "php_redis_enhanced_benchmark_summary.md"
         with open(output_file, 'w') as f:
             f.write(report)
-        print(f"Generated: {output_file}") 
+        print(f"Generated: {output_file}")
+
+    def _average_results(self, results_list):
+        """Helper: Average multiple results"""
+        if len(results_list) == 1:
+            return results_list[0]
+        
+        # Simple averaging for demonstration
+        avg_result = results_list[0].copy()
+        numeric_fields = ['ops_per_sec', 'avg_latency', 'p95_latency', 'p99_latency', 'error_rate']
+        
+        for field in numeric_fields:
+            values = [r.get(field, 0) for r in results_list if field in r]
+            if values:
+                avg_result[field] = sum(values) / len(values)
+        
+        return avg_result
 
     def generate_all_charts(self):
-        """Generate all charts and reports with enhanced TLS handling"""
-        print("Loading test results...")
-        results, metadata = self.load_test_results()
+        """Generate all enhanced charts and reports"""
+        print("Loading test results with statistical analysis...")
+        results, metadata, raw_data = self.load_test_results()
         
         if not results:
             print("No results found to generate charts")
             return
         
-        # Check overall TLS status
-        has_any_tls = False
-        for test_data in results.values():
-            if any(r.get('tls', False) for r in test_data):
-                has_any_tls = True
-                break
+        # Check overall statistics
+        total_results = sum(len(test_data) for test_data in results.values())
+        reliable_results = sum(1 for test_data in results.values() 
+                             for result in test_data 
+                             if result.get('measurement_quality', 'poor') != 'poor')
         
-        print(f"Generating charts for {len(results)} test types...")
-        print(f"TLS data available: {has_any_tls}")
+        iterations = 1
+        if metadata:
+            first_test = next(iter(metadata.values()))
+            iterations = first_test.get('test_methodology', {}).get('iterations_per_test', 1)
+        
+        print(f"Generating enhanced charts for {len(results)} test types...")
+        print(f"Total measurements: {total_results}")
+        print(f"Reliable measurements: {reliable_results}/{total_results}")
+        print(f"Iterations per test: {iterations}")
+        print(f"Raw data available: {'Yes' if raw_data else 'No'}")
         
         # Generate all chart types
-        self.create_performance_comparison_chart(results, metadata)
-        self.create_latency_comparison_chart(results, metadata)
-        self.create_database_state_chart(results, metadata)
-        self.create_test_specific_charts(results, metadata)
-        self.create_summary_report(results, metadata)
+        self.create_statistical_performance_chart(results, metadata)
+        self.create_measurement_reliability_chart(results, metadata)
+        self.create_confidence_interval_chart(results, metadata)
         
-        print(f"All charts and reports generated in {self.output_dir}")
+        if raw_data:
+            self.create_iteration_variance_chart(raw_data)
+        
+        self.create_enhanced_summary_report(results, metadata, raw_data)
+        
+        print(f"\nAll enhanced charts and reports generated in {self.output_dir}")
         
         # Print summary of generated files
         png_files = list(self.output_dir.glob("*.png"))
         md_files = list(self.output_dir.glob("*.md"))
         
         print(f"\nGenerated files:")
-        print(f"  Charts: {len(png_files)} PNG files")
-        print(f"  Reports: {len(md_files)} Markdown files")
+        print(f"  📊 Charts: {len(png_files)} PNG files")
+        print(f"  📄 Reports: {len(md_files)} Markdown files")
+        print(f"  📈 Statistical Analysis: Enhanced with {iterations}-run methodology")
         
-        if has_any_tls:
-            print("  ✓ Charts include both TLS and non-TLS data")
-        else:
-            print("  ℹ Charts show non-TLS data only (no TLS connections succeeded)")
+        if reliable_results < total_results:
+            print(f"  ⚠️  Note: {total_results - reliable_results} measurements showed high variability")
+            print(f"     Consider reviewing test conditions for improved reliability")
 
 def main():
-    parser = argparse.ArgumentParser(description='Generate enhanced charts from PHP Redis benchmark results')
+    parser = argparse.ArgumentParser(description='Generate enhanced statistical charts from PHP Redis benchmark results')
     parser.add_argument('--results-dir', default='php_benchmark_results', 
                        help='Directory containing JSON result files')
     parser.add_argument('--output-dir', default='php_benchmark_charts', 
@@ -778,7 +800,7 @@ def main():
     args = parser.parse_args()
     
     # Create generator and run
-    generator = PHPRedisChartsGenerator(args.results_dir, args.output_dir)
+    generator = EnhancedPHPRedisChartsGenerator(args.results_dir, args.output_dir)
     generator.generate_all_charts()
 
 if __name__ == "__main__":
