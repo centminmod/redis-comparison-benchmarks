@@ -1,0 +1,165 @@
+{
+    "test_name": "WordPress Object Cache Test",
+    "timestamp": "2025-06-07T12:43:54+00:00",
+    "php_version": "8.4.7",
+    "redis_extension_version": "6.2.0",
+    "thread_variant": "2",
+    "thread_config": {
+        "redis_io_threads": 2,
+        "keydb_server_threads": 2,
+        "dragonfly_proactor_threads": 2,
+        "valkey_io_threads": 2
+    },
+    "test_configuration": {
+        "flush_before_test": true,
+        "test_tls": true,
+        "tls_skip_verify": true,
+        "output_dir": "./benchmarklogs-2t",
+        "thread_variant": "2",
+        "database_configurations": {
+            "Redis": {
+                "host": "127.0.0.1",
+                "port": 6379,
+                "tls_port": 6390,
+                "io_threads": 2
+            },
+            "KeyDB": {
+                "host": "127.0.0.1",
+                "port": 6380,
+                "tls_port": 6391,
+                "server_threads": 2
+            },
+            "Dragonfly": {
+                "host": "127.0.0.1",
+                "port": 6381,
+                "tls_port": 6392,
+                "proactor_threads": 2
+            },
+            "Valkey": {
+                "host": "127.0.0.1",
+                "port": 6382,
+                "tls_port": 6393,
+                "io_threads": 2
+            }
+        }
+    },
+    "results_count": 4,
+    "results": [
+        {
+            "operations": 380474,
+            "errors": 0,
+            "duration": 30.000033140182495,
+            "ops_per_sec": 12682.452656706815,
+            "avg_latency": 0.07857545684933323,
+            "p95_latency": 0.09512901306152344,
+            "p99_latency": 0.10585784912109375,
+            "error_rate": 0,
+            "final_key_count": 86750,
+            "database": "Redis",
+            "tls": false,
+            "port": 6379,
+            "flushed_before_test": true,
+            "initial_key_count": 86704,
+            "test_timestamp": "2025-06-07T12:42:23+00:00",
+            "php_version": "8.4.7",
+            "redis_extension_version": "6.2.0",
+            "thread_variant": "2",
+            "thread_config": {
+                "redis_io_threads": 2,
+                "keydb_server_threads": 2,
+                "dragonfly_proactor_threads": 2,
+                "valkey_io_threads": 2
+            },
+            "database_thread_config": {
+                "io_threads": 2
+            }
+        },
+        {
+            "operations": 510859,
+            "errors": 0,
+            "duration": 30.00002408027649,
+            "ops_per_sec": 17028.619664871007,
+            "avg_latency": 0.05841594199840591,
+            "p95_latency": 0.07295608520507812,
+            "p99_latency": 0.08392333984375,
+            "error_rate": 0,
+            "final_key_count": 107129,
+            "database": "KeyDB",
+            "tls": false,
+            "port": 6380,
+            "flushed_before_test": true,
+            "initial_key_count": 107518,
+            "test_timestamp": "2025-06-07T12:42:53+00:00",
+            "php_version": "8.4.7",
+            "redis_extension_version": "6.2.0",
+            "thread_variant": "2",
+            "thread_config": {
+                "redis_io_threads": 2,
+                "keydb_server_threads": 2,
+                "dragonfly_proactor_threads": 2,
+                "valkey_io_threads": 2
+            },
+            "database_thread_config": {
+                "server_threads": 2
+            }
+        },
+        {
+            "operations": 402275,
+            "errors": 0,
+            "duration": 30.000006914138794,
+            "ops_per_sec": 13409.163576239398,
+            "avg_latency": 0.07418723483029624,
+            "p95_latency": 0.09393692016601562,
+            "p99_latency": 0.10609626770019531,
+            "error_rate": 0,
+            "final_key_count": 90585,
+            "database": "Dragonfly",
+            "tls": false,
+            "port": 6381,
+            "flushed_before_test": true,
+            "initial_key_count": 94088,
+            "test_timestamp": "2025-06-07T12:43:24+00:00",
+            "php_version": "8.4.7",
+            "redis_extension_version": "6.2.0",
+            "thread_variant": "2",
+            "thread_config": {
+                "redis_io_threads": 2,
+                "keydb_server_threads": 2,
+                "dragonfly_proactor_threads": 2,
+                "valkey_io_threads": 2
+            },
+            "database_thread_config": {
+                "proactor_threads": 2
+            }
+        },
+        {
+            "operations": 587667,
+            "errors": 0,
+            "duration": 30.000015020370483,
+            "ops_per_sec": 19588.890192253733,
+            "avg_latency": 0.050785272281158984,
+            "p95_latency": 0.06580352783203125,
+            "p99_latency": 0.07510185241699219,
+            "error_rate": 0,
+            "final_key_count": 116981,
+            "database": "Valkey",
+            "tls": false,
+            "port": 6382,
+            "flushed_before_test": true,
+            "initial_key_count": 118870,
+            "test_timestamp": "2025-06-07T12:43:54+00:00",
+            "php_version": "8.4.7",
+            "redis_extension_version": "6.2.0",
+            "thread_variant": "2",
+            "thread_config": {
+                "redis_io_threads": 2,
+                "keydb_server_threads": 2,
+                "dragonfly_proactor_threads": 2,
+                "valkey_io_threads": 2
+            },
+            "database_thread_config": {
+                "io_threads": 2
+            }
+        }
+    ]
+}

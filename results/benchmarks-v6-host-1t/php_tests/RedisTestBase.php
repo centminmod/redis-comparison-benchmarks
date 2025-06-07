@@ -13,6 +13,7 @@
  * - Comprehensive error handling
  * - Debug output and verification
  * - Repository root path handling
+ * - Thread-aware configuration and reporting
  */
 
 class RedisTestBase {
@@ -30,12 +31,20 @@ class RedisTestBase {
     protected $debug_mode = false;
     protected $tls_skip_verify = true;
     
+    // NEW: Thread configuration properties
+    protected $thread_variant = 'unknown';
+    protected $thread_config = [];
+    
     public function __construct($config = []) {
         $this->output_dir = $config['output_dir'] ?? 'php_benchmark_results';
         $this->test_both_tls = $config['test_tls'] ?? true;
         $this->flush_before_test = $config['flush_before_test'] ?? false;
         $this->debug_mode = $config['debug'] ?? false;
         $this->tls_skip_verify = $config['tls_skip_verify'] ?? true;
+        
+        // NEW: Handle thread configuration
+        $this->thread_variant = $config['thread_variant'] ?? 'unknown';
+        $this->thread_config = $config['thread_config'] ?? [];
         
         // Override database configurations if provided
         if (isset($config['databases'])) {
@@ -59,6 +68,12 @@ class RedisTestBase {
         $this->debugLog("Flush before test: " . ($this->flush_before_test ? 'enabled' : 'disabled'));
         $this->debugLog("Redis extension version: " . $this->getRedisExtensionVersion());
         $this->debugLog("TLS skip verify: " . ($this->tls_skip_verify ? 'enabled' : 'disabled'));
+        
+        // NEW: Log thread configuration
+        $this->debugLog("Thread variant: {$this->thread_variant}");
+        if (!empty($this->thread_config)) {
+            $this->debugLog("Thread configuration: " . json_encode($this->thread_config));
+        }
     }
     
     /**
@@ -139,10 +154,86 @@ class RedisTestBase {
         }
     }
     
+    /**
+     * Display thread-specific configuration for a database
+     */
+    protected function displayDatabaseThreadConfig($db_name, $config) {
+        $thread_info = [];
+        
+        // Add thread information based on database type
+        switch ($db_name) {
+            case 'Redis':
+                if (isset($config['io_threads'])) {
+                    $thread_info[] = "IO Threads: {$config['io_threads']}";
+                }
+                break;
+            case 'KeyDB':
+                if (isset($config['server_threads'])) {
+                    $thread_info[] = "Server Threads: {$config['server_threads']}";
+                }
+                break;
+            case 'Dragonfly':
+                if (isset($config['proactor_threads'])) {
+                    $thread_info[] = "Proactor Threads: {$config['proactor_threads']}";
+                }
+                break;
+            case 'Valkey':
+                if (isset($config['io_threads'])) {
+                    $thread_info[] = "IO Threads: {$config['io_threads']}";
+                }
+                break;
+        }
+        
+        if (!empty($thread_info)) {
+            echo "  Configuration: " . implode(', ', $thread_info) . "\n";
+        }
+    }
+    
+    /**
+     * Extract thread configuration specific to a database
+     */
+    protected function extractDatabaseThreadConfig($db_name, $config) {
+        $thread_config = [];
+        
+        switch ($db_name) {
+            case 'Redis':
+                if (isset($config['io_threads'])) {
+                    $thread_config['io_threads'] = $config['io_threads'];
+                }
+                break;
+            case 'KeyDB':
+                if (isset($config['server_threads'])) {
+                    $thread_config['server_threads'] = $config['server_threads'];
+                }
+                break;
+            case 'Dragonfly':
+                if (isset($config['proactor_threads'])) {
+                    $thread_config['proactor_threads'] = $config['proactor_threads'];
+                }
+                break;
+            case 'Valkey':
+                if (isset($config['io_threads'])) {
+                    $thread_config['io_threads'] = $config['io_threads'];
+                }
+                break;
+        }
+        
+        return $thread_config;
+    }
+    
     public function run() {
         echo "Starting {$this->test_name}...\n";
         echo "Timestamp: " . date('Y-m-d H:i:s') . " UTC\n";
         echo "Redis Extension Version: " . $this->getRedisExtensionVersion() . "\n";
+        
+        // NEW: Display thread configuration information
+        echo "Thread Variant: {$this->thread_variant}\n";
+        if (!empty($this->thread_config)) {
+            echo "Thread Configuration:\n";
+            foreach ($this->thread_config as $db => $threads) {
+                echo "  {$db}: {$threads} threads\n";
+            }
+        }
         
         // Validate TLS certificates if TLS testing is enabled
         $tls_ready_databases = [];
@@ -183,6 +274,9 @@ class RedisTestBase {
         
         foreach ($this->databases as $db_name => $config) {
             echo "Testing {$db_name}...\n";
+            
+            // NEW: Display thread-specific configuration for this database
+            $this->displayDatabaseThreadConfig($db_name, $config);
             
             // Test non-TLS
             $redis = $this->connectRedis($config['host'], $config['port'], false);
@@ -258,6 +352,14 @@ class RedisTestBase {
             $result['test_timestamp'] = date('c');
             $result['php_version'] = PHP_VERSION;
             $result['redis_extension_version'] = $this->getRedisExtensionVersion();
+            
+            // NEW: Add thread configuration metadata
+            $result['thread_variant'] = $this->thread_variant;
+            $result['thread_config'] = $this->thread_config;
+            
+            // Add database-specific thread information
+            $db_config = $this->databases[$db_name] ?? [];
+            $result['database_thread_config'] = $this->extractDatabaseThreadConfig($db_name, $db_config);
             
             // Get final database state
             $final_keys = $redis->dbSize();
@@ -421,6 +523,7 @@ class RedisTestBase {
         if (empty($tls_results)) {
             echo "\n" . str_repeat("=", 60) . "\n";
             echo "TLS PERFORMANCE COMPARISON\n";
+            echo "Thread Variant: {$this->thread_variant}\n";  // NEW
             echo str_repeat("=", 60) . "\n";
             echo "No successful TLS connections for performance comparison.\n";
             echo "All databases tested with non-TLS only.\n";
@@ -430,6 +533,7 @@ class RedisTestBase {
         
         echo "\n" . str_repeat("=", 60) . "\n";
         echo "TLS vs NON-TLS PERFORMANCE COMPARISON\n";
+        echo "Thread Variant: {$this->thread_variant}\n";  // NEW
         echo str_repeat("=", 60) . "\n";
         
         foreach ($this->databases as $db_name => $config) {
@@ -512,11 +616,20 @@ class RedisTestBase {
             'timestamp' => date('c'),
             'php_version' => PHP_VERSION,
             'redis_extension_version' => $this->getRedisExtensionVersion(),
+            
+            // NEW: Add thread configuration to metadata
+            'thread_variant' => $this->thread_variant,
+            'thread_config' => $this->thread_config,
+            
             'test_configuration' => [
                 'flush_before_test' => $this->flush_before_test,
                 'test_tls' => $this->test_both_tls,
                 'tls_skip_verify' => $this->tls_skip_verify,
-                'output_dir' => $this->output_dir
+                'output_dir' => $this->output_dir,
+                
+                // NEW: Include thread information in test configuration
+                'thread_variant' => $this->thread_variant,
+                'database_configurations' => $this->databases
             ],
             'results_count' => count($results),
             'results' => $results
@@ -539,7 +652,17 @@ class RedisTestBase {
         $content .= "**Test Date:** " . date('Y-m-d H:i:s') . " UTC\n";
         $content .= "**PHP Version:** " . PHP_VERSION . "\n";
         $content .= "**Redis Extension Version:** " . $this->getRedisExtensionVersion() . "\n";
-        $content .= "**Results Count:** " . count($results) . "\n\n";
+        $content .= "**Results Count:** " . count($results) . "\n";
+        
+        // NEW: Add thread configuration information
+        $content .= "**Thread Variant:** {$this->thread_variant}\n";
+        if (!empty($this->thread_config)) {
+            $content .= "**Thread Configuration:**\n";
+            foreach ($this->thread_config as $key => $value) {
+                $content .= "- {$key}: {$value}\n";
+            }
+        }
+        $content .= "\n";
         
         $content .= "## Test Configuration\n\n";
         $content .= "- **Flush Before Test:** " . ($this->flush_before_test ? 'Yes' : 'No') . "\n";
@@ -563,6 +686,8 @@ class RedisTestBase {
                         return is_float($val) ? number_format($val, 3) : $val;
                     } elseif (is_bool($val)) {
                         return $val ? 'true' : 'false';
+                    } elseif (is_array($val)) {
+                        return json_encode($val);
                     } else {
                         return $val;
                     }
@@ -597,6 +722,7 @@ class RedisTestBase {
         
         echo "\n" . str_repeat("=", 60) . "\n";
         echo "PERFORMANCE SUMMARY\n";
+        echo "Thread Variant: {$this->thread_variant}\n";  // NEW
         echo str_repeat("=", 60) . "\n";
         
         // Group results by database and TLS status

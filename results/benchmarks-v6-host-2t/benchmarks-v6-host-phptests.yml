@@ -1450,7 +1450,7 @@ jobs:
         chmod 644 tests/php/*.crt tests/php/*.pem
         chmod 600 tests/php/*.key
 
-        # debug: list what’s in tests/php now
+        # debug: list what's in tests/php now
         echo ">>> tests/php/ contents <<<"
         ls -alh tests/php/
 
@@ -1460,18 +1460,25 @@ jobs:
         # Configure test duration from environment variable in the source file
         sed -i "s/private \$test_duration = 30/private \$test_duration = ${PHP_TEST_DURATION}/" tests/php/wp_object_cache_test.php
         
-        # Create custom config using echo commands for reliability - in tests/php directory
+        # Create thread-aware custom config using echo commands for reliability - in tests/php directory
         echo '<?php' > tests/php/test_config.php
         echo 'return [' >> tests/php/test_config.php
         echo "    'duration' => ${PHP_TEST_DURATION}," >> tests/php/test_config.php
         echo "    'output_dir' => './benchmarklogs-${{ matrix.variant.threads }}t'," >> tests/php/test_config.php
         echo "    'test_tls' => true," >> tests/php/test_config.php
         echo "    'flush_before_test' => true," >> tests/php/test_config.php
+        echo "    'thread_variant' => '${{ matrix.variant.threads }}'," >> tests/php/test_config.php
+        echo "    'thread_config' => [" >> tests/php/test_config.php
+        echo "        'redis_io_threads' => ${{ matrix.variant.redis_io_threads }}," >> tests/php/test_config.php
+        echo "        'keydb_server_threads' => ${{ matrix.variant.keydb_server_threads }}," >> tests/php/test_config.php
+        echo "        'dragonfly_proactor_threads' => ${{ matrix.variant.dragonfly_proactor_threads }}," >> tests/php/test_config.php
+        echo "        'valkey_io_threads' => ${{ matrix.variant.valkey_io_threads }}" >> tests/php/test_config.php
+        echo "    ]," >> tests/php/test_config.php
         echo "    'databases' => [" >> tests/php/test_config.php
-        echo "        'Redis' => ['host' => '127.0.0.1', 'port' => 6379, 'tls_port' => 6390]," >> tests/php/test_config.php
-        echo "        'KeyDB' => ['host' => '127.0.0.1', 'port' => 6380, 'tls_port' => 6391]," >> tests/php/test_config.php
-        echo "        'Dragonfly' => ['host' => '127.0.0.1', 'port' => 6381, 'tls_port' => 6392]," >> tests/php/test_config.php
-        echo "        'Valkey' => ['host' => '127.0.0.1', 'port' => 6382, 'tls_port' => 6393]" >> tests/php/test_config.php
+        echo "        'Redis' => ['host' => '127.0.0.1', 'port' => 6379, 'tls_port' => 6390, 'io_threads' => ${{ matrix.variant.redis_io_threads }}]," >> tests/php/test_config.php
+        echo "        'KeyDB' => ['host' => '127.0.0.1', 'port' => 6380, 'tls_port' => 6391, 'server_threads' => ${{ matrix.variant.keydb_server_threads }}]," >> tests/php/test_config.php
+        echo "        'Dragonfly' => ['host' => '127.0.0.1', 'port' => 6381, 'tls_port' => 6392, 'proactor_threads' => ${{ matrix.variant.dragonfly_proactor_threads }}]," >> tests/php/test_config.php
+        echo "        'Valkey' => ['host' => '127.0.0.1', 'port' => 6382, 'tls_port' => 6393, 'io_threads' => ${{ matrix.variant.valkey_io_threads }}]" >> tests/php/test_config.php
         echo "    ]" >> tests/php/test_config.php
         echo "];" >> tests/php/test_config.php
         
