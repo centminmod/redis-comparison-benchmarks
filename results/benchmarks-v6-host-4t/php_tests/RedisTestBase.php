@@ -1131,7 +1131,7 @@ class RedisTestBase {
                 
                 // Quality indicator
                 $quality = $result['measurement_quality'] ?? 'unknown';
-                $quality_icon = ['excellent' => '🟢', 'good' => '🟡', 'fair' => '🟠', 'poor' => '🔴'].get($quality, '⚪');
+                $quality_icon = (['excellent' => '🟢', 'good' => '🟡', 'fair' => '🟠', 'poor' => '🔴'])[$quality] ?? '⚪';
                 
                 $row = [
                     $result['database'],
@@ -1252,9 +1252,18 @@ class RedisTestBase {
         }
         
         if (!empty($reliable_results)) {
-            $best_result = max($reliable_results, key: function($r) { return $r['ops_per_sec']; });
-            echo "- 🏆 Best: {$best_result['database']}" . ($best_result['tls'] ? ' (TLS)' : '') . 
-                 " - " . number_format($best_result['ops_per_sec'], 0) . " ops/sec\n";
+            $best_result = null;
+            $best_ops = 0;
+            foreach ($reliable_results as $result) {
+                if ($result['ops_per_sec'] > $best_ops) {
+                    $best_ops = $result['ops_per_sec'];
+                    $best_result = $result;
+                }
+            }
+            if ($best_result) {
+                echo "- 🏆 Best: {$best_result['database']}" . ($best_result['tls'] ? ' (TLS)' : '') . 
+                     " - " . number_format($best_result['ops_per_sec'], 0) . " ops/sec\n";
+            }
             
             $cv_values = array_filter(array_column($reliable_results, 'ops_per_sec_cv'));
             if (!empty($cv_values)) {
