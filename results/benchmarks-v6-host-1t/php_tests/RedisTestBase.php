@@ -290,9 +290,10 @@ class RedisTestBase {
             if ($tls) {
                 // Look for TLS certificates in current directory (tests/php)
                 $cert_files = [
-                    'local_cert' => './test.crt',
-                    'local_pk' => './test.key', 
-                    'cafile' => './ca.crt'
+                    // client identity, not the server certs
+                    'local_cert' => './client_cert.pem',
+                    'local_pk'   => './client_priv.pem',
+                    'cafile'     => './ca.crt'
                 ];
                 
                 // Check if certificates exist
