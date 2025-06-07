@@ -78,7 +78,7 @@ memtier_benchmark \
 
 ![Latency non-TLS](/results/benchmarks-v5-host-4t-jun7-2025/advcharts-latency-dist.png)
 
-Github Hosted runners using Azure VM instances have 4 vCPU threads, so expected that 4 thread results were fastest. With 8 thread results showing the performance when there are no enough vCPU threads to service the load.
+Github Hosted runners using Azure VM instances have 4 vCPU threads, so expected that 4 thread results were fastest. With 8 thread results showing the performance when there are not enough vCPU threads to service the load.
 
 | Threads | Redis ops/s (avg lat) | KeyDB ops/s (avg lat) | Dragonfly ops/s (avg lat) | Valkey ops/s (avg lat) |
 |-------:|----------------------:|----------------------:|--------------------------:|-----------------------:|
@@ -93,7 +93,7 @@ Github Hosted runners using Azure VM instances have 4 vCPU threads, so expected 
 
 ![Latency TLS](/results/benchmarks-v5-host-4t-jun7-2025/advcharts-latency-dist-tls.png)
 
-Github Hosted runners using Azure VM instances have 4 vCPU threads, so expected that 4 thread results were fastest. With 8 thread results showing the performance when there are no enough vCPU threads to service the load.
+Github Hosted runners using Azure VM instances have 4 vCPU threads, so expected that 4 thread results were fastest. With 8 thread results showing the performance when there are not enough vCPU threads to service the load.
 
 | Threads | Redis-TLS ops/s (avg lat) | KeyDB-TLS ops/s (avg lat) | Dragonfly-TLS ops/s (avg lat) | Valkey-TLS ops/s (avg lat) |
 |-------:|--------------------------:|--------------------------:|------------------------------:|---------------------------:|
