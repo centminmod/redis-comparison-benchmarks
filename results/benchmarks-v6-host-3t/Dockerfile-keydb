@@ -1,9 +1,0 @@
-FROM eqalpha/keydb:latest
-
-# Copy the KeyDB configuration file
-COPY keydb.conf /etc/keydb/keydb.conf
-
-# Expose the default KeyDB port (same as Redis)
-EXPOSE 6380
-
-CMD [ "keydb-server", "/etc/keydb/keydb.conf" ]
