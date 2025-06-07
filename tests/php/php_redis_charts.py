@@ -465,12 +465,14 @@ class PHPRedisChartsGenerator:
                 non_tls_ops = [next((r['ops_per_sec'] for r in non_tls_data if r['database'] == db), 0) for db in databases]
                 tls_ops = [next((r['ops_per_sec'] for r in tls_data if r['database'] == db), 0) for db in databases]
                 
-                ax1.bar(x - width/2, non_tls_ops, width, label='Non-TLS', alpha=0.8)
-                ax1.bar(x + width/2, tls_ops, width, label='TLS', alpha=0.6)
+                bars1 = ax1.bar(x - width/2, non_tls_ops, width, label='Non-TLS', alpha=0.8)
+                bars2 = ax1.bar(x + width/2, tls_ops, width, label='TLS', alpha=0.6)
+                bars_list = [bars1, bars2]
             else:
                 width = 0.6
                 non_tls_ops = [next((r['ops_per_sec'] for r in non_tls_data if r['database'] == db), 0) for db in databases]
-                ax1.bar(x, non_tls_ops, width, label='Non-TLS', alpha=0.8)
+                bars1 = ax1.bar(x, non_tls_ops, width, label='Non-TLS', alpha=0.8)
+                bars_list = [bars1]
             
             ax1.set_title('Operations per Second')
             ax1.set_ylabel('Ops/sec')
@@ -479,6 +481,17 @@ class PHPRedisChartsGenerator:
             ax1.legend()
             ax1.grid(axis='y', alpha=0.3)
             
+            # Add value labels for ops/sec
+            for bars in bars_list:
+                for bar in bars:
+                    height = bar.get_height()
+                    if height > 0:
+                        ax1.annotate(f'{int(height)}',
+                                   xy=(bar.get_x() + bar.get_width() / 2, height),
+                                   xytext=(0, 3),
+                                   textcoords="offset points",
+                                   ha='center', va='bottom', fontsize=8)
+            
             # Latency comparison
             ax2 = axes[0, 1]
             if has_tls_data and tls_data:
@@ -486,12 +499,14 @@ class PHPRedisChartsGenerator:
                 non_tls_lat = [next((r.get('avg_latency', 0) for r in non_tls_data if r['database'] == db), 0) for db in databases]
                 tls_lat = [next((r.get('avg_latency', 0) for r in tls_data if r['database'] == db), 0) for db in databases]
                 
-                ax2.bar(x - width/2, non_tls_lat, width, label='Non-TLS', alpha=0.8)
-                ax2.bar(x + width/2, tls_lat, width, label='TLS', alpha=0.6)
+                bars3 = ax2.bar(x - width/2, non_tls_lat, width, label='Non-TLS', alpha=0.8)
+                bars4 = ax2.bar(x + width/2, tls_lat, width, label='TLS', alpha=0.6)
+                bars_list_lat = [bars3, bars4]
             else:
                 width = 0.6
                 non_tls_lat = [next((r.get('avg_latency', 0) for r in non_tls_data if r['database'] == db), 0) for db in databases]
-                ax2.bar(x, non_tls_lat, width, label='Non-TLS', alpha=0.8)
+                bars3 = ax2.bar(x, non_tls_lat, width, label='Non-TLS', alpha=0.8)
+                bars_list_lat = [bars3]
             
             ax2.set_title('Average Latency')
             ax2.set_ylabel('Latency (ms)')
@@ -500,6 +515,17 @@ class PHPRedisChartsGenerator:
             ax2.legend()
             ax2.grid(axis='y', alpha=0.3)
             
+            # Add value labels for latency
+            for bars in bars_list_lat:
+                for bar in bars:
+                    height = bar.get_height()
+                    if height > 0:
+                        ax2.annotate(f'{height:.3f}',
+                                   xy=(bar.get_x() + bar.get_width() / 2, height),
+                                   xytext=(0, 3),
+                                   textcoords="offset points",
+                                   ha='center', va='bottom', fontsize=8)
+            
             # Error rate comparison
             ax3 = axes[1, 0]
             if has_tls_data and tls_data:
@@ -507,12 +533,14 @@ class PHPRedisChartsGenerator:
                 non_tls_err = [next((r.get('error_rate', 0) for r in non_tls_data if r['database'] == db), 0) for db in databases]
                 tls_err = [next((r.get('error_rate', 0) for r in tls_data if r['database'] == db), 0) for db in databases]
                 
-                ax3.bar(x - width/2, non_tls_err, width, label='Non-TLS', alpha=0.8)
-                ax3.bar(x + width/2, tls_err, width, label='TLS', alpha=0.6)
+                bars5 = ax3.bar(x - width/2, non_tls_err, width, label='Non-TLS', alpha=0.8)
+                bars6 = ax3.bar(x + width/2, tls_err, width, label='TLS', alpha=0.6)
+                bars_list_err = [bars5, bars6]
             else:
                 width = 0.6
                 non_tls_err = [next((r.get('error_rate', 0) for r in non_tls_data if r['database'] == db), 0) for db in databases]
-                ax3.bar(x, non_tls_err, width, label='Non-TLS', alpha=0.8)
+                bars5 = ax3.bar(x, non_tls_err, width, label='Non-TLS', alpha=0.8)
+                bars_list_err = [bars5]
             
             ax3.set_title('Error Rate')
             ax3.set_ylabel('Error Rate (%)')
@@ -521,7 +549,18 @@ class PHPRedisChartsGenerator:
             ax3.legend()
             ax3.grid(axis='y', alpha=0.3)
             
-            # Key growth analysis
+            # Add value labels for error rate
+            for bars in bars_list_err:
+                for bar in bars:
+                    height = bar.get_height()
+                    if height > 0:
+                        ax3.annotate(f'{height:.2f}',
+                                   xy=(bar.get_x() + bar.get_width() / 2, height),
+                                   xytext=(0, 3),
+                                   textcoords="offset points",
+                                   ha='center', va='bottom', fontsize=8)
+            
+            # Key growth analysis (this part already has labels)
             ax4 = axes[1, 1]
             if any('final_key_count' in r for r in test_data):
                 key_growth = []
