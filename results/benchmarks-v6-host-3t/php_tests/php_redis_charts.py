@@ -111,11 +111,11 @@ class EnhancedPHPRedisChartsGenerator:
                 has_tls_data = True
                 break
         
-        # Determine chart layout
+        # Determine chart layout with better sizing for side legend
         if has_tls_data:
-            fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(20, 10))
+            fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(24, 10))  # Wider for side legend
         else:
-            fig, ax1 = plt.subplots(1, 1, figsize=(12, 10))
+            fig, ax1 = plt.subplots(1, 1, figsize=(16, 10))  # Wider for side legend
             ax2 = None
         
         # Get metadata for title
@@ -165,13 +165,19 @@ class EnhancedPHPRedisChartsGenerator:
                        capsize=5,
                        color=[self.quality_colors.get(q, '#CCCCCC') for q in non_tls_qualities],
                        alpha=0.8, 
-                       label='Non-TLS')
+                       edgecolor='black',
+                       linewidth=0.5)
         
         ax1.set_title('Non-TLS Performance with Statistical Error Bars', fontsize=14, fontweight='bold')
-        ax1.set_ylabel('Operations/sec')
+        ax1.set_ylabel('Operations/sec', fontsize=12)
         ax1.set_xticks(x)
-        ax1.set_xticklabels(databases)
+        ax1.set_xticklabels(databases, fontsize=11)
         ax1.grid(axis='y', alpha=0.3)
+        
+        # Set y-axis limits with more headroom for labels
+        if any(ops > 0 for ops in non_tls_ops):
+            max_value = max([ops + std for ops, std in zip(non_tls_ops, non_tls_errors) if ops > 0])
+            ax1.set_ylim(0, max_value * 1.2)
         
         # Add value labels with quality indicators
         for i, (bar, ops, quality) in enumerate(zip(bars1, non_tls_ops, non_tls_qualities)):
@@ -179,19 +185,11 @@ class EnhancedPHPRedisChartsGenerator:
                 quality_symbol = {'excellent': '🟢', 'good': '🟡', 'fair': '🟠', 'poor': '🔴'}.get(quality, '⚪')
                 ax1.annotate(f'{int(ops)}\n{quality_symbol}',
                            xy=(bar.get_x() + bar.get_width() / 2, ops),
-                           xytext=(0, 10),
+                           xytext=(0, 15),
                            textcoords="offset points",
-                           ha='center', va='bottom', fontsize=9, fontweight='bold')
-        
-        # Create legend for quality indicators
-        legend_elements = [plt.Rectangle((0,0),1,1, color=color, alpha=0.8, label=f'{quality.title()} (CV {threshold})')
-                          for quality, (color, threshold) in zip(
-                              ['excellent', 'good', 'fair', 'poor'],
-                              [(self.quality_colors['excellent'], '<2%'),
-                               (self.quality_colors['good'], '<5%'),
-                               (self.quality_colors['fair'], '<10%'),
-                               (self.quality_colors['poor'], '≥10%')])]
-        ax1.legend(handles=legend_elements, loc='upper right', title='Measurement Quality')
+                           ha='center', va='bottom', 
+                           fontsize=10, fontweight='bold',
+                           bbox=dict(boxstyle='round,pad=0.3', facecolor='white', alpha=0.8, edgecolor='gray'))
         
         # TLS chart if data available
         if has_tls_data and ax2 is not None:
@@ -225,13 +223,19 @@ class EnhancedPHPRedisChartsGenerator:
                            capsize=5,
                            color=[self.quality_colors.get(q, '#CCCCCC') for q in tls_qualities],
                            alpha=0.8, 
-                           label='TLS')
+                           edgecolor='black',
+                           linewidth=0.5)
             
             ax2.set_title('TLS Performance with Statistical Error Bars', fontsize=14, fontweight='bold')
-            ax2.set_ylabel('Operations/sec')
+            ax2.set_ylabel('Operations/sec', fontsize=12)
             ax2.set_xticks(x)
-            ax2.set_xticklabels(databases)
+            ax2.set_xticklabels(databases, fontsize=11)
             ax2.grid(axis='y', alpha=0.3)
+            
+            # Set y-axis limits for TLS chart
+            if any(ops > 0 for ops in tls_ops):
+                max_tls_value = max([ops + std for ops, std in zip(tls_ops, tls_errors) if ops > 0])
+                ax2.set_ylim(0, max_tls_value * 1.2)
             
             # Add value labels for TLS
             for i, (bar, ops, quality) in enumerate(zip(bars2, tls_ops, tls_qualities)):
@@ -239,13 +243,59 @@ class EnhancedPHPRedisChartsGenerator:
                     quality_symbol = {'excellent': '🟢', 'good': '🟡', 'fair': '🟠', 'poor': '🔴'}.get(quality, '⚪')
                     ax2.annotate(f'{int(ops)}\n{quality_symbol}',
                                xy=(bar.get_x() + bar.get_width() / 2, ops),
-                               xytext=(0, 10),
+                               xytext=(0, 15),
                                textcoords="offset points",
-                               ha='center', va='bottom', fontsize=9, fontweight='bold')
+                               ha='center', va='bottom', 
+                               fontsize=10, fontweight='bold',
+                               bbox=dict(boxstyle='round,pad=0.3', facecolor='white', alpha=0.8, edgecolor='gray'))
         
+        # Create legend for quality indicators with side placement
+        legend_elements = [plt.Rectangle((0,0),1,1, color=color, alpha=0.8, label=f'{quality.title()} (CV {threshold})')
+                          for quality, (color, threshold) in zip(
+                              ['excellent', 'good', 'fair', 'poor'],
+                              [(self.quality_colors['excellent'], '<2%'),
+                               (self.quality_colors['good'], '<5%'),
+                               (self.quality_colors['fair'], '<10%'),
+                               (self.quality_colors['poor'], '≥10%')])]
+        
+        # Position legend on the right side, outside the plot area
+        if has_tls_data and ax2 is not None:
+            # For dual charts, place legend to the right of the second chart
+            legend = ax2.legend(handles=legend_elements, 
+                              bbox_to_anchor=(1.05, 1), 
+                              loc='upper left',
+                              fontsize=11,
+                              frameon=True,
+                              fancybox=True,
+                              shadow=True,
+                              title='Measurement Quality',
+                              title_fontsize=12)
+        else:
+            # For single chart, place legend to the right of the main chart
+            legend = ax1.legend(handles=legend_elements, 
+                              bbox_to_anchor=(1.05, 1), 
+                              loc='upper left',
+                              fontsize=11,
+                              frameon=True,
+                              fancybox=True,
+                              shadow=True,
+                              title='Measurement Quality',
+                              title_fontsize=12)
+        
+        # Style the legend title
+        legend.get_title().set_fontweight('bold')
+        
+        # Adjust layout to accommodate side legend
         plt.tight_layout()
+        if has_tls_data:
+            plt.subplots_adjust(right=0.80)  # More space needed for dual charts
+        else:
+            plt.subplots_adjust(right=0.75)  # Space for single chart legend
+        
+        # Save with high quality
         output_file = self.output_dir / 'php_redis_statistical_performance.png'
-        plt.savefig(output_file, dpi=self.dpi, bbox_inches=self.bbox_inches)
+        plt.savefig(output_file, dpi=self.dpi, bbox_inches=self.bbox_inches, 
+                    facecolor='white', edgecolor='none')
         plt.close()
         print(f"Generated: {output_file}")
 

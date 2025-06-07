@@ -310,6 +310,8 @@ class RedisTestBase {
                         $all_results[] = $result;
                     }
                     $redis_tls->close();
+                } else {
+                    echo "  → TLS test skipped for {$db_name} due to connection failure\n";
                 }
             } elseif ($this->test_both_tls) {
                 echo "  Skipping TLS test for {$db_name} (port not accessible)\n";
@@ -649,54 +651,34 @@ class RedisTestBase {
                 
                 $this->debugLog("TLS certificates found, attempting connection");
                 
-                // Method 1: Direct TLS connection using tls:// scheme
                 try {
-                    $this->debugLog("Attempt 1: Using tls:// scheme");
-                    $connected = $redis->connect("tls://{$host}", $port, 5.0);
-                    if ($connected) {
-                        $this->debugLog("TLS connection successful with tls:// scheme");
-                    } else {
-                        throw new Exception("Connection failed with tls:// scheme");
-                    }
-                } catch (Exception $e) {
-                    $this->debugLog("tls:// scheme failed: " . $e->getMessage());
+                    // Try different TLS connection methods with better error handling
+                    $this->debugLog("Attempt: Using tls:// scheme with certificate verification disabled");
                     
-                    // Method 2: Try with SSL context array
-                    try {
-                        $this->debugLog("Attempt 2: Using SSL context array");
-                        $ssl_context = [
-                            'verify_peer' => false,
-                            'verify_peer_name' => false,
-                            'allow_self_signed' => true,
-                            'local_cert' => $cert_files['local_cert'],
-                            'local_pk' => $cert_files['local_pk'],
-                            'cafile' => $cert_files['cafile'],
-                            'capture_peer_cert' => true,
-                            'disable_compression' => true,
-                            'SNI_enabled' => false
-                        ];
-                        
-                        $connected = $redis->connect($host, $port, 5.0, null, 0, 0, $ssl_context);
-                        if (!$connected) {
-                            throw new Exception("SSL context connection failed");
-                        }
-                        $this->debugLog("TLS connection successful with SSL context");
-                    } catch (Exception $e2) {
-                        $this->debugLog("SSL context failed: " . $e2->getMessage());
-                        
-                        // Method 3: Try minimal TLS connection
-                        try {
-                            $this->debugLog("Attempt 3: Minimal TLS connection");
-                            $minimal_context = ['verify_peer' => false, 'verify_peer_name' => false];
-                            $connected = $redis->connect($host, $port, 5.0, null, 0, 0, $minimal_context);
-                            if (!$connected) {
-                                throw new Exception("Minimal TLS connection failed");
-                            }
-                            $this->debugLog("TLS connection successful with minimal context");
-                        } catch (Exception $e3) {
-                            throw new Exception("All TLS connection methods failed. Last: " . $e3->getMessage());
-                        }
+                    $ssl_context = [
+                        'verify_peer' => false,
+                        'verify_peer_name' => false,
+                        'allow_self_signed' => true,
+                        'local_cert' => $cert_files['local_cert'],
+                        'local_pk' => $cert_files['local_pk'],
+                        'cafile' => $cert_files['cafile'],
+                        'capture_peer_cert' => false,
+                        'disable_compression' => true,
+                        'SNI_enabled' => false
+                    ];
+                    
+                    $connected = $redis->connect($host, $port, 5.0, null, 0, 0, $ssl_context);
+                    if (!$connected) {
+                        throw new Exception("TLS connection failed");
                     }
+                    $this->debugLog("TLS connection successful");
+                    
+                } catch (Exception $e) {
+                    // Log the specific TLS error but don't fail the entire test
+                    $this->debugLog("TLS connection failed: " . $e->getMessage());
+                    echo "  TLS connection failed for {$host}:{$port}: " . $e->getMessage() . "\n";
+                    echo "  Skipping TLS test and continuing with non-TLS tests\n";
+                    return false;
                 }
             } else {
                 // Non-TLS connection with improved timeout handling
@@ -736,13 +718,14 @@ class RedisTestBase {
             
         } catch (Exception $e) {
             $error_msg = $e->getMessage();
-            echo "  Connection failed to {$host}:{$port} ({$connection_label}): {$error_msg}\n";
             
             if ($tls) {
-                echo "  → TLS connection troubleshooting:\n";
-                echo "    - Check if TLS port {$port} is accessible\n";
-                echo "    - Verify TLS certificates are valid\n";
-                echo "    - Ensure server has TLS properly configured\n";
+                // For TLS failures, log but don't treat as fatal
+                echo "  TLS connection failed to {$host}:{$port}: {$error_msg}\n";
+                echo "  → Skipping TLS test for this database and continuing\n";
+            } else {
+                // For non-TLS failures, this is more serious
+                echo "  Connection failed to {$host}:{$port} ({$connection_label}): {$error_msg}\n";
             }
             
             return false;
@@ -856,7 +839,8 @@ class RedisTestBase {
         foreach ($quality_counts as $quality => $count) {
             if ($count > 0) {
                 $percentage = ($count / $total_tests) * 100;
-                $quality_icon = ['excellent' => '🟢', 'good' => '🟡', 'fair' => '🟠', 'poor' => '🔴'][$quality];
+                $quality_icons = ['excellent' => '🟢', 'good' => '🟡', 'fair' => '🟠', 'poor' => '🔴'];
+                $quality_icon = $quality_icons[$quality] ?? '⚪';
                 echo sprintf("  %s %-10s: %2d tests (%.1f%%)\n", 
                     $quality_icon, ucfirst($quality), $count, $percentage);
             }
