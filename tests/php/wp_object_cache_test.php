@@ -272,7 +272,7 @@ if (php_sapi_name() === 'cli') {
         // Default configuration
         $config = [
             'duration' => 30,
-            'test_iterations' => 5,
+            'test_iterations' => 11,
             'output_dir' => './php_benchmark_results',
             'test_tls' => true,
             'flush_before_test' => true,
