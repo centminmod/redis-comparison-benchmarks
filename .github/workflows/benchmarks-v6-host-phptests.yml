@@ -1682,6 +1682,75 @@ jobs:
           fi
         done
 
+    - name: Cleanup Old WordPress PHP Test Results
+      run: |
+        echo "=== Cleaning Up Old WordPress PHP Test Results ==="
+        
+        # Function to clean up old timestamped files in a directory
+        cleanup_old_files() {
+          local dir=$1
+          local pattern=$2
+          local description=$3
+          
+          if [ -d "$dir" ]; then
+            echo "Cleaning up old $description files in $dir"
+            
+            # Find and list old files matching the pattern
+            old_files=$(find "$dir" -name "$pattern" -type f 2>/dev/null || true)
+            
+            if [ -n "$old_files" ]; then
+              echo "Found old $description files:"
+              echo "$old_files"
+              
+              # Remove the old files
+              find "$dir" -name "$pattern" -type f -delete 2>/dev/null || true
+              
+              echo "✅ Removed old $description files"
+            else
+              echo "No old $description files found in $dir"
+            fi
+          else
+            echo "Directory $dir does not exist, skipping cleanup"
+          fi
+        }
+        
+        # Clean up various WordPress PHP test result patterns
+        echo "Cleaning up WordPress Object Cache test results..."
+        
+        # Clean up timestamped JSON files from each thread variant directory
+        for thread_dir in results/benchmarks-v6-host-*t/; do
+          if [ -d "$thread_dir" ]; then
+            echo "Processing $thread_dir"
+            
+            # WordPress Object Cache test JSON files (timestamped)
+            cleanup_old_files "$thread_dir" "wordpress_object_cache_test_20*-*-*_*-*-*.json" "WordPress Object Cache JSON"
+            
+            # WordPress Object Cache test CSV files (timestamped)
+            cleanup_old_files "$thread_dir" "wordpress_object_cache_test_20*-*-*_*-*-*.csv" "WordPress Object Cache CSV"
+            
+            # WordPress Object Cache test Markdown files (timestamped)
+            cleanup_old_files "$thread_dir" "wordpress_object_cache_test_20*-*-*_*-*-*.md" "WordPress Object Cache Markdown"
+            
+            # Any other timestamped PHP test files
+            cleanup_old_files "$thread_dir" "*_20*-*-*_*-*-*.json" "timestamped JSON"
+            cleanup_old_files "$thread_dir" "*_20*-*-*_*-*-*.csv" "timestamped CSV"
+            cleanup_old_files "$thread_dir" "*_20*-*-*_*-*-*.md" "timestamped Markdown"
+            
+            # Clean up old PHP chart files
+            cleanup_old_files "$thread_dir" "php_redis_*.png" "old PHP Redis charts"
+            cleanup_old_files "$thread_dir" "php_redis_benchmark_summary.md" "old PHP benchmark summary"
+            
+            echo "Completed cleanup for $thread_dir"
+          fi
+        done
+        
+        # Also clean up any orphaned files in the root results directory
+        echo "Cleaning up root results directory..."
+        cleanup_old_files "results" "wordpress_object_cache_test_20*-*-*_*-*-*.json" "root WordPress Object Cache JSON"
+        cleanup_old_files "results" "*_20*-*-*_*-*-*.json" "root timestamped JSON"
+        
+        echo "=== Cleanup completed ==="
+
     - name: Organize results by thread variant
       run: |
         echo "=== Organizing Results by Thread Variant ==="
@@ -1734,16 +1803,28 @@ jobs:
           fi
         done
 
-    - name: Verify organized results
+    - name: Verify organized results and show cleanup summary
       run: |
         echo "=== Final Results Directory Structure ==="
         ls -la results/
         echo ""
         
+        echo "=== Cleanup and Organization Summary ==="
         for dir in results/benchmarks-v6-host-*t/; do
           if [ -d "$dir" ]; then
             echo "=== Contents of $dir ==="
             ls -la "$dir" | head -15
+            echo ""
+            
+            # Count and report file types
+            json_count=$(find "$dir" -name "*.json" | wc -l)
+            png_count=$(find "$dir" -name "*.png" | wc -l)
+            md_count=$(find "$dir" -name "*.md" | wc -l)
+            
+            echo "File summary for $dir:"
+            echo "  JSON files: $json_count"
+            echo "  PNG charts: $png_count"
+            echo "  Markdown reports: $md_count"
             echo ""
           fi
         done
@@ -1763,19 +1844,25 @@ jobs:
         
         # Check current status
         echo "Git status before pull:"
-        git status
+        git status --porcelain
         
         # Pull latest changes
         echo "Pulling latest changes..."
         git pull origin ${{ github.ref_name }}
         
-        # Stage all changes
+        # Stage all changes (including deletions)
         echo "Staging changes..."
         git add results/benchmarks-v6-host-*t/
         
+        # Also stage any deletions explicitly
+        git add -u results/benchmarks-v6-host-*t/ 2>/dev/null || true
+        
         # Check what's staged
         echo "Staged changes:"
-        git diff --staged --name-only
+        git diff --staged --name-only | head -20
+        echo "..."
+        staged_count=$(git diff --staged --name-only | wc -l)
+        echo "Total staged files: $staged_count"
         
         # Check if there are changes to commit
         if git diff --staged --quiet; then
@@ -1793,6 +1880,7 @@ jobs:
           - Updated benchmark results for Redis, KeyDB, Dragonfly, and Valkey
           - Generated charts for latency and ops/sec metrics
           - Both TLS and non-TLS configurations tested
+          - Cleaned up old timestamped WordPress PHP test results
           - Custom parameters: requests=${{ inputs.requests || '2000' }}, clients=${{ inputs.clients || '100' }}, pipeline=${{ inputs.pipeline || '1' }}, intrinsic_latency=${{ inputs.intrinsic_latency || '5' }}, data_size=${{ inputs.data_size || '1024' }}
           - Key range: ${KEY_MINIMUM}-${{ inputs.key_maximum || '1000000' }}
           - Workflow: ${{ github.workflow }}
@@ -1820,6 +1908,7 @@ jobs:
           done
           
           echo "✅ All thread-specific benchmark results committed and pushed successfully!"
+          echo "✅ Old timestamped files have been cleaned up"
         fi
 
     - name: Summary
@@ -1828,4 +1917,6 @@ jobs:
         echo "Successfully processed and committed results for thread variants:"
         ls results/ | grep benchmarks-v6-host- | sed 's/benchmarks-v6-host-/  - /'
         echo ""
+        echo "✅ Old timestamped WordPress PHP test files have been cleaned up"
+        echo "✅ New results organized and committed"
         echo "Workflow run #${{ github.run_number }} completed successfully!"
