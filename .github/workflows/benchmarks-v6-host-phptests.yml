@@ -1366,7 +1366,7 @@ jobs:
     - name: Set up PHP for WordPress Redis Tests
       uses: shivammathur/setup-php@v2
       with:
-        php-version: '8.2'
+        php-version: '8.3'
         extensions: redis, json
         coverage: none
 
@@ -1374,6 +1374,9 @@ jobs:
       run: |
         echo "=== PHP Version and Extensions ==="
         php --version
+        echo
+        php --ri redis || true
+        echo
         php -m | grep -E "(redis|json)" || echo "Extensions check"
         
         echo "=== Test Redis PHP Connection ==="
@@ -1449,7 +1452,7 @@ jobs:
 
         # debug: list what’s in tests/php now
         echo ">>> tests/php/ contents <<<"
-        ls -l tests/php/
+        ls -alh tests/php/
 
         echo ">>> tests/php/ cert permissions <<<"
         stat -c '%A %n' tests/php/*.crt tests/php/*.pem tests/php/*.key
