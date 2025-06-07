@@ -356,7 +356,13 @@ class RedisTestBase {
         
         // Sort by ops_per_sec descending
         uasort($grouped, function($a, $b) {
-            return $b['ops_per_sec'] <=> $a['ops_per_sec'];
+            $a_ops = isset($a['ops_per_sec']) ? (float)$a['ops_per_sec'] : 0;
+            $b_ops = isset($b['ops_per_sec']) ? (float)$b['ops_per_sec'] : 0;
+            
+            if ($a_ops == $b_ops) {
+                return 0;
+            }
+            return ($a_ops < $b_ops) ? 1 : -1;
         });
         
         $rank = 1;
