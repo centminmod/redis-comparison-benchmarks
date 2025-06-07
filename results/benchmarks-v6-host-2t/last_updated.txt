@@ -1,7 +1,7 @@
-Last updated: Sat Jun  7 08:15:40 UTC 2025
+Last updated: Sat Jun  7 08:41:18 UTC 2025
 Thread Variant: 2
-Workflow run: 8
-Commit SHA: f18312d9f3a73fac92503ce335d58a351a066927
+Workflow run: 9
+Commit SHA: 7edc5bf368559ad925743382fb2f2f9c2939b028
 Benchmark Config:
   Requests: 200
   Clients: 20
@@ -16,4 +16,4 @@ Dragonfly Proactor Threads: 2
 Valkey IO Threads: 2
 PHP Tests:
   WordPress Object Cache Test Duration: 30s
-  PHP Version: PHP 8.2.28 (cli) (built: Mar 15 2025 02:39:55) (NTS)
+  PHP Version: PHP 8.3.21 (cli) (built: May  9 2025 00:32:49) (NTS)
