@@ -573,11 +573,11 @@ class RedisTestBase {
             return;
         }
         
-        $timestamp = date('Y-m-d_H-i-s');
+        // Remove timestamp from filename generation
         $test_slug = strtolower(str_replace([' ', '-'], '_', $this->test_name));
         $test_slug = preg_replace('/[^a-z0-9_]/', '', $test_slug);
         
-        $base_filename = "{$test_slug}_{$timestamp}";
+        $base_filename = $test_slug; // No timestamp suffix
         
         // Save in multiple formats
         $csv_file = $this->saveCSV($results, "{$this->output_dir}/{$base_filename}.csv");
