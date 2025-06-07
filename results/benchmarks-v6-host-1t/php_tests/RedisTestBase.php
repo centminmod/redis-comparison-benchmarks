@@ -4,7 +4,7 @@
  * Handles Redis connections, TLS setup, result formatting, and database management
  * 
  * Features:
- * - Non-TLS and TLS connection support
+ * - Non-TLS and TLS connection support with version compatibility
  * - FLUSHALL database cleanup before tests
  * - Multiple output formats (CSV, JSON, Markdown)
  * - Comprehensive error handling
@@ -52,11 +52,25 @@ class RedisTestBase {
         $this->debugLog("Output directory: {$this->output_dir}");
         $this->debugLog("TLS testing: " . ($this->test_both_tls ? 'enabled' : 'disabled'));
         $this->debugLog("Flush before test: " . ($this->flush_before_test ? 'enabled' : 'disabled'));
+        $this->debugLog("Redis extension version: " . $this->getRedisExtensionVersion());
+    }
+    
+    /**
+     * Get Redis extension version for compatibility checks
+     */
+    private function getRedisExtensionVersion() {
+        try {
+            $reflection = new ReflectionExtension('redis');
+            return $reflection->getVersion();
+        } catch (Exception $e) {
+            return 'unknown';
+        }
     }
     
     public function run() {
         echo "Starting {$this->test_name}...\n";
         echo "Timestamp: " . date('Y-m-d H:i:s') . " UTC\n";
+        echo "Redis Extension Version: " . $this->getRedisExtensionVersion() . "\n";
         echo str_repeat("=", 60) . "\n";
         
         $all_results = [];
@@ -135,6 +149,7 @@ class RedisTestBase {
             $result['initial_key_count'] = $initial_keys;
             $result['test_timestamp'] = date('c');
             $result['php_version'] = PHP_VERSION;
+            $result['redis_extension_version'] = $this->getRedisExtensionVersion();
             
             // Get final database state
             $final_keys = $redis->dbSize();
@@ -188,18 +203,37 @@ class RedisTestBase {
                 
                 $this->debugLog("TLS certificates found, creating SSL context");
                 
-                $context = stream_context_create([
-                    'ssl' => [
+                // Check Redis extension version for compatibility
+                $redis_version = $this->getRedisExtensionVersion();
+                $this->debugLog("Redis extension version: {$redis_version}");
+                
+                if (version_compare($redis_version, '5.3.0', '>=')) {
+                    // New format for Redis extension 5.3.0+ - pass SSL config as array
+                    $this->debugLog("Using new array format for TLS context (Redis extension >= 5.3.0)");
+                    $ssl_context = [
                         'verify_peer' => false,
                         'verify_peer_name' => false,
                         'allow_self_signed' => true,
                         'local_cert' => $cert_files['local_cert'],
                         'local_pk' => $cert_files['local_pk'],
                         'cafile' => $cert_files['cafile']
-                    ]
-                ]);
+                    ];
+                } else {
+                    // Legacy format for older versions - use stream context
+                    $this->debugLog("Using legacy stream context format for TLS (Redis extension < 5.3.0)");
+                    $ssl_context = stream_context_create([
+                        'ssl' => [
+                            'verify_peer' => false,
+                            'verify_peer_name' => false,
+                            'allow_self_signed' => true,
+                            'local_cert' => $cert_files['local_cert'],
+                            'local_pk' => $cert_files['local_pk'],
+                            'cafile' => $cert_files['cafile']
+                        ]
+                    ]);
+                }
                 
-                $redis->connect($host, $port, 2.0, null, 0, 0, $context);
+                $redis->connect($host, $port, 2.0, null, 0, 0, $ssl_context);
             } else {
                 $redis->connect($host, $port, 2.0);
             }
@@ -215,6 +249,7 @@ class RedisTestBase {
             
         } catch (Exception $e) {
             echo "  Connection failed to {$host}:{$port} ({$connection_label}): {$e->getMessage()}\n";
+            $this->debugLog("Connection error details: " . $e->getMessage());
             return false;
         }
     }
@@ -267,6 +302,7 @@ class RedisTestBase {
             'test_name' => $this->test_name,
             'timestamp' => date('c'),
             'php_version' => PHP_VERSION,
+            'redis_extension_version' => $this->getRedisExtensionVersion(),
             'test_configuration' => [
                 'flush_before_test' => $this->flush_before_test,
                 'test_tls' => $this->test_both_tls,
@@ -292,6 +328,7 @@ class RedisTestBase {
         $content = "# {$this->test_name}\n\n";
         $content .= "**Test Date:** " . date('Y-m-d H:i:s') . " UTC\n";
         $content .= "**PHP Version:** " . PHP_VERSION . "\n";
+        $content .= "**Redis Extension Version:** " . $this->getRedisExtensionVersion() . "\n";
         $content .= "**Results Count:** " . count($results) . "\n\n";
         
         $content .= "## Test Configuration\n\n";

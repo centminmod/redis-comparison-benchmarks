@@ -1,6 +1,6 @@
 === Intrinsic Latency Tests ===
 Test Duration: 1 seconds
-Timestamp: Sat Jun  7 04:26:33 UTC 2025
+Timestamp: Sat Jun  7 04:46:41 UTC 2025
 
 
 >>> Container-side intrinsic latency inside: redis
@@ -8,10 +8,13 @@ Command: docker exec redis redis-cli --intrinsic-latency 1
 ---
 Max latency so far: 1 microseconds.
 Max latency so far: 14 microseconds.
-Max latency so far: 86 microseconds.
+Max latency so far: 20 microseconds.
+Max latency so far: 21 microseconds.
+Max latency so far: 22 microseconds.
+Max latency so far: 33 microseconds.
 
-17024563 total runs (avg latency: 0.0587 microseconds / 58.74 nanoseconds per run).
-Worst run took 1464x longer than the average latency.
+17165426 total runs (avg latency: 0.0583 microseconds / 58.26 nanoseconds per run).
+Worst run took 566x longer than the average latency.
 ✅ redis intrinsic latency test completed
 
 
@@ -19,13 +22,13 @@ Worst run took 1464x longer than the average latency.
 Command: docker exec keydb redis-cli --intrinsic-latency 1
 ---
 Max latency so far: 1 microseconds.
-Max latency so far: 27 microseconds.
-Max latency so far: 30 microseconds.
-Max latency so far: 47 microseconds.
-Max latency so far: 48 microseconds.
+Max latency so far: 23 microseconds.
+Max latency so far: 34 microseconds.
+Max latency so far: 42 microseconds.
+Max latency so far: 66 microseconds.
 
-17040600 total runs (avg latency: 0.0587 microseconds / 58.68 nanoseconds per run).
-Worst run took 818x longer than the average latency.
+17052558 total runs (avg latency: 0.0586 microseconds / 58.64 nanoseconds per run).
+Worst run took 1125x longer than the average latency.
 ✅ keydb intrinsic latency test completed
 
 
@@ -33,11 +36,11 @@ Worst run took 818x longer than the average latency.
 Command: docker exec dragonfly redis-cli --intrinsic-latency 1
 ---
 Max latency so far: 1 microseconds.
-Max latency so far: 64 microseconds.
-Max latency so far: 69 microseconds.
+Max latency so far: 15 microseconds.
+Max latency so far: 89 microseconds.
 
-17164646 total runs (avg latency: 0.0583 microseconds / 58.26 nanoseconds per run).
-Worst run took 1184x longer than the average latency.
+17160322 total runs (avg latency: 0.0583 microseconds / 58.27 nanoseconds per run).
+Worst run took 1527x longer than the average latency.
 ✅ dragonfly intrinsic latency test completed
 
 
@@ -45,12 +48,11 @@ Worst run took 1184x longer than the average latency.
 Command: docker exec valkey redis-cli --intrinsic-latency 1
 ---
 Max latency so far: 1 microseconds.
-Max latency so far: 18 microseconds.
-Max latency so far: 24 microseconds.
-Max latency so far: 68 microseconds.
+Max latency so far: 30 microseconds.
+Max latency so far: 60 microseconds.
 
-17124733 total runs (avg latency: 0.0584 microseconds / 58.40 nanoseconds per run).
-Worst run took 1164x longer than the average latency.
+17118191 total runs (avg latency: 0.0584 microseconds / 58.42 nanoseconds per run).
+Worst run took 1027x longer than the average latency.
 ✅ valkey intrinsic latency test completed
 
 
@@ -58,10 +60,15 @@ Worst run took 1164x longer than the average latency.
 Command: docker exec redis-tls redis-cli --intrinsic-latency 1
 ---
 Max latency so far: 1 microseconds.
-Max latency so far: 162 microseconds.
+Max latency so far: 16 microseconds.
+Max latency so far: 50 microseconds.
+Max latency so far: 93 microseconds.
+Max latency so far: 119 microseconds.
+Max latency so far: 158 microseconds.
+Max latency so far: 164 microseconds.
 
-17162094 total runs (avg latency: 0.0583 microseconds / 58.27 nanoseconds per run).
-Worst run took 2780x longer than the average latency.
+17091821 total runs (avg latency: 0.0585 microseconds / 58.51 nanoseconds per run).
+Worst run took 2803x longer than the average latency.
 ✅ redis-tls intrinsic latency test completed
 
 
@@ -69,11 +76,11 @@ Worst run took 2780x longer than the average latency.
 Command: docker exec keydb-tls redis-cli --intrinsic-latency 1
 ---
 Max latency so far: 1 microseconds.
-Max latency so far: 6 microseconds.
-Max latency so far: 93 microseconds.
+Max latency so far: 19 microseconds.
+Max latency so far: 28 microseconds.
 
-17092585 total runs (avg latency: 0.0585 microseconds / 58.50 nanoseconds per run).
-Worst run took 1590x longer than the average latency.
+17104583 total runs (avg latency: 0.0585 microseconds / 58.46 nanoseconds per run).
+Worst run took 479x longer than the average latency.
 ✅ keydb-tls intrinsic latency test completed
 
 
@@ -81,10 +88,12 @@ Worst run took 1590x longer than the average latency.
 Command: docker exec dragonfly-tls redis-cli --intrinsic-latency 1
 ---
 Max latency so far: 1 microseconds.
-Max latency so far: 84 microseconds.
+Max latency so far: 16 microseconds.
+Max latency so far: 26 microseconds.
+Max latency so far: 95 microseconds.
 
-17168732 total runs (avg latency: 0.0582 microseconds / 58.25 nanoseconds per run).
-Worst run took 1442x longer than the average latency.
+17195037 total runs (avg latency: 0.0582 microseconds / 58.16 nanoseconds per run).
+Worst run took 1634x longer than the average latency.
 ✅ dragonfly-tls intrinsic latency test completed
 
 
@@ -92,12 +101,14 @@ Worst run took 1442x longer than the average latency.
 Command: docker exec valkey-tls redis-cli --intrinsic-latency 1
 ---
 Max latency so far: 1 microseconds.
-Max latency so far: 15 microseconds.
-Max latency so far: 17 microseconds.
-Max latency so far: 19 microseconds.
+Max latency so far: 7 microseconds.
+Max latency so far: 12 microseconds.
+Max latency so far: 16 microseconds.
+Max latency so far: 24 microseconds.
+Max latency so far: 25 microseconds.
 
-17180187 total runs (avg latency: 0.0582 microseconds / 58.21 nanoseconds per run).
-Worst run took 326x longer than the average latency.
+17196636 total runs (avg latency: 0.0582 microseconds / 58.15 nanoseconds per run).
+Worst run took 430x longer than the average latency.
 ✅ valkey-tls intrinsic latency test completed
 
 === Intrinsic Latency Tests Complete ===
