@@ -118,7 +118,9 @@ Github Hosted runners using Azure VM instances have 4 vCPU threads, so expected 
 
 ---
 
-## 4. Performance Heatmaps @ 4 Threads
+## 4. Performance Heatmaps
+
+For 4 threads:
 
 | Metric           | Winner        | Comment                                             |
 |:-----------------|:--------------|:----------------------------------------------------|
