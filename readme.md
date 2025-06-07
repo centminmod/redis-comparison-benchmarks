@@ -11,7 +11,7 @@ This **v5 host-networked benchmark** compares four Redis-compatible engines - **
 - Clients/thread = 100, Requests/thread = 5 000, Pipeline = 1  
 
 **Key points**  
-- Prior Docker NAT-networked tests (see [readme-v2.md]) revealed a Valkey bug: `io-threads >1` regressed in performance.
+- Prior Docker NAT-networked tests (see [readme-v2.md](readme-v2.md)) revealed a Valkey bug: `io-threads >1` regressed in performance.
 - In this host-networked v5 test, that bug is resolved for Valkey which now scales properly with multiple I/O threads `io-threads >1`.  
 
 Previous benchmarks:  
