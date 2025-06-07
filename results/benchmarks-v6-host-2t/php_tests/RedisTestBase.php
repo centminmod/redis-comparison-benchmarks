@@ -5,6 +5,7 @@
  * 
  * Features:
  * - Non-TLS and TLS connection support with version compatibility
+ * - Enhanced TLS error handling and diagnostics
  * - FLUSHALL database cleanup before tests
  * - Multiple output formats (CSV, JSON, Markdown)
  * - Comprehensive error handling
@@ -25,12 +26,14 @@ class RedisTestBase {
     protected $test_both_tls = true;
     protected $flush_before_test = false;
     protected $debug_mode = false;
+    protected $tls_skip_verify = true; // Skip TLS verification for self-signed certs
     
     public function __construct($config = []) {
         $this->output_dir = $config['output_dir'] ?? 'php_benchmark_results';
         $this->test_both_tls = $config['test_tls'] ?? true;
         $this->flush_before_test = $config['flush_before_test'] ?? false;
         $this->debug_mode = $config['debug'] ?? false;
+        $this->tls_skip_verify = $config['tls_skip_verify'] ?? true;
         
         // Override database configurations if provided
         if (isset($config['databases'])) {
@@ -53,6 +56,7 @@ class RedisTestBase {
         $this->debugLog("TLS testing: " . ($this->test_both_tls ? 'enabled' : 'disabled'));
         $this->debugLog("Flush before test: " . ($this->flush_before_test ? 'enabled' : 'disabled'));
         $this->debugLog("Redis extension version: " . $this->getRedisExtensionVersion());
+        $this->debugLog("TLS skip verify: " . ($this->tls_skip_verify ? 'enabled' : 'disabled'));
     }
     
     /**
@@ -67,10 +71,58 @@ class RedisTestBase {
         }
     }
     
+    /**
+     * Check if TLS certificates exist and are readable
+     */
+    private function validateTlsCertificates() {
+        $cert_files = [
+            'local_cert' => './test.crt',
+            'local_pk' => './test.key', 
+            'cafile' => './ca.crt'
+        ];
+        
+        $missing_certs = [];
+        $cert_info = [];
+        
+        foreach ($cert_files as $key => $file) {
+            if (!file_exists($file)) {
+                $missing_certs[] = $file;
+            } else {
+                $cert_info[$key] = [
+                    'file' => $file,
+                    'size' => filesize($file),
+                    'readable' => is_readable($file),
+                    'modified' => date('Y-m-d H:i:s', filemtime($file))
+                ];
+            }
+        }
+        
+        return [
+            'valid' => empty($missing_certs),
+            'missing' => $missing_certs,
+            'info' => $cert_info
+        ];
+    }
+    
     public function run() {
         echo "Starting {$this->test_name}...\n";
         echo "Timestamp: " . date('Y-m-d H:i:s') . " UTC\n";
         echo "Redis Extension Version: " . $this->getRedisExtensionVersion() . "\n";
+        
+        // Validate TLS certificates if TLS testing is enabled
+        if ($this->test_both_tls) {
+            $cert_validation = $this->validateTlsCertificates();
+            if (!$cert_validation['valid']) {
+                echo "TLS Certificate Warning: Missing files - " . implode(', ', $cert_validation['missing']) . "\n";
+                echo "TLS tests will be skipped for connections that fail\n";
+            } else {
+                echo "TLS Certificates: Found and validated\n";
+                foreach ($cert_validation['info'] as $type => $info) {
+                    $this->debugLog("Certificate {$type}: {$info['file']} ({$info['size']} bytes, modified: {$info['modified']})");
+                }
+            }
+        }
+        
         echo str_repeat("=", 60) . "\n";
         
         $all_results = [];
@@ -207,25 +259,32 @@ class RedisTestBase {
                 $redis_version = $this->getRedisExtensionVersion();
                 $this->debugLog("Redis extension version: {$redis_version}");
                 
+                // Create SSL context based on extension version
                 if (version_compare($redis_version, '5.3.0', '>=')) {
                     // New format for Redis extension 5.3.0+ - pass SSL config as array
                     $this->debugLog("Using new array format for TLS context (Redis extension >= 5.3.0)");
                     $ssl_context = [
-                        'verify_peer' => false,
-                        'verify_peer_name' => false,
-                        'allow_self_signed' => true,
+                        'verify_peer' => !$this->tls_skip_verify,
+                        'verify_peer_name' => !$this->tls_skip_verify,
+                        'allow_self_signed' => $this->tls_skip_verify,
                         'local_cert' => $cert_files['local_cert'],
                         'local_pk' => $cert_files['local_pk'],
                         'cafile' => $cert_files['cafile']
                     ];
+                    
+                    // Additional options for problematic connections
+                    if ($this->tls_skip_verify) {
+                        $ssl_context['verify_depth'] = 0;
+                        $ssl_context['disable_compression'] = true;
+                    }
                 } else {
                     // Legacy format for older versions - use stream context
                     $this->debugLog("Using legacy stream context format for TLS (Redis extension < 5.3.0)");
                     $ssl_context = stream_context_create([
                         'ssl' => [
-                            'verify_peer' => false,
-                            'verify_peer_name' => false,
-                            'allow_self_signed' => true,
+                            'verify_peer' => !$this->tls_skip_verify,
+                            'verify_peer_name' => !$this->tls_skip_verify,
+                            'allow_self_signed' => $this->tls_skip_verify,
                             'local_cert' => $cert_files['local_cert'],
                             'local_pk' => $cert_files['local_pk'],
                             'cafile' => $cert_files['cafile']
@@ -233,7 +292,12 @@ class RedisTestBase {
                     ]);
                 }
                 
-                $redis->connect($host, $port, 2.0, null, 0, 0, $ssl_context);
+                $this->debugLog("Attempting TLS connection with context");
+                
+                // Try connection with longer timeout for TLS
+                $redis->connect($host, $port, 5.0, null, 0, 0, $ssl_context);
+                
+                $this->debugLog("TLS connection established, testing with PING");
             } else {
                 $redis->connect($host, $port, 2.0);
             }
@@ -248,8 +312,27 @@ class RedisTestBase {
             return $redis;
             
         } catch (Exception $e) {
-            echo "  Connection failed to {$host}:{$port} ({$connection_label}): {$e->getMessage()}\n";
-            $this->debugLog("Connection error details: " . $e->getMessage());
+            $error_msg = $e->getMessage();
+            echo "  Connection failed to {$host}:{$port} ({$connection_label}): {$error_msg}\n";
+            
+            // Enhanced TLS debugging
+            if ($tls) {
+                $this->debugLog("TLS Connection failure details:");
+                $this->debugLog("  Host: {$host}:{$port}");
+                $this->debugLog("  Error: {$error_msg}");
+                $this->debugLog("  Skip verify: " . ($this->tls_skip_verify ? 'yes' : 'no'));
+                
+                // Check if it's a common TLS issue
+                if (strpos($error_msg, 'socket error') !== false) {
+                    $this->debugLog("  Possible causes: TLS server not running, wrong port, firewall blocking");
+                } elseif (strpos($error_msg, 'certificate') !== false) {
+                    $this->debugLog("  Possible causes: Certificate mismatch, expired cert, CA not trusted");
+                } elseif (strpos($error_msg, 'PING failed') !== false) {
+                    $this->debugLog("  Connection established but PING failed - server may not support PING over TLS");
+                }
+            }
+            
+            $this->debugLog("Connection error details: " . $error_msg);
             return false;
         }
     }
@@ -306,6 +389,7 @@ class RedisTestBase {
             'test_configuration' => [
                 'flush_before_test' => $this->flush_before_test,
                 'test_tls' => $this->test_both_tls,
+                'tls_skip_verify' => $this->tls_skip_verify,
                 'output_dir' => $this->output_dir
             ],
             'results_count' => count($results),
@@ -334,6 +418,7 @@ class RedisTestBase {
         $content .= "## Test Configuration\n\n";
         $content .= "- **Flush Before Test:** " . ($this->flush_before_test ? 'Yes' : 'No') . "\n";
         $content .= "- **TLS Testing:** " . ($this->test_both_tls ? 'Enabled' : 'Disabled') . "\n";
+        $content .= "- **TLS Skip Verify:** " . ($this->tls_skip_verify ? 'Yes' : 'No') . "\n";
         $content .= "- **Output Directory:** {$this->output_dir}\n\n";
         
         if (!empty($results)) {
