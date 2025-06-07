@@ -1442,6 +1442,17 @@ jobs:
         
         # Copy TLS certs, keys and client PEMs to tests/php directory
         cp *.crt *.key *.pem tests/php/ 2>/dev/null || echo "TLS certificates not found, will skip TLS tests"
+
+        # Ensure the files are readable by PHP
+        chmod 644 tests/php/*.crt tests/php/*.pem
+        chmod 600 tests/php/*.key
+
+        # debug: list what’s in tests/php now
+        echo ">>> tests/php/ contents <<<"
+        ls -l tests/php/
+
+        echo ">>> tests/php/ cert permissions <<<"
+        stat -c '%A %n' tests/php/*.crt tests/php/*.pem tests/php/*.key
         
         # Configure test duration from environment variable in the source file
         sed -i "s/private \$test_duration = 30/private \$test_duration = ${PHP_TEST_DURATION}/" tests/php/wp_object_cache_test.php
