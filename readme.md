@@ -131,11 +131,11 @@ Github Hosted runners using Azure VM instances have 4 vCPU threads, so expected 
 
 ### 4.1 Non-TLS
 
-![Heatmap Non-TLS](/results/benchmarks-v5-host-4t-jun7-2025/advcharts-heatmap-tls.png)
+![Heatmap Non-TLS](/results/benchmarks-v5-host-4t-jun7-2025/advcharts-heatmap.png)
 
 ### 4.2 TLS
 
-![Heatmap TLS](/results/benchmarks-v5-host-4t-jun7-2025/advcharts-heatmap.png)
+![Heatmap TLS](/results/benchmarks-v5-host-4t-jun7-2025/advcharts-heatmap-tls.png)
 
 ---
 
