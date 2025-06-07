@@ -85,7 +85,7 @@ class RedisTestBase {
     /**
      * Get Redis extension version for compatibility checks
      */
-    private function getRedisExtensionVersion() {
+    protected function getRedisExtensionVersion() {
         try {
             $reflection = new ReflectionExtension('redis');
             return $reflection->getVersion();
@@ -430,7 +430,7 @@ class RedisTestBase {
     /**
      * NEW: Calculate aggregate results from multiple iterations
      */
-    private function calculateAggregateResults($iterations, $test_label) {
+    protected function calculateAggregateResults($iterations, $test_label) {
         if (empty($iterations)) {
             throw new Exception("No iterations to aggregate");
         }
@@ -526,7 +526,7 @@ class RedisTestBase {
     /**
      * NEW: Calculate mean of an array
      */
-    private function calculateMean($values) {
+    protected function calculateMean($values) {
         if (empty($values)) return 0;
         return array_sum($values) / count($values);
     }
@@ -534,7 +534,7 @@ class RedisTestBase {
     /**
      * NEW: Calculate standard deviation (sample)
      */
-    private function calculateStandardDeviation($values) {
+    protected function calculateStandardDeviation($values) {
         if (count($values) < 2) return 0;
         
         $mean = $this->calculateMean($values);
@@ -551,7 +551,7 @@ class RedisTestBase {
     /**
      * NEW: Calculate coefficient of variation
      */
-    private function calculateCoefficientOfVariation($values) {
+    protected function calculateCoefficientOfVariation($values) {
         $mean = $this->calculateMean($values);
         if ($mean == 0) return 0;
         
@@ -562,7 +562,7 @@ class RedisTestBase {
     /**
      * NEW: Calculate confidence interval
      */
-    private function calculateConfidenceInterval($values, $confidence_level = 0.95) {
+    protected function calculateConfidenceInterval($values, $confidence_level = 0.95) {
         if (count($values) < 2) return ['lower' => 0, 'upper' => 0, 'margin_error' => 0];
         
         $mean = $this->calculateMean($values);
@@ -588,7 +588,7 @@ class RedisTestBase {
     /**
      * NEW: Calculate percentile
      */
-    private function calculatePercentile($values, $percentile) {
+    protected function calculatePercentile($values, $percentile) {
         if (empty($values)) return 0;
         
         sort($values);
@@ -606,7 +606,7 @@ class RedisTestBase {
     /**
      * NEW: Assess measurement quality based on coefficient of variation
      */
-    private function assessMeasurementQuality($cv) {
+    protected function assessMeasurementQuality($cv) {
         if ($cv <= $this->cv_thresholds['excellent']) {
             return 'excellent';
         } elseif ($cv <= $this->cv_thresholds['good']) {
