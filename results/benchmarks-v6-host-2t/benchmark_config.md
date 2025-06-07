@@ -3,19 +3,19 @@
 | Parameter | Value |
 |-----------|-------|
 | Thread Variant | 2 |
-| Requests | 200 |
-| Clients | 20 |
+| Requests | 5000 |
+| Clients | 100 |
 | Pipeline | 1 |
-| Data Size | 4 bytes |
+| Data Size | 512 bytes |
 | Key Minimum | 1 |
-| Key Maximum | 100000 |
+| Key Maximum | 3000000 |
 | Ratio | 1:15 (Read:Write) |
 | Key Pattern | G:G (Gaussian) |
-| Intrinsic Latency | 1 |
+| Intrinsic Latency | 5 |
 | Redis IO Threads | 2 |
 | KeyDB Server Threads | 2 |
 | Dragonfly Proactor Threads | 2 |
 | Valkey IO Threads | 2 |
 
-Run Date: Sat Jun  7 09:03:20 UTC 2025
-Workflow Run: 10
+Run Date: Sat Jun  7 09:35:26 UTC 2025
+Workflow Run: 11

@@ -1,0 +1,19 @@
+Last updated: Sat Jun  7 09:39:41 UTC 2025
+Thread Variant: 3
+Workflow run: 11
+Commit SHA: a86958cbc1c000d61eb53236ebf0f1c1063e15d2
+Benchmark Config:
+  Requests: 5000
+  Clients: 100
+  Pipeline: 1
+  Data Size: 512
+  Key Range: 1-3000000
+  Intrinsic Latency: 5
+Server Configs:
+Redis IO Threads: 3
+KeyDB Server Threads: 3
+Dragonfly Proactor Threads: 3
+Valkey IO Threads: 3
+PHP Tests:
+  WordPress Object Cache Test Duration: 30s
+  PHP Version: PHP 8.3.21 (cli) (built: May  9 2025 00:32:49) (NTS)
