@@ -1366,7 +1366,7 @@ jobs:
     - name: Set up PHP for WordPress Redis Tests
       uses: shivammathur/setup-php@v2
       with:
-        php-version: '8.3'
+        php-version: '8.4'
         extensions: redis, json
         coverage: none
 
