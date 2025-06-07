@@ -1440,8 +1440,8 @@ jobs:
         echo "=== Starting WordPress Object Cache PHP Tests ==="
         echo "Working directory: $(pwd)"
         
-        # Copy TLS certificates to tests/php directory if they exist
-        cp *.crt *.key tests/php/ 2>/dev/null || echo "TLS certificates not found, will skip TLS tests"
+        # Copy TLS certs, keys and client PEMs to tests/php directory
+        cp *.crt *.key *.pem tests/php/ 2>/dev/null || echo "TLS certificates not found, will skip TLS tests"
         
         # Configure test duration from environment variable in the source file
         sed -i "s/private \$test_duration = 30/private \$test_duration = ${PHP_TEST_DURATION}/" tests/php/wp_object_cache_test.php

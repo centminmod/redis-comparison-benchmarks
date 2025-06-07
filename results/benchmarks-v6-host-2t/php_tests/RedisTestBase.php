@@ -78,9 +78,9 @@ class RedisTestBase {
      */
     private function validateTlsCertificates() {
         $cert_files = [
-            'local_cert' => './test.crt',
-            'local_pk' => './test.key', 
-            'cafile' => './ca.crt'
+            'local_cert' => './client_cert.pem',
+            'local_pk'   => './client_priv.pem',
+            'cafile'     => './ca.crt'
         ];
         
         $missing_certs = [];

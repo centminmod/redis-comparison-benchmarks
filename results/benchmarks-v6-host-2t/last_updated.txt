@@ -1,13 +1,13 @@
-Last updated: Sat Jun  7 05:47:45 UTC 2025
+Last updated: Sat Jun  7 06:18:15 UTC 2025
 Thread Variant: 2
-Workflow run: 6
-Commit SHA: 74213e4a7d881c8e7c33e212b4f397180ca4e7c6
+Workflow run: 7
+Commit SHA: 552dce5c93fa121bb4727b91963a35e410623ed9
 Benchmark Config:
   Requests: 200
   Clients: 20
   Pipeline: 1
   Data Size: 4
-  Key Range: 1-10000
+  Key Range: 1-100000
   Intrinsic Latency: 1
 Server Configs:
 Redis IO Threads: 2
