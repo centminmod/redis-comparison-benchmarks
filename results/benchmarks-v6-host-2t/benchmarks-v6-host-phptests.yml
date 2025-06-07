@@ -1421,7 +1421,7 @@ jobs:
         docker exec keydb-tls keydb-cli -h 127.0.0.1 -p 6391 --tls --insecure --cert /tls/test.crt --key /tls/test.key --cacert /tls/ca.crt FLUSHALL || echo "KeyDB TLS flush failed"
         
         echo "Flushing Dragonfly (TLS)..."
-        docker exec dragonfly-tls redis-cli -h 127.0.0.1 -p 6392 --cert /tls/test.crt --key /tls/test.key --cacert /tls/ca.crt FLUSHALL || echo "Dragonfly TLS flush failed"
+        docker exec dragonfly-tls redis-cli -h 127.0.0.1 -p 6392 --tls --cert /tls/test.crt --key /tls/test.key --cacert /tls/ca.crt FLUSHALL || echo "Dragonfly TLS flush failed"
         
         echo "Flushing Valkey (TLS)..."
         docker exec valkey-tls redis-cli -h 127.0.0.1 -p 6393 --tls --insecure --cert /tls/test.crt --key /tls/test.key --cacert /tls/ca.crt FLUSHALL || echo "Valkey TLS flush failed"
