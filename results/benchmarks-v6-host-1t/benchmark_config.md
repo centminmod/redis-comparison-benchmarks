@@ -8,7 +8,7 @@
 | Pipeline | 1 |
 | Data Size | 4 bytes |
 | Key Minimum | 1 |
-| Key Maximum | 100000 |
+| Key Maximum | 10000 |
 | Ratio | 1:15 (Read:Write) |
 | Key Pattern | G:G (Gaussian) |
 | Intrinsic Latency | 1 |
@@ -17,5 +17,5 @@
 | Dragonfly Proactor Threads | 1 |
 | Valkey IO Threads | 1 |
 
-Run Date: Sat Jun  7 05:18:23 UTC 2025
-Workflow Run: 5
+Run Date: Sat Jun  7 05:42:16 UTC 2025
+Workflow Run: 6

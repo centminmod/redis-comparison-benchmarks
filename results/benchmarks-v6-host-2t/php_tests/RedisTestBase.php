@@ -6,6 +6,8 @@
  * Features:
  * - Non-TLS and TLS connection support with version compatibility
  * - Enhanced TLS error handling and diagnostics
+ * - TLS port connectivity pre-checks
+ * - Performance comparison between TLS and non-TLS
  * - FLUSHALL database cleanup before tests
  * - Multiple output formats (CSV, JSON, Markdown)
  * - Comprehensive error handling
@@ -26,7 +28,7 @@ class RedisTestBase {
     protected $test_both_tls = true;
     protected $flush_before_test = false;
     protected $debug_mode = false;
-    protected $tls_skip_verify = true; // Skip TLS verification for self-signed certs
+    protected $tls_skip_verify = true;
     
     public function __construct($config = []) {
         $this->output_dir = $config['output_dir'] ?? 'php_benchmark_results';
@@ -104,22 +106,73 @@ class RedisTestBase {
         ];
     }
     
+    /**
+     * Test if TLS port is accessible before attempting Redis connection
+     */
+    private function testTlsPortConnectivity($host, $port, $timeout = 2) {
+        $this->debugLog("Testing TLS port connectivity to {$host}:{$port}");
+        
+        $context = stream_context_create([
+            'ssl' => [
+                'verify_peer' => false,
+                'verify_peer_name' => false,
+                'allow_self_signed' => true
+            ]
+        ]);
+        
+        $socket = @stream_socket_client(
+            "ssl://{$host}:{$port}",
+            $errno,
+            $errstr,
+            $timeout,
+            STREAM_CLIENT_CONNECT,
+            $context
+        );
+        
+        if ($socket) {
+            fclose($socket);
+            $this->debugLog("TLS port {$host}:{$port} is accessible");
+            return true;
+        } else {
+            $this->debugLog("TLS port {$host}:{$port} is not accessible: {$errstr} ({$errno})");
+            return false;
+        }
+    }
+    
     public function run() {
         echo "Starting {$this->test_name}...\n";
         echo "Timestamp: " . date('Y-m-d H:i:s') . " UTC\n";
         echo "Redis Extension Version: " . $this->getRedisExtensionVersion() . "\n";
         
         // Validate TLS certificates if TLS testing is enabled
+        $tls_ready_databases = [];
         if ($this->test_both_tls) {
             $cert_validation = $this->validateTlsCertificates();
             if (!$cert_validation['valid']) {
                 echo "TLS Certificate Warning: Missing files - " . implode(', ', $cert_validation['missing']) . "\n";
-                echo "TLS tests will be skipped for connections that fail\n";
             } else {
                 echo "TLS Certificates: Found and validated\n";
                 foreach ($cert_validation['info'] as $type => $info) {
                     $this->debugLog("Certificate {$type}: {$info['file']} ({$info['size']} bytes, modified: {$info['modified']})");
                 }
+            }
+            
+            // Check TLS port accessibility
+            echo "\nChecking TLS readiness...\n";
+            foreach ($this->databases as $db_name => $config) {
+                if ($this->testTlsPortConnectivity($config['host'], $config['tls_port'], 3)) {
+                    $tls_ready_databases[] = $db_name;
+                    echo "  {$db_name}: TLS port accessible ✓\n";
+                } else {
+                    echo "  {$db_name}: TLS port not accessible ✗\n";
+                }
+            }
+            
+            if (empty($tls_ready_databases)) {
+                echo "\nNo databases have accessible TLS ports. Running non-TLS tests only.\n";
+                $this->test_both_tls = false;
+            } else {
+                echo "\nTLS testing will be attempted for: " . implode(', ', $tls_ready_databases) . "\n";
             }
         }
         
@@ -141,8 +194,8 @@ class RedisTestBase {
                 $redis->close();
             }
             
-            // Test TLS if enabled
-            if ($this->test_both_tls) {
+            // Test TLS only for databases with accessible TLS ports
+            if ($this->test_both_tls && in_array($db_name, $tls_ready_databases)) {
                 $redis_tls = $this->connectRedis($config['host'], $config['tls_port'], true);
                 if ($redis_tls) {
                     $result = $this->runSingleTest($redis_tls, $db_name, true, $config['tls_port']);
@@ -151,6 +204,8 @@ class RedisTestBase {
                     }
                     $redis_tls->close();
                 }
+            } elseif ($this->test_both_tls) {
+                echo "  Skipping TLS test for {$db_name} (port not accessible)\n";
             }
             
             echo "\n";
@@ -167,8 +222,9 @@ class RedisTestBase {
         echo "Total tests run: " . count($all_results) . "\n";
         echo "Results saved to {$this->output_dir}/\n";
         
-        // Print summary
+        // Print summaries
         $this->printResultsSummary($all_results);
+        $this->printTlsPerformanceComparison($all_results);
     }
     
     protected function runSingleTest($redis, $db_name, $is_tls, $port) {
@@ -261,15 +317,17 @@ class RedisTestBase {
                 
                 // Create SSL context based on extension version
                 if (version_compare($redis_version, '5.3.0', '>=')) {
-                    // New format for Redis extension 5.3.0+ - pass SSL config as array
-                    $this->debugLog("Using new array format for TLS context (Redis extension >= 5.3.0)");
+                    // New array format for Redis extension 5.3.0+
+                    $this->debugLog("Using array format for TLS context");
                     $ssl_context = [
                         'verify_peer' => !$this->tls_skip_verify,
                         'verify_peer_name' => !$this->tls_skip_verify,
                         'allow_self_signed' => $this->tls_skip_verify,
                         'local_cert' => $cert_files['local_cert'],
                         'local_pk' => $cert_files['local_pk'],
-                        'cafile' => $cert_files['cafile']
+                        'cafile' => $cert_files['cafile'],
+                        'capture_peer_cert' => true,
+                        'SNI_enabled' => false
                     ];
                     
                     // Additional options for problematic connections
@@ -278,8 +336,8 @@ class RedisTestBase {
                         $ssl_context['disable_compression'] = true;
                     }
                 } else {
-                    // Legacy format for older versions - use stream context
-                    $this->debugLog("Using legacy stream context format for TLS (Redis extension < 5.3.0)");
+                    // Legacy stream context format for older versions
+                    $this->debugLog("Using stream context format for TLS");
                     $ssl_context = stream_context_create([
                         'ssl' => [
                             'verify_peer' => !$this->tls_skip_verify,
@@ -292,20 +350,83 @@ class RedisTestBase {
                     ]);
                 }
                 
-                $this->debugLog("Attempting TLS connection with context");
+                $this->debugLog("Attempting Redis TLS connection");
                 
-                // Try connection with longer timeout for TLS
-                $redis->connect($host, $port, 5.0, null, 0, 0, $ssl_context);
+                // Multiple connection attempts with different approaches
+                $connection_attempts = [
+                    // Attempt 1: Standard connection with full context
+                    function() use ($redis, $host, $port, $ssl_context) {
+                        return $redis->connect($host, $port, 10.0, null, 0, 0, $ssl_context);
+                    },
+                    // Attempt 2: Connection with minimal context (for problematic servers)
+                    function() use ($redis, $host, $port) {
+                        $minimal_context = [
+                            'verify_peer' => false,
+                            'verify_peer_name' => false,
+                            'allow_self_signed' => true
+                        ];
+                        return $redis->connect($host, $port, 10.0, null, 0, 0, $minimal_context);
+                    }
+                ];
                 
-                $this->debugLog("TLS connection established, testing with PING");
+                $connected = false;
+                $last_error = null;
+                
+                foreach ($connection_attempts as $attempt_num => $attempt) {
+                    try {
+                        $this->debugLog("TLS connection attempt " . ($attempt_num + 1));
+                        if ($attempt()) {
+                            $connected = true;
+                            $this->debugLog("TLS connection successful on attempt " . ($attempt_num + 1));
+                            break;
+                        }
+                    } catch (Exception $e) {
+                        $last_error = $e->getMessage();
+                        $this->debugLog("TLS connection attempt " . ($attempt_num + 1) . " failed: " . $last_error);
+                    }
+                }
+                
+                if (!$connected) {
+                    throw new Exception("All TLS connection attempts failed. Last error: " . ($last_error ?? 'unknown'));
+                }
+                
             } else {
+                // Non-TLS connection
                 $redis->connect($host, $port, 2.0);
             }
             
             // Test connection with PING
+            $this->debugLog("Testing connection with PING");
             $ping_result = $redis->ping();
-            if ($ping_result !== '+PONG' && $ping_result !== 'PONG' && $ping_result !== true) {
-                throw new Exception("PING failed: " . var_export($ping_result, true));
+            
+            // Different databases return different PING responses
+            $valid_ping_responses = ['+PONG', 'PONG', true, 1];
+            
+            if (!in_array($ping_result, $valid_ping_responses, true)) {
+                // For some TLS configurations, PING might not work immediately
+                if ($tls) {
+                    $this->debugLog("PING failed on TLS connection, trying alternative validation");
+                    
+                    // Try a simple SET/GET operation instead
+                    try {
+                        $test_key = 'tls_test_' . uniqid();
+                        $redis->set($test_key, 'test_value', 1); // 1 second TTL
+                        $get_result = $redis->get($test_key);
+                        $redis->del($test_key);
+                        
+                        if ($get_result === 'test_value') {
+                            $this->debugLog("TLS connection validated with SET/GET operation");
+                        } else {
+                            throw new Exception("TLS connection validation failed: SET/GET test failed");
+                        }
+                    } catch (Exception $e) {
+                        throw new Exception("TLS connection validation failed: " . $e->getMessage());
+                    }
+                } else {
+                    throw new Exception("PING failed: " . var_export($ping_result, true));
+                }
+            } else {
+                $this->debugLog("PING successful: " . var_export($ping_result, true));
             }
             
             $this->debugLog("Successfully connected to {$host}:{$port} ({$connection_label})");
@@ -317,24 +438,78 @@ class RedisTestBase {
             
             // Enhanced TLS debugging
             if ($tls) {
-                $this->debugLog("TLS Connection failure details:");
+                $this->debugLog("TLS Connection failure analysis:");
                 $this->debugLog("  Host: {$host}:{$port}");
                 $this->debugLog("  Error: {$error_msg}");
-                $this->debugLog("  Skip verify: " . ($this->tls_skip_verify ? 'yes' : 'no'));
                 
-                // Check if it's a common TLS issue
-                if (strpos($error_msg, 'socket error') !== false) {
-                    $this->debugLog("  Possible causes: TLS server not running, wrong port, firewall blocking");
-                } elseif (strpos($error_msg, 'certificate') !== false) {
-                    $this->debugLog("  Possible causes: Certificate mismatch, expired cert, CA not trusted");
+                // Provide specific guidance based on error type
+                if (strpos($error_msg, 'socket error on read socket') !== false) {
+                    echo "  → TLS server may not be properly configured or running\n";
+                    echo "  → Check if the server is listening on port {$port} with TLS enabled\n";
                 } elseif (strpos($error_msg, 'PING failed') !== false) {
-                    $this->debugLog("  Connection established but PING failed - server may not support PING over TLS");
+                    echo "  → TLS connection established but server doesn't respond to PING\n";
+                    echo "  → This may be normal for some TLS configurations\n";
+                } elseif (strpos($error_msg, 'certificate') !== false) {
+                    echo "  → Certificate validation issue - check certificate files\n";
+                } else {
+                    echo "  → General TLS connection failure - check server configuration\n";
                 }
             }
             
-            $this->debugLog("Connection error details: " . $error_msg);
             return false;
         }
+    }
+    
+    /**
+     * Compare TLS vs non-TLS performance
+     */
+    protected function printTlsPerformanceComparison($results) {
+        $tls_results = array_filter($results, function($r) { return $r['tls']; });
+        $non_tls_results = array_filter($results, function($r) { return !$r['tls']; });
+        
+        if (empty($tls_results)) {
+            echo "\n" . str_repeat("=", 60) . "\n";
+            echo "TLS PERFORMANCE COMPARISON\n";
+            echo str_repeat("=", 60) . "\n";
+            echo "No successful TLS connections for performance comparison.\n";
+            echo "All databases tested with non-TLS only.\n";
+            echo str_repeat("=", 60) . "\n";
+            return;
+        }
+        
+        echo "\n" . str_repeat("=", 60) . "\n";
+        echo "TLS vs NON-TLS PERFORMANCE COMPARISON\n";
+        echo str_repeat("=", 60) . "\n";
+        
+        foreach ($this->databases as $db_name => $config) {
+            $non_tls = array_filter($non_tls_results, function($r) use ($db_name) { 
+                return $r['database'] === $db_name; 
+            });
+            $tls = array_filter($tls_results, function($r) use ($db_name) { 
+                return $r['database'] === $db_name; 
+            });
+            
+            if (!empty($non_tls) && !empty($tls)) {
+                $non_tls_ops = reset($non_tls)['ops_per_sec'];
+                $tls_ops = reset($tls)['ops_per_sec'];
+                $performance_impact = (($non_tls_ops - $tls_ops) / $non_tls_ops) * 100;
+                
+                echo sprintf("%-10s | Non-TLS: %8.0f ops/sec | TLS: %8.0f ops/sec | Impact: %+5.1f%%\n",
+                    $db_name,
+                    $non_tls_ops,
+                    $tls_ops,
+                    $performance_impact
+                );
+            } elseif (!empty($non_tls)) {
+                echo sprintf("%-10s | Non-TLS: %8.0f ops/sec | TLS: %8s | Impact: %s\n",
+                    $db_name,
+                    reset($non_tls)['ops_per_sec'],
+                    'FAILED',
+                    'N/A'
+                );
+            }
+        }
+        echo str_repeat("=", 60) . "\n";
     }
     
     protected function saveResults($results) {
