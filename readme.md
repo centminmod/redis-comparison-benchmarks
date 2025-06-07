@@ -18,6 +18,13 @@ Previous benchmarks:
 * v1 [Redis vs KeyDB vs Dragonfly](readme-v1.md)
 * v2 [added Valkey, NAT-networked](readme-v2.md)
 
+## Versions Tested
+
+* Redis 8.0.2
+* KeyDB 6.3.4
+* Dragonfly 1.30.3
+* Valkey 8.1.1
+
 ## Host-Networked 4-Thread Benchmarks (v5)
 
 > **Environment:** GitHub Actions Azure Hosted runners with Ubuntu (4 vCPU, 16 GB RAM), Docker host network, CPU-pinning
