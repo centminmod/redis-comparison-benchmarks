@@ -92,11 +92,20 @@ class PHPRedisChartsGenerator:
         return results, metadata
 
     def create_performance_comparison_chart(self, results, metadata):
-        """Enhanced performance comparison chart with metadata"""
+        """Enhanced performance comparison chart with conditional TLS handling"""
         if not results:
             print("No results to chart")
             return
             
+        # Check if we have any TLS results across all test types
+        has_tls_data = False
+        for test_data in results.values():
+            if any(r.get('tls', False) for r in test_data):
+                has_tls_data = True
+                break
+        
+        print(f"TLS data detected: {has_tls_data}")
+        
         # Calculate subplot dimensions
         test_count = len(results)
         if test_count == 1:
@@ -122,7 +131,8 @@ class PHPRedisChartsGenerator:
         php_version = first_test.get('php_version', 'Unknown')
         test_timestamp = first_test.get('timestamp', '')
         
-        fig.suptitle(f'WordPress Redis Tests - Performance Comparison\nPHP {php_version} - {test_timestamp[:10]}', 
+        tls_status = "with TLS" if has_tls_data else "non-TLS only"
+        fig.suptitle(f'WordPress Redis Tests - Performance Comparison ({tls_status})\nPHP {php_version} - {test_timestamp[:10]}', 
                     fontsize=16, fontweight='bold')
         
         databases = ['Redis', 'KeyDB', 'Dragonfly', 'Valkey']
@@ -138,20 +148,24 @@ class PHPRedisChartsGenerator:
             tls_data = [r for r in test_data if r.get('tls', False)]
             
             x = np.arange(len(databases))
-            width = 0.35
             
-            non_tls_ops = []
-            tls_ops = []
-            
-            for db in databases:
-                non_tls_result = next((r for r in non_tls_data if r['database'] == db), None)
-                tls_result = next((r for r in tls_data if r['database'] == db), None)
+            # Determine chart layout based on TLS data availability
+            if has_tls_data and tls_data:
+                # Show both TLS and non-TLS
+                width = 0.35
+                non_tls_ops = [next((r['ops_per_sec'] for r in non_tls_data if r['database'] == db), 0) for db in databases]
+                tls_ops = [next((r['ops_per_sec'] for r in tls_data if r['database'] == db), 0) for db in databases]
                 
-                non_tls_ops.append(non_tls_result['ops_per_sec'] if non_tls_result else 0)
-                tls_ops.append(tls_result['ops_per_sec'] if tls_result else 0)
-            
-            bars1 = ax.bar(x - width/2, non_tls_ops, width, label='Non-TLS', alpha=0.8, color='lightblue')
-            bars2 = ax.bar(x + width/2, tls_ops, width, label='TLS', alpha=0.8, color='lightcoral')
+                bars1 = ax.bar(x - width/2, non_tls_ops, width, label='Non-TLS', alpha=0.8, color='lightblue')
+                bars2 = ax.bar(x + width/2, tls_ops, width, label='TLS', alpha=0.8, color='lightcoral')
+                bars_list = [bars1, bars2]
+            else:
+                # Show only non-TLS (centered bars)
+                width = 0.6
+                non_tls_ops = [next((r['ops_per_sec'] for r in non_tls_data if r['database'] == db), 0) for db in databases]
+                
+                bars1 = ax.bar(x, non_tls_ops, width, label='Non-TLS', alpha=0.8, color='lightblue')
+                bars_list = [bars1]
             
             # Enhanced title with test metadata
             test_meta = metadata.get(test_name, {})
@@ -169,7 +183,7 @@ class PHPRedisChartsGenerator:
             ax.grid(axis='y', alpha=0.3)
             
             # Add value labels on bars
-            for bars in [bars1, bars2]:
+            for bars in bars_list:
                 for bar in bars:
                     height = bar.get_height()
                     if height > 0:
@@ -190,17 +204,31 @@ class PHPRedisChartsGenerator:
         print(f"Generated: {output_file}")
 
     def create_latency_comparison_chart(self, results, metadata):
-        """Enhanced latency comparison with error handling"""
+        """Enhanced latency comparison with conditional TLS handling"""
         if not results:
             return
-            
-        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 8))
+        
+        # Check for TLS data
+        has_tls_data = False
+        for test_data in results.values():
+            if any(r.get('tls', False) for r in test_data):
+                has_tls_data = True
+                break
+        
+        print(f"Latency chart - TLS data detected: {has_tls_data}")
+        
+        if has_tls_data:
+            fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 8))
+        else:
+            fig, ax1 = plt.subplots(1, 1, figsize=(12, 8))
+            ax2 = None
         
         # Get metadata for title
         first_test = next(iter(metadata.values())) if metadata else {}
         php_version = first_test.get('php_version', 'Unknown')
         
-        fig.suptitle(f'WordPress Redis Tests - Latency Comparison (PHP {php_version})', 
+        tls_status = "with TLS" if has_tls_data else "non-TLS only"
+        fig.suptitle(f'WordPress Redis Tests - Latency Comparison ({tls_status}) (PHP {php_version})', 
                     fontsize=16, fontweight='bold')
         
         databases = ['Redis', 'KeyDB', 'Dragonfly', 'Valkey']
@@ -224,13 +252,21 @@ class PHPRedisChartsGenerator:
         
         # Plot average latencies
         x = np.arange(len(databases))
-        width = 0.35
         
-        avg_non_tls = [np.mean(all_avg_latencies[db]['non_tls']) if all_avg_latencies[db]['non_tls'] else 0 for db in databases]
-        avg_tls = [np.mean(all_avg_latencies[db]['tls']) if all_avg_latencies[db]['tls'] else 0 for db in databases]
-        
-        bars1 = ax1.bar(x - width/2, avg_non_tls, width, label='Non-TLS', alpha=0.8, color='lightblue')
-        bars2 = ax1.bar(x + width/2, avg_tls, width, label='TLS', alpha=0.8, color='lightcoral')
+        if has_tls_data:
+            width = 0.35
+            avg_non_tls = [np.mean(all_avg_latencies[db]['non_tls']) if all_avg_latencies[db]['non_tls'] else 0 for db in databases]
+            avg_tls = [np.mean(all_avg_latencies[db]['tls']) if all_avg_latencies[db]['tls'] else 0 for db in databases]
+            
+            bars1 = ax1.bar(x - width/2, avg_non_tls, width, label='Non-TLS', alpha=0.8, color='lightblue')
+            bars2 = ax1.bar(x + width/2, avg_tls, width, label='TLS', alpha=0.8, color='lightcoral')
+            bars_list = [bars1, bars2]
+        else:
+            width = 0.6
+            avg_non_tls = [np.mean(all_avg_latencies[db]['non_tls']) if all_avg_latencies[db]['non_tls'] else 0 for db in databases]
+            
+            bars1 = ax1.bar(x, avg_non_tls, width, label='Non-TLS', alpha=0.8, color='lightblue')
+            bars_list = [bars1]
         
         ax1.set_title('Average Latency (ms)')
         ax1.set_ylabel('Latency (ms)')
@@ -240,7 +276,7 @@ class PHPRedisChartsGenerator:
         ax1.grid(axis='y', alpha=0.3)
         
         # Add value labels
-        for bars in [bars1, bars2]:
+        for bars in bars_list:
             for bar in bars:
                 height = bar.get_height()
                 if height > 0:
@@ -250,30 +286,31 @@ class PHPRedisChartsGenerator:
                                textcoords="offset points",
                                ha='center', va='bottom', fontsize=8)
         
-        # Plot p99 latencies
-        p99_non_tls = [np.mean(all_p99_latencies[db]['non_tls']) if all_p99_latencies[db]['non_tls'] else 0 for db in databases]
-        p99_tls = [np.mean(all_p99_latencies[db]['tls']) if all_p99_latencies[db]['tls'] else 0 for db in databases]
-        
-        bars3 = ax2.bar(x - width/2, p99_non_tls, width, label='Non-TLS', alpha=0.8, color='lightblue')
-        bars4 = ax2.bar(x + width/2, p99_tls, width, label='TLS', alpha=0.8, color='lightcoral')
-        
-        ax2.set_title('P99 Latency (ms)')
-        ax2.set_ylabel('Latency (ms)')
-        ax2.set_xticks(x)
-        ax2.set_xticklabels(databases)
-        ax2.legend()
-        ax2.grid(axis='y', alpha=0.3)
-        
-        # Add value labels
-        for bars in [bars3, bars4]:
-            for bar in bars:
-                height = bar.get_height()
-                if height > 0:
-                    ax2.annotate(f'{height:.2f}',
-                               xy=(bar.get_x() + bar.get_width() / 2, height),
-                               xytext=(0, 3),
-                               textcoords="offset points",
-                               ha='center', va='bottom', fontsize=8)
+        # Plot P99 latencies only if we have TLS data
+        if has_tls_data and ax2 is not None:
+            p99_non_tls = [np.mean(all_p99_latencies[db]['non_tls']) if all_p99_latencies[db]['non_tls'] else 0 for db in databases]
+            p99_tls = [np.mean(all_p99_latencies[db]['tls']) if all_p99_latencies[db]['tls'] else 0 for db in databases]
+            
+            bars3 = ax2.bar(x - width/2, p99_non_tls, width, label='Non-TLS', alpha=0.8, color='lightblue')
+            bars4 = ax2.bar(x + width/2, p99_tls, width, label='TLS', alpha=0.8, color='lightcoral')
+            
+            ax2.set_title('P99 Latency (ms)')
+            ax2.set_ylabel('Latency (ms)')
+            ax2.set_xticks(x)
+            ax2.set_xticklabels(databases)
+            ax2.legend()
+            ax2.grid(axis='y', alpha=0.3)
+            
+            # Add value labels
+            for bars in [bars3, bars4]:
+                for bar in bars:
+                    height = bar.get_height()
+                    if height > 0:
+                        ax2.annotate(f'{height:.2f}',
+                                   xy=(bar.get_x() + bar.get_width() / 2, height),
+                                   xytext=(0, 3),
+                                   textcoords="offset points",
+                                   ha='center', va='bottom', fontsize=8)
         
         plt.tight_layout()
         output_file = self.output_dir / 'php_redis_latency_comparison.png'
@@ -282,7 +319,7 @@ class PHPRedisChartsGenerator:
         print(f"Generated: {output_file}")
 
     def create_database_state_chart(self, results, metadata):
-        """NEW: Chart showing database state changes (key counts)"""
+        """Database state chart with conditional TLS handling"""
         if not results:
             return
             
@@ -299,19 +336,30 @@ class PHPRedisChartsGenerator:
         if not has_key_data:
             print("No key count data found, skipping database state chart")
             return
+        
+        # Check for TLS data
+        has_tls_data = False
+        for test_data in results.values():
+            if any(r.get('tls', False) for r in test_data):
+                has_tls_data = True
+                break
             
-        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 8))
+        if has_tls_data:
+            fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 8))
+        else:
+            fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 8))
         
         # Get metadata for title
         first_test = next(iter(metadata.values())) if metadata else {}
         flush_enabled = first_test.get('test_configuration', {}).get('flush_before_test', False)
         
-        fig.suptitle(f'Database State Analysis (Flush: {"Enabled" if flush_enabled else "Disabled"})', 
+        tls_status = "with TLS" if has_tls_data else "non-TLS only"
+        fig.suptitle(f'Database State Analysis ({tls_status}) (Flush: {"Enabled" if flush_enabled else "Disabled"})', 
                     fontsize=16, fontweight='bold')
         
         databases = ['Redis', 'KeyDB', 'Dragonfly', 'Valkey']
         
-        # Collect key count data
+        # Collect key count data (combine TLS and non-TLS for state analysis)
         initial_counts = {db: [] for db in databases}
         final_counts = {db: [] for db in databases}
         key_growth = {db: [] for db in databases}
@@ -382,11 +430,14 @@ class PHPRedisChartsGenerator:
         print(f"Generated: {output_file}")
 
     def create_test_specific_charts(self, results, metadata):
-        """Enhanced test-specific charts with metadata"""
+        """Enhanced test-specific charts with conditional TLS handling"""
         for test_name, test_data in results.items():
             if not test_data:
                 continue
-                
+            
+            # Check if this test has TLS data
+            has_tls_data = any(r.get('tls', False) for r in test_data)
+            
             fig, axes = plt.subplots(2, 2, figsize=(16, 12))
             
             # Get test metadata
@@ -395,7 +446,8 @@ class PHPRedisChartsGenerator:
             flush_status = config.get('flush_before_test', False)
             php_version = test_meta.get('php_version', 'Unknown')
             
-            fig.suptitle(f'{test_name} - Detailed Results\nPHP {php_version} | Flush: {"Yes" if flush_status else "No"}', 
+            tls_status = "with TLS" if has_tls_data else "non-TLS only"
+            fig.suptitle(f'{test_name} - Detailed Results ({tls_status})\nPHP {php_version} | Flush: {"Yes" if flush_status else "No"}', 
                         fontsize=16, fontweight='bold')
             
             databases = ['Redis', 'KeyDB', 'Dragonfly', 'Valkey']
@@ -406,13 +458,20 @@ class PHPRedisChartsGenerator:
             
             # Ops/sec comparison
             ax1 = axes[0, 0]
-            non_tls_ops = [next((r['ops_per_sec'] for r in non_tls_data if r['database'] == db), 0) for db in databases]
-            tls_ops = [next((r['ops_per_sec'] for r in tls_data if r['database'] == db), 0) for db in databases]
-            
             x = np.arange(len(databases))
-            width = 0.35
-            ax1.bar(x - width/2, non_tls_ops, width, label='Non-TLS', alpha=0.8)
-            ax1.bar(x + width/2, tls_ops, width, label='TLS', alpha=0.6)
+            
+            if has_tls_data and tls_data:
+                width = 0.35
+                non_tls_ops = [next((r['ops_per_sec'] for r in non_tls_data if r['database'] == db), 0) for db in databases]
+                tls_ops = [next((r['ops_per_sec'] for r in tls_data if r['database'] == db), 0) for db in databases]
+                
+                ax1.bar(x - width/2, non_tls_ops, width, label='Non-TLS', alpha=0.8)
+                ax1.bar(x + width/2, tls_ops, width, label='TLS', alpha=0.6)
+            else:
+                width = 0.6
+                non_tls_ops = [next((r['ops_per_sec'] for r in non_tls_data if r['database'] == db), 0) for db in databases]
+                ax1.bar(x, non_tls_ops, width, label='Non-TLS', alpha=0.8)
+            
             ax1.set_title('Operations per Second')
             ax1.set_ylabel('Ops/sec')
             ax1.set_xticks(x)
@@ -422,11 +481,18 @@ class PHPRedisChartsGenerator:
             
             # Latency comparison
             ax2 = axes[0, 1]
-            non_tls_lat = [next((r.get('avg_latency', 0) for r in non_tls_data if r['database'] == db), 0) for db in databases]
-            tls_lat = [next((r.get('avg_latency', 0) for r in tls_data if r['database'] == db), 0) for db in databases]
+            if has_tls_data and tls_data:
+                width = 0.35
+                non_tls_lat = [next((r.get('avg_latency', 0) for r in non_tls_data if r['database'] == db), 0) for db in databases]
+                tls_lat = [next((r.get('avg_latency', 0) for r in tls_data if r['database'] == db), 0) for db in databases]
+                
+                ax2.bar(x - width/2, non_tls_lat, width, label='Non-TLS', alpha=0.8)
+                ax2.bar(x + width/2, tls_lat, width, label='TLS', alpha=0.6)
+            else:
+                width = 0.6
+                non_tls_lat = [next((r.get('avg_latency', 0) for r in non_tls_data if r['database'] == db), 0) for db in databases]
+                ax2.bar(x, non_tls_lat, width, label='Non-TLS', alpha=0.8)
             
-            ax2.bar(x - width/2, non_tls_lat, width, label='Non-TLS', alpha=0.8)
-            ax2.bar(x + width/2, tls_lat, width, label='TLS', alpha=0.6)
             ax2.set_title('Average Latency')
             ax2.set_ylabel('Latency (ms)')
             ax2.set_xticks(x)
@@ -436,11 +502,18 @@ class PHPRedisChartsGenerator:
             
             # Error rate comparison
             ax3 = axes[1, 0]
-            non_tls_err = [next((r.get('error_rate', 0) for r in non_tls_data if r['database'] == db), 0) for db in databases]
-            tls_err = [next((r.get('error_rate', 0) for r in tls_data if r['database'] == db), 0) for db in databases]
+            if has_tls_data and tls_data:
+                width = 0.35
+                non_tls_err = [next((r.get('error_rate', 0) for r in non_tls_data if r['database'] == db), 0) for db in databases]
+                tls_err = [next((r.get('error_rate', 0) for r in tls_data if r['database'] == db), 0) for db in databases]
+                
+                ax3.bar(x - width/2, non_tls_err, width, label='Non-TLS', alpha=0.8)
+                ax3.bar(x + width/2, tls_err, width, label='TLS', alpha=0.6)
+            else:
+                width = 0.6
+                non_tls_err = [next((r.get('error_rate', 0) for r in non_tls_data if r['database'] == db), 0) for db in databases]
+                ax3.bar(x, non_tls_err, width, label='Non-TLS', alpha=0.8)
             
-            ax3.bar(x - width/2, non_tls_err, width, label='Non-TLS', alpha=0.8)
-            ax3.bar(x + width/2, tls_err, width, label='TLS', alpha=0.6)
             ax3.set_title('Error Rate')
             ax3.set_ylabel('Error Rate (%)')
             ax3.set_xticks(x)
@@ -448,7 +521,7 @@ class PHPRedisChartsGenerator:
             ax3.legend()
             ax3.grid(axis='y', alpha=0.3)
             
-            # Key growth analysis (NEW)
+            # Key growth analysis
             ax4 = axes[1, 1]
             if any('final_key_count' in r for r in test_data):
                 key_growth = []
@@ -486,22 +559,31 @@ class PHPRedisChartsGenerator:
             print(f"Generated: {output_file}")
 
     def create_summary_report(self, results, metadata):
-        """Enhanced summary report with metadata and analysis"""
+        """Enhanced summary report with conditional TLS handling"""
         if not results:
             print("No results to summarize")
             return
+        
+        # Check for TLS data
+        has_tls_data = False
+        for test_data in results.values():
+            if any(r.get('tls', False) for r in test_data):
+                has_tls_data = True
+                break
             
         # Get overall metadata
         first_test = next(iter(metadata.values())) if metadata else {}
         php_version = first_test.get('php_version', 'Unknown')
         test_config = first_test.get('test_configuration', {})
         
-        report = f"# WordPress Redis Benchmark Results\n\n"
+        tls_status = "with TLS" if has_tls_data else "non-TLS only"
+        report = f"# WordPress Redis Benchmark Results ({tls_status})\n\n"
         report += f"**Generated:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
         report += f"**PHP Version:** {php_version}\n"
         report += f"**Test Configuration:**\n"
         report += f"- Flush Before Test: {'Yes' if test_config.get('flush_before_test') else 'No'}\n"
-        report += f"- TLS Testing: {'Yes' if test_config.get('test_tls') else 'No'}\n\n"
+        report += f"- TLS Testing: {'Yes' if test_config.get('test_tls') else 'No'}\n"
+        report += f"- TLS Results Found: {'Yes' if has_tls_data else 'No'}\n\n"
         
         # Performance summary table
         report += "## Performance Summary\n\n"
@@ -543,6 +625,26 @@ class PHPRedisChartsGenerator:
                     mode = "TLS" if result.get('tls', False) else "Non-TLS"
                     report += f"{i+1}. **{result['database']} ({mode})**: {result.get('avg_latency', 0):.2f} ms\n"
             
+            # TLS vs Non-TLS comparison if TLS data exists
+            if has_tls_data:
+                report += "\n### TLS vs Non-TLS Performance Impact\n\n"
+                
+                tls_results = [r for r in all_results if r.get('tls', False)]
+                non_tls_results = [r for r in all_results if not r.get('tls', False)]
+                
+                if tls_results and non_tls_results:
+                    for db in ['Redis', 'KeyDB', 'Dragonfly', 'Valkey']:
+                        db_tls = [r for r in tls_results if r['database'] == db]
+                        db_non_tls = [r for r in non_tls_results if r['database'] == db]
+                        
+                        if db_tls and db_non_tls:
+                            tls_avg_ops = np.mean([r['ops_per_sec'] for r in db_tls])
+                            non_tls_avg_ops = np.mean([r['ops_per_sec'] for r in db_non_tls])
+                            impact = ((non_tls_avg_ops - tls_avg_ops) / non_tls_avg_ops) * 100
+                            
+                            report += f"- **{db}**: {impact:+.1f}% performance impact with TLS "
+                            report += f"({non_tls_avg_ops:.0f} → {tls_avg_ops:.0f} ops/sec)\n"
+            
             # Database state analysis
             if any('initial_key_count' in r for r in all_results):
                 report += "\n### Database State Analysis\n\n"
@@ -571,13 +673,23 @@ class PHPRedisChartsGenerator:
                 report += f"- Configuration: {config}\n"
             report += "\n"
         
+        # TLS connection status
+        if not has_tls_data and first_test.get('test_configuration', {}).get('test_tls', False):
+            report += "\n## TLS Connection Issues\n\n"
+            report += "TLS testing was enabled but no successful TLS connections were recorded.\n"
+            report += "This may indicate:\n"
+            report += "- TLS ports are not accessible\n"
+            report += "- TLS certificates are missing or invalid\n"
+            report += "- Server TLS configuration issues\n"
+            report += "- PHP Redis extension TLS compatibility issues\n\n"
+        
         output_file = self.output_dir / "php_redis_benchmark_summary.md"
         with open(output_file, 'w') as f:
             f.write(report)
-        print(f"Generated: {output_file}")
+        print(f"Generated: {output_file}") 
 
     def generate_all_charts(self):
-        """Generate all charts and reports"""
+        """Generate all charts and reports with enhanced TLS handling"""
         print("Loading test results...")
         results, metadata = self.load_test_results()
         
@@ -585,7 +697,15 @@ class PHPRedisChartsGenerator:
             print("No results found to generate charts")
             return
         
+        # Check overall TLS status
+        has_any_tls = False
+        for test_data in results.values():
+            if any(r.get('tls', False) for r in test_data):
+                has_any_tls = True
+                break
+        
         print(f"Generating charts for {len(results)} test types...")
+        print(f"TLS data available: {has_any_tls}")
         
         # Generate all chart types
         self.create_performance_comparison_chart(results, metadata)
@@ -595,6 +715,19 @@ class PHPRedisChartsGenerator:
         self.create_summary_report(results, metadata)
         
         print(f"All charts and reports generated in {self.output_dir}")
+        
+        # Print summary of generated files
+        png_files = list(self.output_dir.glob("*.png"))
+        md_files = list(self.output_dir.glob("*.md"))
+        
+        print(f"\nGenerated files:")
+        print(f"  Charts: {len(png_files)} PNG files")
+        print(f"  Reports: {len(md_files)} Markdown files")
+        
+        if has_any_tls:
+            print("  ✓ Charts include both TLS and non-TLS data")
+        else:
+            print("  ℹ Charts show non-TLS data only (no TLS connections succeeded)")
 
 def main():
     parser = argparse.ArgumentParser(description='Generate enhanced charts from PHP Redis benchmark results')
