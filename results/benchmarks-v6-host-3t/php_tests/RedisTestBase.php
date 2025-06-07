@@ -1,18 +1,13 @@
 <?php
 /**
- * Base class for WordPress Redis Tests
- * Handles Redis connections, TLS setup, result formatting, and database management
+ * Enhanced RedisTestBase with 5-Run Testing and Statistical Analysis
  * 
  * Features:
- * - Non-TLS and TLS connection support with version compatibility
- * - Enhanced TLS error handling and diagnostics
- * - TLS port connectivity pre-checks
- * - Performance comparison between TLS and non-TLS
- * - FLUSHALL database cleanup before tests
- * - Multiple output formats (CSV, JSON, Markdown)
- * - Comprehensive error handling
- * - Debug output and verification
- * - Repository root path handling
+ * - Multiple test iterations for statistical reliability
+ * - Standard deviation, coefficient of variation calculations
+ * - Confidence intervals and measurement quality assessment
+ * - Raw data logging for detailed analysis
+ * - Enhanced reporting with statistical measures
  * - Thread-aware configuration and reporting
  */
 
@@ -31,9 +26,22 @@ class RedisTestBase {
     protected $debug_mode = false;
     protected $tls_skip_verify = true;
     
-    // NEW: Thread configuration properties
+    // NEW: Multi-run testing configuration
+    protected $test_iterations = 5;
+    protected $iteration_pause_ms = 500; // 500ms pause between iterations
+    protected $save_raw_results = true;
+    
+    // Thread configuration properties
     protected $thread_variant = 'unknown';
     protected $thread_config = [];
+    
+    // NEW: Statistical thresholds for measurement quality
+    protected $cv_thresholds = [
+        'excellent' => 0.02,  // CV < 2%
+        'good' => 0.05,       // CV < 5%
+        'fair' => 0.10,       // CV < 10%
+        // 'poor' for CV >= 10%
+    ];
     
     public function __construct($config = []) {
         $this->output_dir = $config['output_dir'] ?? 'php_benchmark_results';
@@ -42,7 +50,12 @@ class RedisTestBase {
         $this->debug_mode = $config['debug'] ?? false;
         $this->tls_skip_verify = $config['tls_skip_verify'] ?? true;
         
-        // NEW: Handle thread configuration
+        // NEW: Multi-run configuration
+        $this->test_iterations = $config['test_iterations'] ?? 5;
+        $this->iteration_pause_ms = $config['iteration_pause_ms'] ?? 500;
+        $this->save_raw_results = $config['save_raw_results'] ?? true;
+        
+        // Thread configuration
         $this->thread_variant = $config['thread_variant'] ?? 'unknown';
         $this->thread_config = $config['thread_config'] ?? [];
         
@@ -55,25 +68,18 @@ class RedisTestBase {
             throw new Exception('Redis PHP extension is required');
         }
         
-        // Handle relative paths from repository root
         if (!is_dir($this->output_dir)) {
             if (!mkdir($this->output_dir, 0755, true)) {
                 throw new Exception("Could not create output directory: {$this->output_dir}");
             }
         }
         
-        $this->debugLog("RedisTestBase initialized");
+        $this->debugLog("Enhanced RedisTestBase initialized");
+        $this->debugLog("Test iterations: {$this->test_iterations}");
+        $this->debugLog("Iteration pause: {$this->iteration_pause_ms}ms");
+        $this->debugLog("Save raw results: " . ($this->save_raw_results ? 'enabled' : 'disabled'));
         $this->debugLog("Output directory: {$this->output_dir}");
-        $this->debugLog("TLS testing: " . ($this->test_both_tls ? 'enabled' : 'disabled'));
-        $this->debugLog("Flush before test: " . ($this->flush_before_test ? 'enabled' : 'disabled'));
-        $this->debugLog("Redis extension version: " . $this->getRedisExtensionVersion());
-        $this->debugLog("TLS skip verify: " . ($this->tls_skip_verify ? 'enabled' : 'disabled'));
-        
-        // NEW: Log thread configuration
         $this->debugLog("Thread variant: {$this->thread_variant}");
-        if (!empty($this->thread_config)) {
-            $this->debugLog("Thread configuration: " . json_encode($this->thread_config));
-        }
     }
     
     /**
@@ -226,7 +232,14 @@ class RedisTestBase {
         echo "Timestamp: " . date('Y-m-d H:i:s') . " UTC\n";
         echo "Redis Extension Version: " . $this->getRedisExtensionVersion() . "\n";
         
-        // NEW: Display thread configuration information
+        // NEW: Display enhanced test configuration
+        echo "Enhanced Testing Configuration:\n";
+        echo "- Iterations per test: {$this->test_iterations}\n";
+        echo "- Iteration pause: {$this->iteration_pause_ms}ms\n";
+        echo "- Statistical analysis: Enabled\n";
+        echo "- Raw data logging: " . ($this->save_raw_results ? 'Enabled' : 'Disabled') . "\n";
+        
+        // Display thread configuration information
         echo "Thread Variant: {$this->thread_variant}\n";
         if (!empty($this->thread_config)) {
             echo "Thread Configuration:\n";
@@ -275,7 +288,7 @@ class RedisTestBase {
         foreach ($this->databases as $db_name => $config) {
             echo "Testing {$db_name}...\n";
             
-            // NEW: Display thread-specific configuration for this database
+            // Display thread-specific configuration for this database
             $this->displayDatabaseThreadConfig($db_name, $config);
             
             // Test non-TLS
@@ -311,19 +324,24 @@ class RedisTestBase {
         $this->saveResults($all_results);
         
         echo str_repeat("=", 60) . "\n";
-        echo "Test suite completed!\n";
+        echo "Enhanced test suite completed!\n";
         echo "Total execution time: " . number_format($total_test_time, 2) . " seconds\n";
         echo "Total tests run: " . count($all_results) . "\n";
+        echo "Statistical iterations per test: {$this->test_iterations}\n";
         echo "Results saved to {$this->output_dir}/\n";
         
-        // Print summaries
+        // Print enhanced summaries
         $this->printResultsSummary($all_results);
         $this->printTlsPerformanceComparison($all_results);
+        $this->printStatisticalInsights($all_results);
     }
     
+    /**
+     * NEW: Enhanced single test runner with multiple iterations
+     */
     protected function runSingleTest($redis, $db_name, $is_tls, $port) {
         $test_label = $db_name . ($is_tls ? ' (TLS)' : ' (non-TLS)');
-        echo "  Running {$test_label}...\n";
+        echo "  Running {$this->test_iterations} iterations for {$test_label}...\n";
         
         try {
             // Get initial database state
@@ -338,47 +356,265 @@ class RedisTestBase {
                 $flush_time = microtime(true) - $flush_start;
                 $key_count_after_flush = $redis->dbSize();
                 echo "  Database flushed in " . number_format($flush_time * 1000, 2) . "ms. Keys remaining: {$key_count_after_flush}\n";
+                $initial_keys = $key_count_after_flush; // Update initial count after flush
             }
             
-            // Run the actual test
-            $result = $this->runTest($redis, $test_label);
+            // Run multiple test iterations
+            $all_iterations = [];
+            for ($iteration = 1; $iteration <= $this->test_iterations; $iteration++) {
+                echo "    Iteration {$iteration}/{$this->test_iterations}... ";
+                
+                $iteration_result = $this->runSingleIteration($redis, $test_label, $iteration);
+                $iteration_result['iteration'] = $iteration;
+                $iteration_result['iteration_timestamp'] = date('c');
+                $all_iterations[] = $iteration_result;
+                
+                echo sprintf("%.0f ops/sec, %.3fms latency\n", 
+                    $iteration_result['ops_per_sec'], $iteration_result['avg_latency']);
+                
+                // Brief pause between iterations to let system stabilize
+                if ($iteration < $this->test_iterations && $this->iteration_pause_ms > 0) {
+                    usleep($this->iteration_pause_ms * 1000);
+                }
+            }
+            
+            // Calculate aggregate statistics
+            $aggregate_result = $this->calculateAggregateResults($all_iterations, $test_label);
             
             // Add metadata to result
-            $result['database'] = $db_name;
-            $result['tls'] = $is_tls;
-            $result['port'] = $port;
-            $result['flushed_before_test'] = $this->flush_before_test;
-            $result['initial_key_count'] = $initial_keys;
-            $result['test_timestamp'] = date('c');
-            $result['php_version'] = PHP_VERSION;
-            $result['redis_extension_version'] = $this->getRedisExtensionVersion();
-            
-            // NEW: Add thread configuration metadata
-            $result['thread_variant'] = $this->thread_variant;
-            $result['thread_config'] = $this->thread_config;
+            $aggregate_result['database'] = $db_name;
+            $aggregate_result['tls'] = $is_tls;
+            $aggregate_result['port'] = $port;
+            $aggregate_result['flushed_before_test'] = $this->flush_before_test;
+            $aggregate_result['initial_key_count'] = $initial_keys;
+            $aggregate_result['test_timestamp'] = date('c');
+            $aggregate_result['php_version'] = PHP_VERSION;
+            $aggregate_result['redis_extension_version'] = $this->getRedisExtensionVersion();
+            $aggregate_result['thread_variant'] = $this->thread_variant;
+            $aggregate_result['thread_config'] = $this->thread_config;
             
             // Add database-specific thread information
             $db_config = $this->databases[$db_name] ?? [];
-            $result['database_thread_config'] = $this->extractDatabaseThreadConfig($db_name, $db_config);
+            $aggregate_result['database_thread_config'] = $this->extractDatabaseThreadConfig($db_name, $db_config);
             
             // Get final database state
             $final_keys = $redis->dbSize();
-            $result['final_key_count'] = $final_keys;
+            $aggregate_result['final_key_count'] = $final_keys;
             
+            // NEW: Store raw iterations if enabled
+            if ($this->save_raw_results) {
+                $aggregate_result['raw_iterations'] = $all_iterations;
+            }
+            
+            // Enhanced output with statistical information
             echo sprintf(
-                "  %s: %.2f ops/sec, %.2fms avg latency, %.2f%% errors\n",
+                "  %s: %.2f±%.2f ops/sec (CV: %.1f%%), %.3f±%.3fms latency, Quality: %s\n",
                 $test_label,
-                $result['ops_per_sec'],
-                $result['avg_latency'],
-                $result['error_rate']
+                $aggregate_result['ops_per_sec'],
+                $aggregate_result['ops_per_sec_stddev'],
+                $aggregate_result['ops_per_sec_cv'] * 100,
+                $aggregate_result['avg_latency'],
+                $aggregate_result['latency_stddev'],
+                $aggregate_result['measurement_quality']
             );
             echo "  Final keys in database: {$final_keys}\n";
             
-            return $result;
+            return $aggregate_result;
             
         } catch (Exception $e) {
             echo "  ERROR: Test failed for {$test_label}: " . $e->getMessage() . "\n";
             return null;
+        }
+    }
+    
+    /**
+     * NEW: Calculate aggregate results from multiple iterations
+     */
+    private function calculateAggregateResults($iterations, $test_label) {
+        if (empty($iterations)) {
+            throw new Exception("No iterations to aggregate");
+        }
+        
+        // Extract metric arrays
+        $ops_per_sec = array_column($iterations, 'ops_per_sec');
+        $latencies = array_column($iterations, 'avg_latency');
+        $p95_latencies = array_column($iterations, 'p95_latency');
+        $p99_latencies = array_column($iterations, 'p99_latency');
+        $operations = array_column($iterations, 'operations');
+        $errors = array_column($iterations, 'errors');
+        $durations = array_column($iterations, 'duration');
+        
+        // Calculate basic statistics
+        $avg_ops = $this->calculateMean($ops_per_sec);
+        $stddev_ops = $this->calculateStandardDeviation($ops_per_sec);
+        $cv_ops = $this->calculateCoefficientOfVariation($ops_per_sec);
+        
+        $avg_latency = $this->calculateMean($latencies);
+        $stddev_latency = $this->calculateStandardDeviation($latencies);
+        
+        // Determine measurement quality
+        $quality = $this->assessMeasurementQuality($cv_ops);
+        
+        // Calculate confidence interval (95%)
+        $confidence_interval = $this->calculateConfidenceInterval($ops_per_sec, 0.95);
+        
+        return [
+            'iterations_count' => count($iterations),
+            'test_iterations' => $this->test_iterations,
+            
+            // Primary metrics (averages)
+            'ops_per_sec' => $avg_ops,
+            'avg_latency' => $avg_latency,
+            'p95_latency' => $this->calculateMean($p95_latencies),
+            'p99_latency' => $this->calculateMean($p99_latencies),
+            
+            // Statistical measures for ops/sec
+            'ops_per_sec_min' => min($ops_per_sec),
+            'ops_per_sec_max' => max($ops_per_sec),
+            'ops_per_sec_stddev' => $stddev_ops,
+            'ops_per_sec_cv' => $cv_ops,
+            'ops_per_sec_confidence_interval_95' => $confidence_interval,
+            
+            // Statistical measures for latency
+            'latency_min' => min($latencies),
+            'latency_max' => max($latencies),
+            'latency_stddev' => $stddev_latency,
+            'latency_cv' => $this->calculateCoefficientOfVariation($latencies),
+            
+            // Measurement quality assessment
+            'measurement_quality' => $quality,
+            'measurement_reliable' => ($quality !== 'poor'),
+            
+            // Aggregated totals
+            'total_operations' => array_sum($operations),
+            'total_errors' => array_sum($errors),
+            'error_rate' => (array_sum($errors) / max(array_sum($operations), 1)) * 100,
+            'avg_duration' => $this->calculateMean($durations),
+            
+            // Additional percentiles for ops/sec
+            'ops_per_sec_median' => $this->calculatePercentile($ops_per_sec, 50),
+            'ops_per_sec_p25' => $this->calculatePercentile($ops_per_sec, 25),
+            'ops_per_sec_p75' => $this->calculatePercentile($ops_per_sec, 75),
+        ];
+    }
+    
+    /**
+     * NEW: Run a single test iteration (to be overridden by child classes)
+     */
+    protected function runSingleIteration($redis, $test_label, $iteration) {
+        // Default implementation - child classes should override this
+        $start_time = microtime(true);
+        
+        // Simulate some work
+        usleep(rand(900000, 1100000)); // 0.9-1.1 seconds
+        
+        $duration = microtime(true) - $start_time;
+        $operations = rand(950, 1050);
+        
+        return [
+            'operations' => $operations,
+            'errors' => 0,
+            'duration' => $duration,
+            'ops_per_sec' => $operations / $duration,
+            'avg_latency' => ($duration / $operations) * 1000, // Convert to ms
+            'p95_latency' => (($duration / $operations) * 1000) * 1.2,
+            'p99_latency' => (($duration / $operations) * 1000) * 1.5,
+            'error_rate' => 0.0
+        ];
+    }
+    
+    /**
+     * NEW: Calculate mean of an array
+     */
+    private function calculateMean($values) {
+        if (empty($values)) return 0;
+        return array_sum($values) / count($values);
+    }
+    
+    /**
+     * NEW: Calculate standard deviation (sample)
+     */
+    private function calculateStandardDeviation($values) {
+        if (count($values) < 2) return 0;
+        
+        $mean = $this->calculateMean($values);
+        $sum_squares = 0;
+        
+        foreach ($values as $value) {
+            $sum_squares += pow($value - $mean, 2);
+        }
+        
+        // Sample standard deviation (n-1)
+        return sqrt($sum_squares / (count($values) - 1));
+    }
+    
+    /**
+     * NEW: Calculate coefficient of variation
+     */
+    private function calculateCoefficientOfVariation($values) {
+        $mean = $this->calculateMean($values);
+        if ($mean == 0) return 0;
+        
+        $stddev = $this->calculateStandardDeviation($values);
+        return $stddev / $mean;
+    }
+    
+    /**
+     * NEW: Calculate confidence interval
+     */
+    private function calculateConfidenceInterval($values, $confidence_level = 0.95) {
+        if (count($values) < 2) return ['lower' => 0, 'upper' => 0, 'margin_error' => 0];
+        
+        $mean = $this->calculateMean($values);
+        $stddev = $this->calculateStandardDeviation($values);
+        $n = count($values);
+        
+        // T-score for 95% confidence (approximation for small samples)
+        $t_scores = [
+            2 => 12.706, 3 => 4.303, 4 => 3.182, 5 => 2.776,
+            6 => 2.571, 7 => 2.447, 8 => 2.365, 9 => 2.306, 10 => 2.262
+        ];
+        
+        $t_score = $t_scores[$n] ?? 2.0; // Default to ~2.0 for larger samples
+        $margin_error = $t_score * ($stddev / sqrt($n));
+        
+        return [
+            'lower' => $mean - $margin_error,
+            'upper' => $mean + $margin_error,
+            'margin_error' => $margin_error
+        ];
+    }
+    
+    /**
+     * NEW: Calculate percentile
+     */
+    private function calculatePercentile($values, $percentile) {
+        if (empty($values)) return 0;
+        
+        sort($values);
+        $index = ($percentile / 100) * (count($values) - 1);
+        
+        if (floor($index) == $index) {
+            return $values[$index];
+        } else {
+            $lower = $values[floor($index)];
+            $upper = $values[ceil($index)];
+            return $lower + (($index - floor($index)) * ($upper - $lower));
+        }
+    }
+    
+    /**
+     * NEW: Assess measurement quality based on coefficient of variation
+     */
+    private function assessMeasurementQuality($cv) {
+        if ($cv <= $this->cv_thresholds['excellent']) {
+            return 'excellent';
+        } elseif ($cv <= $this->cv_thresholds['good']) {
+            return 'good';
+        } elseif ($cv <= $this->cv_thresholds['fair']) {
+            return 'fair';
+        } else {
+            return 'poor';
         }
     }
     
@@ -523,7 +759,7 @@ class RedisTestBase {
         if (empty($tls_results)) {
             echo "\n" . str_repeat("=", 60) . "\n";
             echo "TLS PERFORMANCE COMPARISON\n";
-            echo "Thread Variant: {$this->thread_variant}\n";  // NEW
+            echo "Thread Variant: {$this->thread_variant}\n";
             echo str_repeat("=", 60) . "\n";
             echo "No successful TLS connections for performance comparison.\n";
             echo "All databases tested with non-TLS only.\n";
@@ -533,7 +769,7 @@ class RedisTestBase {
         
         echo "\n" . str_repeat("=", 60) . "\n";
         echo "TLS vs NON-TLS PERFORMANCE COMPARISON\n";
-        echo "Thread Variant: {$this->thread_variant}\n";  // NEW
+        echo "Thread Variant: {$this->thread_variant}\n";
         echo str_repeat("=", 60) . "\n";
         
         foreach ($this->databases as $db_name => $config) {
@@ -545,49 +781,226 @@ class RedisTestBase {
             });
             
             if (!empty($non_tls) && !empty($tls)) {
-                $non_tls_ops = reset($non_tls)['ops_per_sec'];
-                $tls_ops = reset($tls)['ops_per_sec'];
+                $non_tls_result = reset($non_tls);
+                $tls_result = reset($tls);
+                
+                $non_tls_ops = $non_tls_result['ops_per_sec'];
+                $tls_ops = $tls_result['ops_per_sec'];
                 $performance_impact = (($non_tls_ops - $tls_ops) / $non_tls_ops) * 100;
                 
-                echo sprintf("%-10s | Non-TLS: %8.0f ops/sec | TLS: %8.0f ops/sec | Impact: %+5.1f%%\n",
+                // Check if difference is statistically significant
+                $non_tls_ci = $non_tls_result['ops_per_sec_confidence_interval_95'] ?? [];
+                $tls_ci = $tls_result['ops_per_sec_confidence_interval_95'] ?? [];
+                
+                $significant = "";
+                if (isset($tls_ci['upper']) && isset($non_tls_ci['lower']) && 
+                    $tls_ci['upper'] < $non_tls_ci['lower']) {
+                    $significant = " *";
+                }
+                
+                echo sprintf("%-10s | Non-TLS: %8.0f±%-4.0f | TLS: %8.0f±%-4.0f | Impact: %+5.1f%%%s\n",
                     $db_name,
                     $non_tls_ops,
+                    $non_tls_result['ops_per_sec_stddev'] ?? 0,
                     $tls_ops,
-                    $performance_impact
+                    $tls_result['ops_per_sec_stddev'] ?? 0,
+                    $performance_impact,
+                    $significant
                 );
             } elseif (!empty($non_tls)) {
-                echo sprintf("%-10s | Non-TLS: %8.0f ops/sec | TLS: %8s | Impact: %s\n",
+                echo sprintf("%-10s | Non-TLS: %8.0f±%-4.0f | TLS: %8s | Impact: %s\n",
                     $db_name,
                     reset($non_tls)['ops_per_sec'],
+                    reset($non_tls)['ops_per_sec_stddev'] ?? 0,
                     'FAILED',
                     'N/A'
                 );
             }
         }
+        echo str_repeat("-", 60) . "\n";
+        echo "* = Statistically significant difference (95% confidence)\n";
         echo str_repeat("=", 60) . "\n";
     }
     
+    /**
+     * NEW: Print statistical insights about the test results
+     */
+    protected function printStatisticalInsights($results) {
+        if (empty($results)) {
+            return;
+        }
+        
+        echo "\n" . str_repeat("=", 80) . "\n";
+        echo "STATISTICAL INSIGHTS\n";
+        echo "Thread Variant: {$this->thread_variant} | Iterations: {$this->test_iterations}\n";
+        echo str_repeat("=", 80) . "\n";
+        
+        // Analyze measurement quality
+        $quality_counts = ['excellent' => 0, 'good' => 0, 'fair' => 0, 'poor' => 0];
+        $cv_values = [];
+        
+        foreach ($results as $result) {
+            $quality = $result['measurement_quality'] ?? 'unknown';
+            if (isset($quality_counts[$quality])) {
+                $quality_counts[$quality]++;
+            }
+            
+            $cv = $result['ops_per_sec_cv'] ?? 0;
+            if ($cv > 0) {
+                $cv_values[] = $cv * 100; // Convert to percentage
+            }
+        }
+        
+        echo "Measurement Quality Distribution:\n";
+        $total_tests = array_sum($quality_counts);
+        foreach ($quality_counts as $quality => $count) {
+            if ($count > 0) {
+                $percentage = ($count / $total_tests) * 100;
+                $quality_icon = ['excellent' => '🟢', 'good' => '🟡', 'fair' => '🟠', 'poor' => '🔴'][$quality];
+                echo sprintf("  %s %-10s: %2d tests (%.1f%%)\n", 
+                    $quality_icon, ucfirst($quality), $count, $percentage);
+            }
+        }
+        
+        if (!empty($cv_values)) {
+            $avg_cv = $this->calculateMean($cv_values);
+            $min_cv = min($cv_values);
+            $max_cv = max($cv_values);
+            
+            echo "\nCoefficient of Variation Analysis:\n";
+            echo sprintf("  Average CV: %.1f%% (lower is better)\n", $avg_cv);
+            echo sprintf("  Range: %.1f%% - %.1f%%\n", $min_cv, $max_cv);
+            
+            if ($avg_cv < 2.0) {
+                echo "  📊 Excellent measurement consistency across all tests\n";
+            } elseif ($avg_cv < 5.0) {
+                echo "  📊 Good measurement consistency\n";
+            } elseif ($avg_cv < 10.0) {
+                echo "  📊 Fair measurement consistency - consider test environment optimization\n";
+            } else {
+                echo "  ⚠️  Poor measurement consistency - investigate test conditions\n";
+            }
+        }
+        
+        // Analyze performance spread
+        $all_ops = array_column($results, 'ops_per_sec');
+        if (!empty($all_ops)) {
+            $min_ops = min($all_ops);
+            $max_ops = max($all_ops);
+            $performance_range = (($max_ops - $min_ops) / $min_ops) * 100;
+            
+            echo "\nPerformance Analysis:\n";
+            echo sprintf("  Performance range: %.0f - %.0f ops/sec (%.1f%% spread)\n", 
+                $min_ops, $max_ops, $performance_range);
+            
+            if ($performance_range > 100) {
+                echo "  📈 Significant performance differences detected between databases\n";
+            } elseif ($performance_range > 50) {
+                echo "  📈 Moderate performance differences between databases\n";
+            } else {
+                echo "  📈 Relatively similar performance across databases\n";
+            }
+        }
+        
+        // Statistical recommendations
+        echo "\nStatistical Recommendations:\n";
+        
+        $poor_quality_count = $quality_counts['poor'];
+        if ($poor_quality_count > 0) {
+            echo "  ⚠️  {$poor_quality_count} tests showed high variability (CV ≥ 10%)\n";
+            echo "     • Consider running tests during low system load\n";
+            echo "     • Check for background processes affecting performance\n";
+            echo "     • Increase iteration count for better statistical power\n";
+        }
+        
+        if ($this->test_iterations < 5) {
+            echo "  📊 Consider increasing iterations to 5+ for better statistical confidence\n";
+        }
+        
+        $reliable_count = $quality_counts['excellent'] + $quality_counts['good'];
+        if ($reliable_count >= count($results) * 0.8) {
+            echo "  ✅ High confidence in results - good statistical reliability\n";
+        }
+        
+        echo str_repeat("=", 80) . "\n";
+    }
+    
+    /**
+     * NEW: Enhanced results saving with raw data
+     */
     protected function saveResults($results) {
         if (empty($results)) {
             echo "No results to save.\n";
             return;
         }
         
-        // Remove timestamp from filename generation
         $test_slug = strtolower(str_replace([' ', '-'], '_', $this->test_name));
         $test_slug = preg_replace('/[^a-z0-9_]/', '', $test_slug);
         
-        $base_filename = $test_slug; // No timestamp suffix
+        $base_filename = $test_slug;
         
-        // Save in multiple formats
+        // Save aggregated results (existing format)
         $csv_file = $this->saveCSV($results, "{$this->output_dir}/{$base_filename}.csv");
         $json_file = $this->saveJSON($results, "{$this->output_dir}/{$base_filename}.json");
         $md_file = $this->saveMarkdown($results, "{$this->output_dir}/{$base_filename}.md");
         
-        echo "Results saved:\n";
+        // NEW: Save raw iteration data if enabled
+        $raw_file = '';
+        if ($this->save_raw_results) {
+            $raw_file = $this->saveRawResults($results, "{$this->output_dir}/{$base_filename}_raw.json");
+        }
+        
+        echo "Enhanced results saved:\n";
         echo "  CSV: {$csv_file}\n";
         echo "  JSON: {$json_file}\n";
         echo "  Markdown: {$md_file}\n";
+        if ($raw_file) {
+            echo "  Raw Data: {$raw_file}\n";
+        }
+    }
+    
+    /**
+     * NEW: Save raw iteration results for detailed analysis
+     */
+    protected function saveRawResults($results, $filename) {
+        $raw_data = [
+            'test_name' => $this->test_name . ' - Raw Iterations',
+            'timestamp' => date('c'),
+            'test_iterations' => $this->test_iterations,
+            'iteration_pause_ms' => $this->iteration_pause_ms,
+            'thread_variant' => $this->thread_variant,
+            'thread_config' => $this->thread_config,
+            'statistical_methodology' => [
+                'iterations_per_test' => $this->test_iterations,
+                'pause_between_iterations_ms' => $this->iteration_pause_ms,
+                'quality_thresholds' => $this->cv_thresholds,
+                'confidence_level' => 0.95
+            ],
+            'databases' => []
+        ];
+        
+        foreach ($results as $result) {
+            if (!isset($result['raw_iterations'])) continue;
+            
+            $db_key = $result['database'] . ($result['tls'] ? '_TLS' : '_NonTLS');
+            $raw_data['databases'][$db_key] = [
+                'database' => $result['database'],
+                'tls' => $result['tls'],
+                'port' => $result['port'],
+                'thread_config' => $result['database_thread_config'] ?? [],
+                'measurement_quality' => $result['measurement_quality'] ?? 'unknown',
+                'coefficient_of_variation' => $result['ops_per_sec_cv'] ?? 0,
+                'confidence_interval_95' => $result['ops_per_sec_confidence_interval_95'] ?? [],
+                'iterations' => $result['raw_iterations']
+            ];
+        }
+        
+        $json_content = json_encode($raw_data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+        if (file_put_contents($filename, $json_content) === false) {
+            throw new Exception("Could not write raw results file: {$filename}");
+        }
+        
+        return $filename;
     }
     
     protected function saveCSV($results, $filename) {
@@ -597,11 +1010,36 @@ class RedisTestBase {
         }
         
         if (!empty($results)) {
-            // Header
-            fputcsv($fp, array_keys($results[0]));
+            // Enhanced header with statistical fields
+            $headers = [
+                'database', 'tls', 'port', 'ops_per_sec', 'ops_per_sec_stddev', 'ops_per_sec_cv',
+                'avg_latency', 'latency_stddev', 'p95_latency', 'p99_latency', 
+                'measurement_quality', 'iterations_count', 'error_rate',
+                'confidence_interval_lower', 'confidence_interval_upper', 'thread_variant'
+            ];
+            fputcsv($fp, $headers);
             
-            // Data
-            foreach ($results as $row) {
+            // Data rows with statistical information
+            foreach ($results as $result) {
+                $ci = $result['ops_per_sec_confidence_interval_95'] ?? [];
+                $row = [
+                    $result['database'],
+                    $result['tls'] ? 'true' : 'false',
+                    $result['port'],
+                    $result['ops_per_sec'],
+                    $result['ops_per_sec_stddev'] ?? 0,
+                    $result['ops_per_sec_cv'] ?? 0,
+                    $result['avg_latency'],
+                    $result['latency_stddev'] ?? 0,
+                    $result['p95_latency'],
+                    $result['p99_latency'],
+                    $result['measurement_quality'] ?? 'unknown',
+                    $result['iterations_count'] ?? $this->test_iterations,
+                    $result['error_rate'],
+                    $ci['lower'] ?? 0,
+                    $ci['upper'] ?? 0,
+                    $result['thread_variant']
+                ];
                 fputcsv($fp, $row);
             }
         }
@@ -610,6 +1048,9 @@ class RedisTestBase {
         return $filename;
     }
     
+    /**
+     * Enhanced JSON save with statistical metadata
+     */
     protected function saveJSON($results, $filename) {
         $data = [
             'test_name' => $this->test_name,
@@ -617,7 +1058,20 @@ class RedisTestBase {
             'php_version' => PHP_VERSION,
             'redis_extension_version' => $this->getRedisExtensionVersion(),
             
-            // NEW: Add thread configuration to metadata
+            // Enhanced: Add statistical testing metadata
+            'test_methodology' => [
+                'iterations_per_test' => $this->test_iterations,
+                'iteration_pause_ms' => $this->iteration_pause_ms,
+                'statistical_measures' => [
+                    'standard_deviation',
+                    'coefficient_of_variation',
+                    'confidence_intervals',
+                    'percentiles'
+                ],
+                'quality_thresholds' => $this->cv_thresholds,
+                'confidence_level' => 0.95
+            ],
+            
             'thread_variant' => $this->thread_variant,
             'thread_config' => $this->thread_config,
             
@@ -626,8 +1080,6 @@ class RedisTestBase {
                 'test_tls' => $this->test_both_tls,
                 'tls_skip_verify' => $this->tls_skip_verify,
                 'output_dir' => $this->output_dir,
-                
-                // NEW: Include thread information in test configuration
                 'thread_variant' => $this->thread_variant,
                 'database_configurations' => $this->databases
             ],
@@ -647,65 +1099,94 @@ class RedisTestBase {
         return $filename;
     }
     
+    /**
+     * Enhanced markdown save with statistical information
+     */
     protected function saveMarkdown($results, $filename) {
         $content = "# {$this->test_name}\n\n";
         $content .= "**Test Date:** " . date('Y-m-d H:i:s') . " UTC\n";
         $content .= "**PHP Version:** " . PHP_VERSION . "\n";
         $content .= "**Redis Extension Version:** " . $this->getRedisExtensionVersion() . "\n";
         $content .= "**Results Count:** " . count($results) . "\n";
-        
-        // NEW: Add thread configuration information
         $content .= "**Thread Variant:** {$this->thread_variant}\n";
+        
+        // NEW: Statistical methodology information
+        $content .= "\n## Statistical Methodology\n\n";
+        $content .= "- **Iterations per Test:** {$this->test_iterations}\n";
+        $content .= "- **Iteration Pause:** {$this->iteration_pause_ms}ms\n";
+        $content .= "- **Statistical Measures:** Standard deviation, coefficient of variation, 95% confidence intervals\n";
+        $content .= "- **Quality Thresholds:** Excellent (<2% CV), Good (<5% CV), Fair (<10% CV), Poor (≥10% CV)\n";
+        
         if (!empty($this->thread_config)) {
-            $content .= "**Thread Configuration:**\n";
+            $content .= "\n## Thread Configuration\n\n";
             foreach ($this->thread_config as $key => $value) {
-                $content .= "- {$key}: {$value}\n";
+                $content .= "- **{$key}:** {$value}\n";
             }
         }
-        $content .= "\n";
         
-        $content .= "## Test Configuration\n\n";
+        $content .= "\n## Test Configuration\n\n";
         $content .= "- **Flush Before Test:** " . ($this->flush_before_test ? 'Yes' : 'No') . "\n";
         $content .= "- **TLS Testing:** " . ($this->test_both_tls ? 'Enabled' : 'Disabled') . "\n";
-        $content .= "- **TLS Skip Verify:** " . ($this->tls_skip_verify ? 'Yes' : 'No') . "\n";
         $content .= "- **Output Directory:** {$this->output_dir}\n\n";
         
         if (!empty($results)) {
-            $content .= "## Results\n\n";
+            $content .= "## Results with Statistical Analysis\n\n";
             
-            $headers = array_keys($results[0]);
+            // Enhanced table with statistical columns
+            $headers = [
+                'Database', 'Mode', 'Ops/sec', '±StdDev', 'CV%', 'Quality', 
+                'Latency(ms)', '±StdDev', 'P95 Lat', 'P99 Lat', '95% CI', 'Iterations'
+            ];
             
-            // Table header
             $content .= "| " . implode(" | ", $headers) . " |\n";
             $content .= "| " . str_repeat("--- | ", count($headers)) . "\n";
             
-            // Table rows
-            foreach ($results as $row) {
-                $formatted_row = array_map(function($val) {
-                    if (is_numeric($val)) {
-                        return is_float($val) ? number_format($val, 3) : $val;
-                    } elseif (is_bool($val)) {
-                        return $val ? 'true' : 'false';
-                    } elseif (is_array($val)) {
-                        return json_encode($val);
-                    } else {
-                        return $val;
-                    }
-                }, $row);
-                $content .= "| " . implode(" | ", $formatted_row) . " |\n";
+            foreach ($results as $result) {
+                $mode = $result['tls'] ? 'TLS' : 'Non-TLS';
+                $ci = $result['ops_per_sec_confidence_interval_95'] ?? ['lower' => 0, 'upper' => 0];
+                
+                // Quality indicator
+                $quality = $result['measurement_quality'] ?? 'unknown';
+                $quality_icon = ['excellent' => '🟢', 'good' => '🟡', 'fair' => '🟠', 'poor' => '🔴'].get($quality, '⚪');
+                
+                $row = [
+                    $result['database'],
+                    $mode,
+                    number_format($result['ops_per_sec'], 0),
+                    '±' . number_format($result['ops_per_sec_stddev'] ?? 0, 0),
+                    number_format(($result['ops_per_sec_cv'] ?? 0) * 100, 1) . '%',
+                    $quality_icon . ' ' . $quality,
+                    number_format($result['avg_latency'], 3),
+                    '±' . number_format($result['latency_stddev'] ?? 0, 3),
+                    number_format($result['p95_latency'], 3),
+                    number_format($result['p99_latency'], 3),
+                    number_format($ci['lower'] ?? 0, 0) . '-' . number_format($ci['upper'] ?? 0, 0),
+                    $result['iterations_count'] ?? $this->test_iterations
+                ];
+                
+                $content .= "| " . implode(" | ", $row) . " |\n";
             }
         }
         
-        $content .= "\n## Summary Statistics\n\n";
+        // Enhanced summary with statistical insights
+        $content .= "\n## Statistical Summary\n\n";
         if (!empty($results)) {
-            $ops_per_sec = array_column($results, 'ops_per_sec');
-            $avg_latencies = array_column($results, 'avg_latency');
-            $error_rates = array_column($results, 'error_rate');
+            $reliable_results = array_filter($results, function($r) { 
+                return ($r['measurement_quality'] ?? 'poor') !== 'poor'; 
+            });
             
-            $content .= "- **Average Ops/Sec:** " . number_format(array_sum($ops_per_sec) / count($ops_per_sec), 2) . "\n";
-            $content .= "- **Max Ops/Sec:** " . number_format(max($ops_per_sec), 2) . "\n";
-            $content .= "- **Average Latency:** " . number_format(array_sum($avg_latencies) / count($avg_latencies), 3) . "ms\n";
-            $content .= "- **Average Error Rate:** " . number_format(array_sum($error_rates) / count($error_rates), 3) . "%\n";
+            $content .= "- **Total Tests:** " . count($results) . "\n";
+            $content .= "- **Reliable Measurements:** " . count($reliable_results) . "/" . count($results) . "\n";
+            
+            if (!empty($reliable_results)) {
+                $ops_values = array_column($reliable_results, 'ops_per_sec');
+                $content .= "- **Best Performance:** " . number_format(max($ops_values), 0) . " ops/sec\n";
+                $content .= "- **Average Performance:** " . number_format($this->calculateMean($ops_values), 0) . " ops/sec\n";
+                
+                $cv_values = array_column($reliable_results, 'ops_per_sec_cv');
+                $avg_cv = $this->calculateMean(array_filter($cv_values)) * 100;
+                $content .= "- **Average Measurement Precision:** " . number_format($avg_cv, 1) . "% CV\n";
+            }
         }
         
         if (file_put_contents($filename, $content) === false) {
@@ -715,56 +1196,88 @@ class RedisTestBase {
         return $filename;
     }
     
+    /**
+     * Enhanced performance summary with statistical analysis
+     */
     protected function printResultsSummary($results) {
         if (empty($results)) {
             return;
         }
         
-        echo "\n" . str_repeat("=", 60) . "\n";
-        echo "PERFORMANCE SUMMARY\n";
-        echo "Thread Variant: {$this->thread_variant}\n";  // NEW
-        echo str_repeat("=", 60) . "\n";
+        echo "\n" . str_repeat("=", 100) . "\n";
+        echo "ENHANCED STATISTICAL PERFORMANCE SUMMARY\n";
+        echo "Thread Variant: {$this->thread_variant} | Iterations per test: {$this->test_iterations}\n";
+        echo str_repeat("=", 100) . "\n";
         
-        // Group results by database and TLS status
+        // Group and sort results
         $grouped = [];
         foreach ($results as $result) {
             $key = $result['database'] . ($result['tls'] ? ' (TLS)' : '');
             $grouped[$key] = $result;
         }
         
-        // Sort by ops_per_sec descending
         uasort($grouped, function($a, $b) {
-            $a_ops = isset($a['ops_per_sec']) ? (float)$a['ops_per_sec'] : 0;
-            $b_ops = isset($b['ops_per_sec']) ? (float)$b['ops_per_sec'] : 0;
-            
-            if ($a_ops == $b_ops) {
-                return 0;
-            }
-            return ($a_ops < $b_ops) ? 1 : -1;
+            return ($b['ops_per_sec'] ?? 0) <=> ($a['ops_per_sec'] ?? 0);
         });
         
         $rank = 1;
+        echo sprintf("%-3s %-20s %12s %10s %8s %8s %8s %10s %12s\n", 
+            "Rank", "Database", "Ops/sec", "±StdDev", "CV%", "Latency", "Quality", "95% CI", "Reliable");
+        echo str_repeat("-", 100) . "\n";
+        
         foreach ($grouped as $key => $result) {
-            echo sprintf("#%d %-20s %8.2f ops/sec  %6.2fms latency  %5.2f%% errors\n",
+            $quality_icon = [
+                'excellent' => '🟢',
+                'good' => '🟡', 
+                'fair' => '🟠',
+                'poor' => '🔴'
+            ][$result['measurement_quality'] ?? 'poor'] ?? '⚪';
+            
+            $ci = $result['ops_per_sec_confidence_interval_95'] ?? [];
+            $ci_range = isset($ci['lower'], $ci['upper']) ? 
+                number_format($ci['lower'], 0) . '-' . number_format($ci['upper'], 0) : 'N/A';
+            
+            $reliable = ($result['measurement_quality'] ?? 'poor') !== 'poor' ? '✅' : '❌';
+            
+            echo sprintf("#%-2d %-20s %8.0f %8.0f %6.1f%% %6.3fms %s%-7s %12s %8s\n",
                 $rank++,
                 $key,
                 $result['ops_per_sec'],
+                $result['ops_per_sec_stddev'] ?? 0,
+                ($result['ops_per_sec_cv'] ?? 0) * 100,
                 $result['avg_latency'],
-                $result['error_rate']
+                $quality_icon,
+                $result['measurement_quality'] ?? 'unknown',
+                $ci_range,
+                $reliable
             );
         }
         
-        echo str_repeat("=", 60) . "\n";
-    }
-    
-    protected function percentile($array, $percentile) {
-        if (empty($array)) {
-            return 0;
+        echo str_repeat("=", 100) . "\n";
+        
+        // Statistical insights summary
+        $reliable_results = array_filter($results, function($r) { 
+            return ($r['measurement_quality'] ?? 'poor') !== 'poor'; 
+        });
+        
+        echo "Quick Insights:\n";
+        echo "- Reliable measurements: " . count($reliable_results) . "/" . count($results) . "\n";
+        
+        if (count($reliable_results) != count($results)) {
+            echo "- ⚠️  Some measurements show high variability - check test conditions\n";
         }
         
-        sort($array);
-        $index = ceil($percentile / 100 * count($array)) - 1;
-        return $array[max(0, $index)];
+        if (!empty($reliable_results)) {
+            $best_result = max($reliable_results, key: function($r) { return $r['ops_per_sec']; });
+            echo "- 🏆 Best: {$best_result['database']}" . ($best_result['tls'] ? ' (TLS)' : '') . 
+                 " - " . number_format($best_result['ops_per_sec'], 0) . " ops/sec\n";
+            
+            $cv_values = array_filter(array_column($reliable_results, 'ops_per_sec_cv'));
+            if (!empty($cv_values)) {
+                $avg_precision = $this->calculateMean($cv_values) * 100;
+                echo "- 📊 Average precision: " . number_format($avg_precision, 1) . "% CV\n";
+            }
+        }
     }
     
     protected function debugLog($message) {
@@ -773,24 +1286,7 @@ class RedisTestBase {
         }
     }
     
-    // Override this method in child classes
-    protected function runTest($redis, $db_name) {
-        // Default implementation - should be overridden
-        sleep(1);
-        
-        return [
-            'operations' => 1000,
-            'errors' => 0,
-            'duration' => 1.0,
-            'ops_per_sec' => 1000.0,
-            'avg_latency' => 1.0,
-            'p95_latency' => 1.5,
-            'p99_latency' => 2.0,
-            'error_rate' => 0.0
-        ];
-    }
-    
-    // Static helper method for configuration validation
+    // Static helper methods
     public static function validateConfig($config) {
         $required_keys = ['duration', 'output_dir'];
         $missing_keys = [];
@@ -805,12 +1301,10 @@ class RedisTestBase {
             throw new Exception("Missing required configuration keys: " . implode(', ', $missing_keys));
         }
         
-        // Validate duration
         if (!is_numeric($config['duration']) || $config['duration'] <= 0) {
             throw new Exception("Duration must be a positive number");
         }
         
-        // Validate output directory path
         if (empty($config['output_dir']) || !is_string($config['output_dir'])) {
             throw new Exception("Output directory must be a non-empty string");
         }
@@ -818,7 +1312,6 @@ class RedisTestBase {
         return true;
     }
     
-    // Static helper method to check Redis extension
     public static function checkRedisExtension() {
         if (!extension_loaded('redis')) {
             throw new Exception('Redis PHP extension is not loaded. Install with: pecl install redis');
@@ -832,7 +1325,6 @@ class RedisTestBase {
         ];
     }
     
-    // Static helper method to test basic connectivity
     public static function testConnection($host = '127.0.0.1', $port = 6379, $timeout = 2.0) {
         try {
             $redis = new Redis();

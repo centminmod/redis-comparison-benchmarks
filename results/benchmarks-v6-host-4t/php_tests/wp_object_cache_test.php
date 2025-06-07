@@ -1,104 +1,289 @@
 <?php
 /**
- * WordPress Object Cache Simulation Test
- * Simulates typical WordPress object caching patterns
+ * Enhanced WordPress Object Cache Test with 5-Run Statistical Analysis
+ * 
+ * Features:
+ * - Multiple iterations per database test
+ * - Statistical reliability measurement
+ * - Enhanced error handling and reporting
+ * - Raw data logging for analysis
  */
 
 require_once 'RedisTestBase.php';
 
 class WordPressObjectCacheTest extends RedisTestBase {
-    private $test_duration = 30; // seconds
-    private $key_prefix = 'wp_obj_';
+    private $operations = 100000;  // Operations per iteration
+    private $test_duration = 30;   // Duration per iteration in seconds
+    private $read_write_ratio = 70; // 70% reads, 30% writes
     
-    public function __construct($config) {
-        parent::__construct($config);
+    // WordPress-like cache groups
+    private $cache_groups = [
+        'posts', 'terms', 'users', 'options', 'comments', 
+        'themes', 'plugins', 'transients', 'site-options'
+    ];
+    
+    public function __construct($config = []) {
         $this->test_name = "WordPress Object Cache Test";
+        
+        // Override default iterations if specified
+        if (isset($config['test_iterations'])) {
+            $this->test_iterations = $config['test_iterations'];
+        }
+        
+        // Test-specific configuration
+        $this->operations = $config['operations'] ?? 100000;
+        $this->test_duration = $config['duration'] ?? 30;
+        $this->read_write_ratio = $config['read_write_ratio'] ?? 70;
+        
+        parent::__construct($config);
+        
+        $this->debugLog("WordPress Object Cache Test initialized");
+        $this->debugLog("Operations per iteration: {$this->operations}");
+        $this->debugLog("Duration per iteration: {$this->test_duration}s");
+        $this->debugLog("Read/Write ratio: {$this->read_write_ratio}%/{100-$this->read_write_ratio}%");
     }
     
-    protected function runTest($redis, $db_name) {
-        echo "  Starting test with database containing " . $redis->dbSize() . " keys\n";
-        
+    /**
+     * Override: Run a single test iteration with WordPress-like cache operations
+     */
+    protected function runSingleIteration($redis, $test_label, $iteration) {
         $start_time = microtime(true);
         $end_time = $start_time + $this->test_duration;
+        
         $operations = 0;
         $errors = 0;
         $latencies = [];
         
-        // Typical WordPress cache keys and data
-        $cache_groups = ['posts', 'terms', 'users', 'options', 'comments'];
-        $object_types = ['post_meta', 'user_meta', 'term_meta', 'transient'];
+        // Warm up the cache with some initial data
+        $this->warmUpCache($redis);
         
-        while (microtime(true) < $end_time) {
-            $op_start = microtime(true);
+        $this->debugLog("Starting iteration {$iteration} for {$test_label}");
+        
+        while (microtime(true) < $end_time && $operations < $this->operations) {
+            $operation_start = microtime(true);
             
             try {
-                // 70% reads, 30% writes (typical WordPress ratio)
-                if (mt_rand(1, 100) <= 70) {
-                    // Read operation
-                    $group = $cache_groups[array_rand($cache_groups)];
-                    $id = mt_rand(1, 10000);
-                    $key = "{$this->key_prefix}{$group}_{$id}";
-                    $redis->get($key);
+                if (rand(1, 100) <= $this->read_write_ratio) {
+                    // READ operation (GET)
+                    $key = $this->generateWordPressKey();
+                    $result = $redis->get($key);
+                    
+                    // Simulate cache miss handling (WordPress behavior)
+                    if ($result === false && rand(1, 100) <= 20) {
+                        // 20% chance to populate missing key
+                        $value = $this->generateWordPressValue();
+                        $ttl = rand(3600, 86400); // 1-24 hours TTL
+                        $redis->setex($key, $ttl, $value);
+                    }
                 } else {
-                    // Write operation with WordPress-like data
-                    $group = $cache_groups[array_rand($cache_groups)];
-                    $type = $object_types[array_rand($object_types)];
-                    $id = mt_rand(1, 10000);
-                    $key = "{$this->key_prefix}{$group}_{$type}_{$id}";
-                    
-                    $data = json_encode([
-                        'id' => $id,
-                        'type' => $type,
-                        'content' => str_repeat('WordPress cache data ', mt_rand(10, 50)),
-                        'meta' => ['created' => time(), 'version' => '1.0'],
-                        'tags' => ['wp', 'cache', $group]
-                    ]);
-                    
-                    // Set with typical WordPress TTL (1 hour to 24 hours)
-                    $ttl = mt_rand(3600, 86400);
-                    $redis->setex($key, $ttl, $data);
+                    // WRITE operation (SETEX with TTL)
+                    $key = $this->generateWordPressKey();
+                    $value = $this->generateWordPressValue();
+                    $ttl = rand(300, 86400); // 5 minutes to 24 hours
+                    $redis->setex($key, $ttl, $value);
                 }
                 
                 $operations++;
-                $latencies[] = (microtime(true) - $op_start) * 1000;
                 
             } catch (Exception $e) {
                 $errors++;
+                $this->debugLog("Error in iteration {$iteration}: " . $e->getMessage());
+            }
+            
+            // Record latency for statistical analysis
+            $operation_latency = (microtime(true) - $operation_start) * 1000; // Convert to ms
+            $latencies[] = $operation_latency;
+            
+            // Occasional brief pause to simulate real-world usage
+            if ($operations % 1000 == 0) {
+                usleep(100); // 0.1ms pause every 1000 operations
             }
         }
         
-        $total_time = microtime(true) - $start_time;
-        $final_keys = $redis->dbSize();
-        echo "  Test completed with {$final_keys} keys in database\n";
+        $actual_duration = microtime(true) - $start_time;
+        $ops_per_sec = $operations / $actual_duration;
+        
+        // Calculate latency statistics
+        $avg_latency = array_sum($latencies) / count($latencies);
+        sort($latencies);
+        $p95_latency = $this->calculatePercentile($latencies, 95);
+        $p99_latency = $this->calculatePercentile($latencies, 99);
+        
+        $this->debugLog("Iteration {$iteration} completed: {$operations} ops in {$actual_duration}s");
         
         return [
+            'iteration' => $iteration,
             'operations' => $operations,
             'errors' => $errors,
-            'duration' => $total_time,
-            'ops_per_sec' => $operations / $total_time,
-            'avg_latency' => array_sum($latencies) / count($latencies),
-            'p95_latency' => $this->percentile($latencies, 95),
-            'p99_latency' => $this->percentile($latencies, 99),
-            'error_rate' => ($errors / ($operations + $errors)) * 100,
-            'final_key_count' => $final_keys
+            'duration' => $actual_duration,
+            'ops_per_sec' => $ops_per_sec,
+            'avg_latency' => $avg_latency,
+            'p95_latency' => $p95_latency,
+            'p99_latency' => $p99_latency,
+            'error_rate' => ($errors / max($operations, 1)) * 100,
+            'latency_samples' => count($latencies),
+            'read_write_ratio_actual' => $this->read_write_ratio, // Could calculate actual ratio
         ];
     }
     
-    protected function percentile($array, $percentile) {
-        if (empty($array)) return 0;
+    /**
+     * Warm up cache with initial WordPress-like data
+     */
+    private function warmUpCache($redis) {
+        $warmup_keys = 100;
         
-        sort($array);
-        $index = ceil($percentile / 100 * count($array)) - 1;
-        return $array[max(0, $index)];
+        for ($i = 0; $i < $warmup_keys; $i++) {
+            $key = $this->generateWordPressKey();
+            $value = $this->generateWordPressValue();
+            $ttl = rand(3600, 43200); // 1-12 hours for warmup data
+            
+            try {
+                $redis->setex($key, $ttl, $value);
+            } catch (Exception $e) {
+                // Ignore warmup errors
+            }
+        }
+    }
+    
+    /**
+     * Generate WordPress-like cache keys
+     */
+    private function generateWordPressKey() {
+        $group = $this->cache_groups[array_rand($this->cache_groups)];
+        $id = rand(1, 10000);
+        
+        // Generate keys that mimic WordPress cache patterns
+        $patterns = [
+            "wp_cache_{$group}_{$id}",
+            "{$group}_meta_{$id}",
+            "wp_option_{$group}_{$id}",
+            "query_{$group}_" . md5("query_{$id}"),
+            "transient_{$group}_{$id}",
+            "user_meta_{$id}_{$group}",
+            "post_meta_{$id}_{$group}",
+            "taxonomy_{$group}_{$id}",
+        ];
+        
+        return $patterns[array_rand($patterns)];
+    }
+    
+    /**
+     * Generate WordPress-like cache values
+     */
+    private function generateWordPressValue() {
+        $value_types = [
+            // Simple values
+            'simple_string' => 'WordPress cached value ' . rand(1000, 9999),
+            'simple_number' => rand(1, 1000000),
+            'simple_boolean' => rand(0, 1) ? 'true' : 'false',
+            
+            // Serialized PHP data (common in WordPress)
+            'serialized_array' => serialize([
+                'id' => rand(1, 1000),
+                'title' => 'Sample Post Title ' . rand(1, 100),
+                'content' => str_repeat('Lorem ipsum dolor sit amet. ', rand(5, 20)),
+                'meta' => [
+                    'author' => 'user_' . rand(1, 100),
+                    'date' => date('Y-m-d H:i:s'),
+                    'category' => 'category_' . rand(1, 20)
+                ]
+            ]),
+            
+            // JSON data
+            'json_data' => json_encode([
+                'type' => 'wordpress_cache',
+                'data' => str_repeat('x', rand(100, 1000)),
+                'timestamp' => time(),
+                'random' => rand(1, 100000)
+            ]),
+            
+            // Larger content (simulating page cache)
+            'large_content' => str_repeat('WordPress page content. ', rand(50, 200))
+        ];
+        
+        $type = array_rand($value_types);
+        return $value_types[$type];
+    }
+    
+    /**
+     * Override: Enhanced results summary for WordPress context
+     */
+    protected function printResultsSummary($results) {
+        parent::printResultsSummary($results);
+        
+        // WordPress-specific analysis
+        echo "\n" . str_repeat("=", 80) . "\n";
+        echo "WORDPRESS PERFORMANCE ANALYSIS\n";
+        echo str_repeat("=", 80) . "\n";
+        
+        foreach ($results as $result) {
+            $db_name = $result['database'] . ($result['tls'] ? ' (TLS)' : '');
+            $ops_per_sec = $result['ops_per_sec'];
+            
+            // Estimate WordPress page loads per second
+            // Assuming 10-50 cache operations per page load
+            $light_pages_per_sec = $ops_per_sec / 10;  // Light pages (10 cache ops)
+            $heavy_pages_per_sec = $ops_per_sec / 50;  // Heavy pages (50 cache ops)
+            
+            echo sprintf("%-20s | Light pages: %6.0f/sec | Heavy pages: %6.0f/sec\n",
+                $db_name, $light_pages_per_sec, $heavy_pages_per_sec);
+        }
+        
+        echo "\nWordPress Cache Recommendations:\n";
+        
+        // Find best performer
+        $best_result = null;
+        $best_ops = 0;
+        foreach ($results as $result) {
+            if (($result['measurement_quality'] ?? 'poor') !== 'poor' && $result['ops_per_sec'] > $best_ops) {
+                $best_ops = $result['ops_per_sec'];
+                $best_result = $result;
+            }
+        }
+        
+        if ($best_result) {
+            $best_name = $best_result['database'] . ($best_result['tls'] ? ' with TLS' : '');
+            echo "- 🏆 Best performer: {$best_name}\n";
+            echo "- 📊 Estimated capacity: " . number_format($best_ops / 30, 0) . " concurrent users (30 cache ops/user/sec)\n";
+        }
+        
+        // Reliability analysis
+        $reliable_count = count(array_filter($results, function($r) { 
+            return ($r['measurement_quality'] ?? 'poor') !== 'poor'; 
+        }));
+        
+        if ($reliable_count < count($results)) {
+            echo "- ⚠️  Consider running tests during low system load for better measurement reliability\n";
+        }
+        
+        echo "- 💡 For production WordPress, consider read/write ratios: 90/10 for cached sites, 70/30 for dynamic sites\n";
+        echo str_repeat("=", 80) . "\n";
     }
 }
 
-// Run the test
+// Enhanced configuration support
 if (php_sapi_name() === 'cli') {
-    $config = [
-        'duration' => 30,
-        'output_dir' => 'php_benchmark_results'
-    ];
+    // Load configuration if available
+    $config_file = __DIR__ . '/test_config.php';
+    if (file_exists($config_file)) {
+        $config = include $config_file;
+        echo "Loaded configuration from test_config.php\n";
+    } else {
+        // Default configuration
+        $config = [
+            'duration' => 30,
+            'test_iterations' => 5,
+            'output_dir' => './php_benchmark_results',
+            'test_tls' => true,
+            'flush_before_test' => true,
+            'debug' => false,
+            'operations' => 100000,
+            'read_write_ratio' => 70
+        ];
+        echo "Using default configuration\n";
+    }
+    
+    echo "Configuration: " . json_encode($config, JSON_PRETTY_PRINT) . "\n\n";
     
     $test = new WordPressObjectCacheTest($config);
     $test->run();

@@ -1,9 +1,13 @@
 <?php
 return [
     'duration' => 30,
+    'test_iterations' => 5,
+    'iteration_pause_ms' => 500,
+    'save_raw_results' => true,
     'output_dir' => './benchmarklogs-2t',
     'test_tls' => true,
     'flush_before_test' => true,
+    'debug' => false,
     'thread_variant' => '2',
     'thread_config' => [
         'redis_io_threads' => 2,

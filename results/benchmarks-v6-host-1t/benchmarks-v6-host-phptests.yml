@@ -1440,33 +1440,28 @@ jobs:
 
     - name: Run WordPress Object Cache PHP Tests
       run: |
-        echo "=== Starting WordPress Object Cache PHP Tests ==="
+        echo "=== Starting Enhanced WordPress Object Cache PHP Tests ==="
         echo "Working directory: $(pwd)"
         
         # Copy TLS certs, keys and client PEMs to tests/php directory
         cp *.crt *.key *.pem tests/php/ 2>/dev/null || echo "TLS certificates not found, will skip TLS tests"
-
-        # Ensure the files are readable by PHP
         chmod 644 tests/php/*.crt tests/php/*.pem
         chmod 600 tests/php/*.key
 
-        # debug: list what's in tests/php now
-        echo ">>> tests/php/ contents <<<"
-        ls -alh tests/php/
-
-        echo ">>> tests/php/ cert permissions <<<"
-        stat -c '%A %n' tests/php/*.crt tests/php/*.pem tests/php/*.key
-        
-        # Configure test duration from environment variable in the source file
+        # Configure enhanced test with 5 iterations
         sed -i "s/private \$test_duration = 30/private \$test_duration = ${PHP_TEST_DURATION}/" tests/php/wp_object_cache_test.php
         
-        # Create thread-aware custom config using echo commands for reliability - in tests/php directory
+        # Create enhanced thread-aware configuration with statistical testing
         echo '<?php' > tests/php/test_config.php
         echo 'return [' >> tests/php/test_config.php
         echo "    'duration' => ${PHP_TEST_DURATION}," >> tests/php/test_config.php
+        echo "    'test_iterations' => 5," >> tests/php/test_config.php  # NEW: 5 iterations
+        echo "    'iteration_pause_ms' => 500," >> tests/php/test_config.php  # NEW: Pause between iterations
+        echo "    'save_raw_results' => true," >> tests/php/test_config.php  # NEW: Save raw data
         echo "    'output_dir' => './benchmarklogs-${{ matrix.variant.threads }}t'," >> tests/php/test_config.php
         echo "    'test_tls' => true," >> tests/php/test_config.php
         echo "    'flush_before_test' => true," >> tests/php/test_config.php
+        echo "    'debug' => false," >> tests/php/test_config.php
         echo "    'thread_variant' => '${{ matrix.variant.threads }}'," >> tests/php/test_config.php
         echo "    'thread_config' => [" >> tests/php/test_config.php
         echo "        'redis_io_threads' => ${{ matrix.variant.redis_io_threads }}," >> tests/php/test_config.php
@@ -1482,31 +1477,16 @@ jobs:
         echo "    ]" >> tests/php/test_config.php
         echo "];" >> tests/php/test_config.php
         
-        # Create configured test runner using echo commands - in tests/php directory
-        echo '<?php' > tests/php/wp_object_cache_test_configured.php
-        echo "require_once 'RedisTestBase.php';" >> tests/php/wp_object_cache_test_configured.php
-        echo "require_once 'wp_object_cache_test.php';" >> tests/php/wp_object_cache_test_configured.php
-        echo "" >> tests/php/wp_object_cache_test_configured.php
-        echo "if (php_sapi_name() === 'cli') {" >> tests/php/wp_object_cache_test_configured.php
-        echo "    \$config = include 'test_config.php';" >> tests/php/wp_object_cache_test_configured.php
-        echo "    \$test = new WordPressObjectCacheTest(\$config);" >> tests/php/wp_object_cache_test_configured.php
-        echo "    \$test->run();" >> tests/php/wp_object_cache_test_configured.php
-        echo "}" >> tests/php/wp_object_cache_test_configured.php
-        
-        # Run the WordPress Object Cache test from repository root
-        echo "Running WordPress Object Cache Test for ${{ matrix.variant.threads }}t configuration..."
-        echo "Test duration: ${PHP_TEST_DURATION} seconds"
+        # Execute enhanced PHP test
+        echo "Running Enhanced WordPress Object Cache Test for ${{ matrix.variant.threads }}t configuration..."
+        echo "Test duration: ${PHP_TEST_DURATION} seconds per iteration"
+        echo "Iterations: 5 per database"
         echo "Thread variant: ${{ matrix.variant.threads }}"
-        echo "Database configurations:"
-        echo "  Redis IO Threads: ${{ matrix.variant.redis_io_threads }}"
-        echo "  KeyDB Server Threads: ${{ matrix.variant.keydb_server_threads }}"
-        echo "  Dragonfly Proactor Threads: ${{ matrix.variant.dragonfly_proactor_threads }}"
-        echo "  Valkey IO Threads: ${{ matrix.variant.valkey_io_threads }}"
+        echo "Statistical analysis: Enabled"
         
-        # Execute PHP test with full path, staying in repository root
-        php tests/php/wp_object_cache_test_configured.php 2>&1 | tee ./benchmarklogs-${{ matrix.variant.threads }}t/php_wordpress_test.log
+        php tests/php/wp_object_cache_test_configured.php 2>&1 | tee ./benchmarklogs-${{ matrix.variant.threads }}t/php_wordpress_test_enhanced.log
         
-        echo "WordPress Object Cache PHP test completed"
+        echo "Enhanced WordPress Object Cache PHP test completed"
 
     - name: Generate PHP WordPress Test Charts
       run: |
