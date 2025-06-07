@@ -140,9 +140,13 @@ class RedisTestBase {
             $final_keys = $redis->dbSize();
             $result['final_key_count'] = $final_keys;
             
-            echo "  {$test_label}: {$result['ops_per_sec']:.2f} ops/sec, ";
-            echo "{$result['avg_latency']:.2f}ms avg latency, ";
-            echo "{$result['error_rate']:.2f}% errors\n";
+            echo sprintf(
+                "  %s: %.2f ops/sec, %.2fms avg latency, %.2f%% errors\n",
+                $test_label,
+                $result['ops_per_sec'],
+                $result['avg_latency'],
+                $result['error_rate']
+            );
             echo "  Final keys in database: {$final_keys}\n";
             
             return $result;
