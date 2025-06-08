@@ -838,10 +838,14 @@ class RedisTestBase {
                         'allow_self_signed' => true
                     ];
                     
+                    // Track overall success across all tests
+                    $connection_established = false;
+                    
                     if ($this->tryRedisConnection($redis_test, $host, $port, $minimal_context, "minimal SSL")) {
                         // Use the working connection
                         $redis = $redis_test;
                         $this->debugLog("SUCCESS: Minimal SSL context worked");
+                        $connection_established = true;
                     } else {
                         // Test 3: SSL context with certificates (current approach)
                         echo "  📡 Test 3: SSL context with certificates...\n";
@@ -858,6 +862,7 @@ class RedisTestBase {
                         if ($this->tryRedisConnection($redis_test, $host, $port, $cert_context, "with certificates")) {
                             $redis = $redis_test;
                             $this->debugLog("SUCCESS: Certificate SSL context worked");
+                            $connection_established = true;
                         } else {
                             // Test 4: Full SSL context (original approach)
                             echo "  📡 Test 4: Full SSL context with all options...\n";
@@ -877,10 +882,10 @@ class RedisTestBase {
                             if ($this->tryRedisConnection($redis_test, $host, $port, $full_context, "full SSL context")) {
                                 $redis = $redis_test;
                                 $this->debugLog("SUCCESS: Full SSL context worked");
+                                $connection_established = true;
                             } else {
                                 // Test 5: Different TLS versions
                                 echo "  📡 Test 5: Alternative TLS versions...\n";
-                                $success = false;
                                 
                                 $crypto_methods = [
                                     'TLSv1.2' => STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT,
@@ -895,12 +900,12 @@ class RedisTestBase {
                                     if ($this->tryRedisConnection($redis_test, $host, $port, $method_context, $method_name)) {
                                         $redis = $redis_test;
                                         $this->debugLog("SUCCESS: {$method_name} worked");
-                                        $success = true;
+                                        $connection_established = true;
                                         break;
                                     }
                                 }
                                 
-                                if (!$success) {
+                                if (!$connection_established) {
                                     // Test 6: Last resort - minimal SSL without command validation
                                     echo "  📡 Test 6: Minimal SSL without command validation...\n";
                                     $redis_test = new Redis();
@@ -910,18 +915,24 @@ class RedisTestBase {
                                         $this->debugLog("SUCCESS: Minimal SSL without command validation worked");
                                         echo "  ⚠️ WARNING: Using TLS connection without command validation\n";
                                         echo "  ⚠️ Commands may fail during actual test - this is a known issue\n";
-                                        $success = true;
+                                        $connection_established = true;
                                     }
                                 }
                                 
-                                if (!$success) {
+                                if (!$connection_established) {
                                     throw new Exception("All TLS connection methods failed - see detailed output above");
                                 }
                             }
                         }
                     }
                     
-                    $this->debugLog("TLS connection successful with progressive testing");
+                    // If we reach here, connection was established
+                    if ($connection_established) {
+                        $this->debugLog("TLS connection successful with progressive testing");
+                        return $redis; // Return the working Redis connection
+                    } else {
+                        throw new Exception("Unexpected: connection_established is false but no exception thrown");
+                    }
                     
                 } catch (Exception $e) {
                     // Log the specific TLS error but don't fail the entire test
