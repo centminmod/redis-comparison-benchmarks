@@ -30,7 +30,7 @@ function loadTestConfiguration() {
     // Default configuration
     $default_config = [
         'duration' => 30,
-        'test_iterations' => 11,
+        'test_iterations' => 13,
         'iteration_pause_ms' => 500,
         'save_raw_results' => true,
         'output_dir' => './php_benchmark_results',

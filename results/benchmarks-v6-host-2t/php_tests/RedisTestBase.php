@@ -27,7 +27,7 @@ class RedisTestBase {
     protected $tls_skip_verify = true;
     
     // NEW: Multi-run testing configuration
-    protected $test_iterations = 11;
+    protected $test_iterations = 13;
     protected $iteration_pause_ms = 500; // 500ms pause between iterations
     protected $save_raw_results = true;
     
@@ -51,7 +51,7 @@ class RedisTestBase {
         $this->tls_skip_verify = $config['tls_skip_verify'] ?? true;
         
         // NEW: Multi-run configuration
-        $this->test_iterations = $config['test_iterations'] ?? 11;
+        $this->test_iterations = $config['test_iterations'] ?? 13;
         $this->iteration_pause_ms = $config['iteration_pause_ms'] ?? 500;
         $this->save_raw_results = $config['save_raw_results'] ?? true;
         
@@ -897,8 +897,8 @@ class RedisTestBase {
             echo "     • Increase iteration count for better statistical power\n";
         }
         
-        if ($this->test_iterations < 11) {
-            echo "  📊 Consider increasing iterations to 11+ for better statistical confidence\n";
+        if ($this->test_iterations < 13) {
+            echo "  📊 Consider increasing iterations to 13+ for better statistical confidence\n";
         }
         
         $reliable_count = $quality_counts['excellent'] + $quality_counts['good'];
