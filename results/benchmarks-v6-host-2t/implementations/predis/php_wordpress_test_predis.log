@@ -1,0 +1,139 @@
+WordPress Object Cache Test with Predis - Configured Runner
+============================================================
+Implementation: Predis (Pure PHP Redis Client)
+Enhanced TLS Support: Yes
+Statistical Analysis: 13 iterations with confidence intervals
+
+📋 Loading configuration from: tests/php/test_config_predis.php
+✅ Configuration loaded successfully
+
+📊 Test Configuration:
+  Implementation: Predis (Pure PHP)
+  Duration per iteration: 30s
+  Test iterations: 13
+  Output directory: ./benchmarklogs-2t
+  TLS testing: Enabled
+  Flush before test: Yes
+  Thread variant: 2
+  Connection timeout: 5s
+  Read/write timeout: 5s
+  Connection retries: 3
+  Persistent connections: No
+  Thread configuration:
+    redis_io_threads: 2 threads
+    keydb_server_threads: 2 threads
+    dragonfly_proactor_threads: 2 threads
+    valkey_io_threads: 2 threads
+  Database configurations:
+    Redis: 127.0.0.1:6379 (TLS: 6390) (IO threads: 2)
+    KeyDB: 127.0.0.1:6380 (TLS: 6391) (Server threads: 2)
+    Dragonfly: 127.0.0.1:6381 (TLS: 6392) (Proactor threads: 2)
+    Valkey: 127.0.0.1:6382 (TLS: 6393) (IO threads: 2)
+
+======================================================================
+
+🔍 Checking Predis availability...
+✅ Predis library available
+
+🚀 Starting Predis WordPress Object Cache Test...
+
+Starting WordPress Object Cache Test (Predis)...
+Timestamp: 2025-06-08 19:28:54 UTC
+Predis Version: unknown
+PHP Version: 8.4.7
+Enhanced Testing Configuration (Predis):
+- Iterations per test: 13
+- Iteration pause: 500ms
+- Statistical analysis: Enabled
+- Raw data logging: Enabled
+- Connection timeout: 5s
+- Read/write timeout: 5s
+- Connection retry attempts: 3
+- Persistent connections: Disabled
+- TCP keepalive: Enabled
+Thread Variant: 2
+Thread Configuration:
+  redis_io_threads: 2 threads
+  keydb_server_threads: 2 threads
+  dragonfly_proactor_threads: 2 threads
+  valkey_io_threads: 2 threads
+TLS Certificates: Found and validated (Predis-compatible)
+
+Checking TLS readiness (Predis)...
+  Redis: TLS port accessible ✓
+  KeyDB: TLS port accessible ✓
+  Dragonfly: TLS port accessible ✓
+  Valkey: TLS port accessible ✓
+
+Predis TLS testing will be attempted for: Redis, KeyDB, Dragonfly, Valkey
+============================================================
+Testing Redis with Predis...
+  Configuration: IO Threads: 2
+  Predis connection exception for 127.0.0.1:6379 (non-TLS (Predis)): PING failed: \Predis\Response\Status::__set_state(array(
+   'payload' => 'PONG',
+))
+  Predis TLS connection exception for 127.0.0.1:6390: PING failed: \Predis\Response\Status::__set_state(array(
+   'payload' => 'PONG',
+))
+  → Skipping TLS test and continuing
+  → TLS test skipped for Redis due to Predis connection failure
+
+Testing KeyDB with Predis...
+  Configuration: Server Threads: 2
+  Predis connection exception for 127.0.0.1:6380 (non-TLS (Predis)): PING failed: \Predis\Response\Status::__set_state(array(
+   'payload' => 'PONG',
+))
+  Predis TLS connection exception for 127.0.0.1:6391: PING failed: \Predis\Response\Status::__set_state(array(
+   'payload' => 'PONG',
+))
+  → Skipping TLS test and continuing
+  → TLS test skipped for KeyDB due to Predis connection failure
+
+Testing Dragonfly with Predis...
+  Configuration: Proactor Threads: 2
+  Predis connection exception for 127.0.0.1:6381 (non-TLS (Predis)): PING failed: \Predis\Response\Status::__set_state(array(
+   'payload' => 'PONG',
+))
+  Predis TLS connection exception for 127.0.0.1:6392: PING failed: \Predis\Response\Status::__set_state(array(
+   'payload' => 'PONG',
+))
+  → Skipping TLS test and continuing
+  → TLS test skipped for Dragonfly due to Predis connection failure
+
+Testing Valkey with Predis...
+  Configuration: IO Threads: 2
+  Predis connection exception for 127.0.0.1:6382 (non-TLS (Predis)): PING failed: \Predis\Response\Status::__set_state(array(
+   'payload' => 'PONG',
+))
+  Predis TLS connection exception for 127.0.0.1:6393: PING failed: \Predis\Response\Status::__set_state(array(
+   'payload' => 'PONG',
+))
+  → Skipping TLS test and continuing
+  → TLS test skipped for Valkey due to Predis connection failure
+
+No results to save.
+============================================================
+Enhanced Predis test suite completed!
+Total execution time: 24.07 seconds
+Total tests run: 0
+Statistical iterations per test: 13
+Results saved to ./benchmarklogs-2t/
+Redis implementation: Predis (pure PHP)
+
+============================================================
+TLS PERFORMANCE COMPARISON (Predis)
+Thread Variant: 2
+============================================================
+No successful TLS connections for performance comparison.
+All databases tested with non-TLS only.
+============================================================
+
+======================================================================
+✅ Predis WordPress Object Cache test completed successfully!
+📁 Results saved to: ./benchmarklogs-2t
+📊 Implementation: Predis (Pure PHP Redis Client)
+🔒 TLS Support: Enhanced reliability compared to phpredis
+
+📄 Generated files:
+  php_wordpress_test_phpredis.log (52.5KB)
+  php_wordpress_test_predis.log (4.9KB)

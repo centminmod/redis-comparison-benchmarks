@@ -9,21 +9,37 @@
 - Valkey IO Threads: 1
 
 **Test Details:**
-- Test Type: WordPress Object Cache simulation
+- Test Type: WordPress Object Cache simulation with dual implementation comparison
 - Operations: 70% reads (GET), 30% writes (SETEX with TTL)
 - Key Pattern: WordPress cache groups (posts, terms, users, options, comments)
 - TTL Range: 1-24 hours
 - Databases Tested: Redis, KeyDB, Dragonfly, Valkey (both non-TLS and TLS)
 - Database State: FLUSHALL executed before tests
+- Statistical Iterations: 13 per implementation per database
+
+**Implementation Testing:**
+- phpredis: 
+  - Status: ✅ Tested
+  - Implementation: Redis PHP extension (C-based)
+  - Performance: High (native C extension)
+  - TLS Support: Known issues with command execution
+- Predis: 
+  - Status: ✅ Tested
+  - Implementation: Pure PHP Redis client
+  - Performance: Moderate (pure PHP overhead)
+  - TLS Support: Enhanced reliability and SSL context handling
 
 **Workflow Information:**
-- Workflow Run: 27
-- Commit SHA: 2631b42846c75255110e6c186e5190fb888e8ba7
-- Run Date: Sun Jun  8 16:25:10 UTC 2025
+- Workflow Run: 28
+- Commit SHA: 9fb31d1ed615936ff7ca12f11fe34eac9cda9bf6
+- Run Date: Sun Jun  8 19:28:08 UTC 2025
 - Matrix Variant: 1t
 
 **Files Generated:**
-- Raw test logs: php_wordpress_test.log
+- phpredis test logs: php_wordpress_test_phpredis.log
+- Predis test logs: php_wordpress_test_predis.log
 - JSON results: php_results/*.json
-- Charts: php_redis_*.png
+- Performance charts: php_redis_*.png
+- Implementation comparison charts: php_*comparison*.png
+- Comparison report: php_redis_implementation_comparison_report.md
 - Summary report: php_redis_benchmark_summary.md

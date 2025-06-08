@@ -1,0 +1,1124 @@
+Loaded configuration from test_config.php
+Configuration: {
+    "duration": 30,
+    "implementation": "phpredis",
+    "test_iterations": 13,
+    "iteration_pause_ms": 500,
+    "save_raw_results": true,
+    "output_dir": ".\/benchmarklogs-2t",
+    "test_tls": true,
+    "flush_before_test": true,
+    "debug": false,
+    "thread_variant": "2",
+    "thread_config": {
+        "redis_io_threads": 2,
+        "keydb_server_threads": 2,
+        "dragonfly_proactor_threads": 2,
+        "valkey_io_threads": 2
+    },
+    "databases": {
+        "Redis": {
+            "host": "127.0.0.1",
+            "port": 6379,
+            "tls_port": 6390,
+            "io_threads": 2
+        },
+        "KeyDB": {
+            "host": "127.0.0.1",
+            "port": 6380,
+            "tls_port": 6391,
+            "server_threads": 2
+        },
+        "Dragonfly": {
+            "host": "127.0.0.1",
+            "port": 6381,
+            "tls_port": 6392,
+            "proactor_threads": 2
+        },
+        "Valkey": {
+            "host": "127.0.0.1",
+            "port": 6382,
+            "tls_port": 6393,
+            "io_threads": 2
+        }
+    }
+}
+
+Starting WordPress Object Cache Test...
+Timestamp: 2025-06-08 19:14:40 UTC
+Redis Extension Version: 6.2.0
+Enhanced Testing Configuration:
+- Iterations per test: 13
+- Iteration pause: 500ms
+- Statistical analysis: Enabled
+- Raw data logging: Enabled
+Thread Variant: 2
+Thread Configuration:
+  redis_io_threads: 2 threads
+  keydb_server_threads: 2 threads
+  dragonfly_proactor_threads: 2 threads
+  valkey_io_threads: 2 threads
+TLS Certificates: Found and validated
+
+Checking TLS readiness...
+  Redis: TLS port accessible ✓
+  KeyDB: TLS port accessible ✓
+  Dragonfly: TLS port accessible ✓
+  Valkey: TLS port accessible ✓
+
+TLS testing will be attempted for: Redis, KeyDB, Dragonfly, Valkey
+============================================================
+Testing Redis...
+  Configuration: IO Threads: 2
+  Running 13 iterations for Redis (non-TLS)...
+  Initial keys in database: 0
+  Flushing database before test...
+  Database flushed in 0.27ms. Keys remaining: 0
+    Iteration 1/13... 10499 ops/sec, 0.095ms latency
+    Iteration 2/13... 10573 ops/sec, 0.094ms latency
+    Iteration 3/13... 10676 ops/sec, 0.093ms latency
+    Iteration 4/13... 10654 ops/sec, 0.093ms latency
+    Iteration 5/13... 10838 ops/sec, 0.092ms latency
+    Iteration 6/13... 10895 ops/sec, 0.091ms latency
+    Iteration 7/13... 11030 ops/sec, 0.090ms latency
+    Iteration 8/13... 10911 ops/sec, 0.091ms latency
+    Iteration 9/13... 11079 ops/sec, 0.090ms latency
+    Iteration 10/13... 11242 ops/sec, 0.088ms latency
+    Iteration 11/13... 11253 ops/sec, 0.088ms latency
+    Iteration 12/13... 11286 ops/sec, 0.088ms latency
+    Iteration 13/13... 11249 ops/sec, 0.088ms latency
+  Redis (non-TLS): 10937.21±277.85 ops/sec (CV: 2.5%), 0.091±0.002ms latency, Quality: good
+  Final keys in database: 394943
+  🔐 Starting detailed TLS connection debugging for 127.0.0.1:6390
+    🔍 Debugging certificate files:
+    📄 local_cert: ./client_cert.pem (1233 bytes, perms: 0644)
+      Subject CN: test.server.com
+      Issuer CN: CA
+      Valid from: 2025-06-08 18:51:16
+      Valid to: 2026-06-08 18:51:16
+    📄 local_pk: ./client_priv.pem (1700 bytes, perms: 0600)
+    📄 cafile: ./ca.crt (1338 bytes, perms: 0644)
+      Subject CN: CA
+      Issuer CN: CA
+      Valid from: 2025-06-08 18:51:16
+      Valid to: 2026-06-08 18:51:16
+  📡 Test 1: Raw SSL socket connection...
+    🔍 Testing raw SSL socket to 127.0.0.1:6390
+    ✅ Raw SSL socket connection successful
+    📜 Server certificate subject: test.com
+    📜 Server certificate issuer: CA
+  📡 Test 2: Minimal SSL context...
+    🔧 Testing: minimal SSL
+    📋 SSL Context: ["verify_peer","verify_peer_name","allow_self_signed"]
+    ✅ Redis TLS connection successful with minimal SSL
+    🧪 Testing Redis commands over TLS...
+      📞 Testing PING...
+      ❌ PING failed: socket error on read socket
+    ⚠️ Command test failed for minimal SSL: socket error on read socket
+  📡 Test 3: SSL context with certificates...
+    🔧 Testing: with certificates
+    📋 SSL Context: ["verify_peer","verify_peer_name","allow_self_signed","local_cert","local_pk","cafile"]
+    ✅ Redis TLS connection successful with with certificates
+    🧪 Testing Redis commands over TLS...
+      📞 Testing PING...
+      ❌ PING failed: socket error on read socket
+    ⚠️ Command test failed for with certificates: socket error on read socket
+  📡 Test 4: Full SSL context with all options...
+    🔧 Testing: full SSL context
+    📋 SSL Context: ["verify_peer","verify_peer_name","allow_self_signed","local_cert","local_pk","cafile","capture_peer_cert","disable_compression","SNI_enabled"]
+    ✅ Redis TLS connection successful with full SSL context
+    🧪 Testing Redis commands over TLS...
+      📞 Testing PING...
+      ❌ PING failed: socket error on read socket
+    ⚠️ Command test failed for full SSL context: socket error on read socket
+  📡 Test 5: Alternative TLS versions...
+    🔧 Testing: TLSv1.2
+    📋 SSL Context: ["verify_peer","verify_peer_name","allow_self_signed","crypto_method"]
+    ✅ Redis TLS connection successful with TLSv1.2
+    🧪 Testing Redis commands over TLS...
+      📞 Testing PING...
+      ❌ PING failed: socket error on read socket
+    ⚠️ Command test failed for TLSv1.2: socket error on read socket
+    🔧 Testing: TLSv1.3
+    📋 SSL Context: ["verify_peer","verify_peer_name","allow_self_signed","crypto_method"]
+    ✅ Redis TLS connection successful with TLSv1.3
+    🧪 Testing Redis commands over TLS...
+      📞 Testing PING...
+      ❌ PING failed: socket error on read socket
+    ⚠️ Command test failed for TLSv1.3: socket error on read socket
+    🔧 Testing: ANY_TLS
+    📋 SSL Context: ["verify_peer","verify_peer_name","allow_self_signed","crypto_method"]
+    ✅ Redis TLS connection successful with ANY_TLS
+    🧪 Testing Redis commands over TLS...
+      📞 Testing PING...
+      ❌ PING failed: socket error on read socket
+    ⚠️ Command test failed for ANY_TLS: socket error on read socket
+  📡 Test 6: Minimal SSL without command validation...
+    🔧 Testing: minimal SSL (no command test)
+    📋 SSL Context: ["verify_peer","verify_peer_name","allow_self_signed"]
+    ✅ Redis TLS connection successful with minimal SSL (no command test)
+    ⏭️ Skipping command test as requested
+  ⚠️ WARNING: Using TLS connection without command validation
+  ⚠️ Commands may fail during actual test - this is a known issue
+  Running 13 iterations for Redis (TLS)...
+  ERROR: Test failed for Redis (TLS): read error on connection to 127.0.0.1:6390
+
+Testing KeyDB...
+  Configuration: Server Threads: 2
+  Running 13 iterations for KeyDB (non-TLS)...
+  Initial keys in database: 0
+  Flushing database before test...
+  Database flushed in 0.63ms. Keys remaining: 0
+    Iteration 1/13... 13733 ops/sec, 0.072ms latency
+    Iteration 2/13... 13817 ops/sec, 0.072ms latency
+    Iteration 3/13... 13938 ops/sec, 0.071ms latency
+    Iteration 4/13... 14012 ops/sec, 0.071ms latency
+    Iteration 5/13... 14136 ops/sec, 0.070ms latency
+    Iteration 6/13... 14149 ops/sec, 0.070ms latency
+    Iteration 7/13... 14163 ops/sec, 0.070ms latency
+    Iteration 8/13... 14238 ops/sec, 0.070ms latency
+    Iteration 9/13... 14387 ops/sec, 0.069ms latency
+    Iteration 10/13... 14605 ops/sec, 0.068ms latency
+    Iteration 11/13... 14544 ops/sec, 0.068ms latency
+    Iteration 12/13... 14560 ops/sec, 0.068ms latency
+    Iteration 13/13... 14629 ops/sec, 0.068ms latency
+  KeyDB (non-TLS): 14223.93±303.04 ops/sec (CV: 2.1%), 0.070±0.002ms latency, Quality: good
+  Final keys in database: 394824
+  🔐 Starting detailed TLS connection debugging for 127.0.0.1:6391
+    🔍 Debugging certificate files:
+    📄 local_cert: ./client_cert.pem (1233 bytes, perms: 0644)
+      Subject CN: test.server.com
+      Issuer CN: CA
+      Valid from: 2025-06-08 18:51:16
+      Valid to: 2026-06-08 18:51:16
+    📄 local_pk: ./client_priv.pem (1700 bytes, perms: 0600)
+    📄 cafile: ./ca.crt (1338 bytes, perms: 0644)
+      Subject CN: CA
+      Issuer CN: CA
+      Valid from: 2025-06-08 18:51:16
+      Valid to: 2026-06-08 18:51:16
+  📡 Test 1: Raw SSL socket connection...
+    🔍 Testing raw SSL socket to 127.0.0.1:6391
+    ✅ Raw SSL socket connection successful
+    📜 Server certificate subject: test.com
+    📜 Server certificate issuer: CA
+  📡 Test 2: Minimal SSL context...
+    🔧 Testing: minimal SSL
+    📋 SSL Context: ["verify_peer","verify_peer_name","allow_self_signed"]
+    ✅ Redis TLS connection successful with minimal SSL
+    🧪 Testing Redis commands over TLS...
+      📞 Testing PING...
+      ❌ PING failed: socket error on read socket
+    ⚠️ Command test failed for minimal SSL: socket error on read socket
+  📡 Test 3: SSL context with certificates...
+    🔧 Testing: with certificates
+    📋 SSL Context: ["verify_peer","verify_peer_name","allow_self_signed","local_cert","local_pk","cafile"]
+    ✅ Redis TLS connection successful with with certificates
+    🧪 Testing Redis commands over TLS...
+      📞 Testing PING...
+      ❌ PING failed: socket error on read socket
+    ⚠️ Command test failed for with certificates: socket error on read socket
+  📡 Test 4: Full SSL context with all options...
+    🔧 Testing: full SSL context
+    📋 SSL Context: ["verify_peer","verify_peer_name","allow_self_signed","local_cert","local_pk","cafile","capture_peer_cert","disable_compression","SNI_enabled"]
+    ✅ Redis TLS connection successful with full SSL context
+    🧪 Testing Redis commands over TLS...
+      📞 Testing PING...
+      ❌ PING failed: socket error on read socket
+    ⚠️ Command test failed for full SSL context: socket error on read socket
+  📡 Test 5: Alternative TLS versions...
+    🔧 Testing: TLSv1.2
+    📋 SSL Context: ["verify_peer","verify_peer_name","allow_self_signed","crypto_method"]
+    ✅ Redis TLS connection successful with TLSv1.2
+    🧪 Testing Redis commands over TLS...
+      📞 Testing PING...
+      ❌ PING failed: socket error on read socket
+    ⚠️ Command test failed for TLSv1.2: socket error on read socket
+    🔧 Testing: TLSv1.3
+    📋 SSL Context: ["verify_peer","verify_peer_name","allow_self_signed","crypto_method"]
+    ✅ Redis TLS connection successful with TLSv1.3
+    🧪 Testing Redis commands over TLS...
+      📞 Testing PING...
+      ❌ PING failed: socket error on read socket
+    ⚠️ Command test failed for TLSv1.3: socket error on read socket
+    🔧 Testing: ANY_TLS
+    📋 SSL Context: ["verify_peer","verify_peer_name","allow_self_signed","crypto_method"]
+    ✅ Redis TLS connection successful with ANY_TLS
+    🧪 Testing Redis commands over TLS...
+      📞 Testing PING...
+      ❌ PING failed: socket error on read socket
+    ⚠️ Command test failed for ANY_TLS: socket error on read socket
+  📡 Test 6: Minimal SSL without command validation...
+    🔧 Testing: minimal SSL (no command test)
+    📋 SSL Context: ["verify_peer","verify_peer_name","allow_self_signed"]
+    ✅ Redis TLS connection successful with minimal SSL (no command test)
+    ⏭️ Skipping command test as requested
+  ⚠️ WARNING: Using TLS connection without command validation
+  ⚠️ Commands may fail during actual test - this is a known issue
+  Running 13 iterations for KeyDB (TLS)...
+  ERROR: Test failed for KeyDB (TLS): read error on connection to 127.0.0.1:6391
+
+Testing Dragonfly...
+  Configuration: Proactor Threads: 2
+  Running 13 iterations for Dragonfly (non-TLS)...
+  Initial keys in database: 0
+  Flushing database before test...
+  Database flushed in 1.50ms. Keys remaining: 0
+    Iteration 1/13... 11581 ops/sec, 0.086ms latency
+    Iteration 2/13... 11560 ops/sec, 0.086ms latency
+    Iteration 3/13... 11588 ops/sec, 0.086ms latency
+    Iteration 4/13... 11514 ops/sec, 0.086ms latency
+    Iteration 5/13... 11746 ops/sec, 0.084ms latency
+    Iteration 6/13... 11705 ops/sec, 0.085ms latency
+    Iteration 7/13... 11775 ops/sec, 0.084ms latency
+    Iteration 8/13... 11583 ops/sec, 0.086ms latency
+    Iteration 9/13... 11827 ops/sec, 0.084ms latency
+    Iteration 10/13... 11663 ops/sec, 0.085ms latency
+    Iteration 11/13... 11618 ops/sec, 0.085ms latency
+    Iteration 12/13... 11824 ops/sec, 0.084ms latency
+    Iteration 13/13... 11898 ops/sec, 0.083ms latency
+  Dragonfly (non-TLS): 11683.15±121.64 ops/sec (CV: 1.0%), 0.085±0.001ms latency, Quality: excellent
+  Final keys in database: 394991
+  🔐 Starting detailed TLS connection debugging for 127.0.0.1:6392
+    🔍 Debugging certificate files:
+    📄 local_cert: ./client_cert.pem (1233 bytes, perms: 0644)
+      Subject CN: test.server.com
+      Issuer CN: CA
+      Valid from: 2025-06-08 18:51:16
+      Valid to: 2026-06-08 18:51:16
+    📄 local_pk: ./client_priv.pem (1700 bytes, perms: 0600)
+    📄 cafile: ./ca.crt (1338 bytes, perms: 0644)
+      Subject CN: CA
+      Issuer CN: CA
+      Valid from: 2025-06-08 18:51:16
+      Valid to: 2026-06-08 18:51:16
+  📡 Test 1: Raw SSL socket connection...
+    🔍 Testing raw SSL socket to 127.0.0.1:6392
+    ✅ Raw SSL socket connection successful
+    📜 Server certificate subject: test.com
+    📜 Server certificate issuer: CA
+  📡 Test 2: Minimal SSL context...
+    🔧 Testing: minimal SSL
+    📋 SSL Context: ["verify_peer","verify_peer_name","allow_self_signed"]
+    ✅ Redis TLS connection successful with minimal SSL
+    🧪 Testing Redis commands over TLS...
+      📞 Testing PING...
+      ✅ PING successful: false
+      💾 Testing SET with key: tls_test_6845e2758212b...
+      ✅ SET successful: false
+      📖 Testing GET...
+      ❌ Command failed: Connection lost
+      🔍 Error details: RedisException
+      💔 Connection appears dead: Redis server 127.0.0.1:6392 went away
+    ⚠️ Command test failed for minimal SSL: Connection lost
+  📡 Test 3: SSL context with certificates...
+    🔧 Testing: with certificates
+    📋 SSL Context: ["verify_peer","verify_peer_name","allow_self_signed","local_cert","local_pk","cafile"]
+    ✅ Redis TLS connection successful with with certificates
+    🧪 Testing Redis commands over TLS...
+      📞 Testing PING...
+      ✅ PING successful: false
+      💾 Testing SET with key: tls_test_6845e27582312...
+      ❌ Command failed: read error on connection to 127.0.0.1:6392
+      🔍 Error details: RedisException
+      📊 Server still responsive, got info: non-array
+    ⚠️ Command test failed for with certificates: read error on connection to 127.0.0.1:6392
+  📡 Test 4: Full SSL context with all options...
+    🔧 Testing: full SSL context
+    📋 SSL Context: ["verify_peer","verify_peer_name","allow_self_signed","local_cert","local_pk","cafile","capture_peer_cert","disable_compression","SNI_enabled"]
+    ✅ Redis TLS connection successful with full SSL context
+    🧪 Testing Redis commands over TLS...
+      📞 Testing PING...
+      ✅ PING successful: false
+      💾 Testing SET with key: tls_test_6845e275824c6...
+      ❌ Command failed: read error on connection to 127.0.0.1:6392
+      🔍 Error details: RedisException
+      📊 Server still responsive, got info: non-array
+    ⚠️ Command test failed for full SSL context: read error on connection to 127.0.0.1:6392
+  📡 Test 5: Alternative TLS versions...
+    🔧 Testing: TLSv1.2
+    📋 SSL Context: ["verify_peer","verify_peer_name","allow_self_signed","crypto_method"]
+    ✅ Redis TLS connection successful with TLSv1.2
+    🧪 Testing Redis commands over TLS...
+      📞 Testing PING...
+      ✅ PING successful: false
+      💾 Testing SET with key: tls_test_6845e275826ed...
+      ✅ SET successful: false
+      📖 Testing GET...
+      ❌ Command failed: read error on connection to 127.0.0.1:6392
+      🔍 Error details: RedisException
+      📊 Server still responsive, got info: non-array
+    ⚠️ Command test failed for TLSv1.2: read error on connection to 127.0.0.1:6392
+    🔧 Testing: TLSv1.3
+    📋 SSL Context: ["verify_peer","verify_peer_name","allow_self_signed","crypto_method"]
+    ✅ Redis TLS connection successful with TLSv1.3
+    🧪 Testing Redis commands over TLS...
+      📞 Testing PING...
+      ✅ PING successful: false
+      💾 Testing SET with key: tls_test_6845e2758295a...
+      ❌ Command failed: read error on connection to 127.0.0.1:6392
+      🔍 Error details: RedisException
+      📊 Server still responsive, got info: non-array
+    ⚠️ Command test failed for TLSv1.3: read error on connection to 127.0.0.1:6392
+    🔧 Testing: ANY_TLS
+    📋 SSL Context: ["verify_peer","verify_peer_name","allow_self_signed","crypto_method"]
+    ✅ Redis TLS connection successful with ANY_TLS
+    🧪 Testing Redis commands over TLS...
+      📞 Testing PING...
+      ✅ PING successful: false
+      💾 Testing SET with key: tls_test_6845e27582b74...
+      ✅ SET successful: false
+      📖 Testing GET...
+      ❌ Command failed: read error on connection to 127.0.0.1:6392
+      🔍 Error details: RedisException
+      📊 Server still responsive, got info: non-array
+    ⚠️ Command test failed for ANY_TLS: read error on connection to 127.0.0.1:6392
+  📡 Test 6: Minimal SSL without command validation...
+    🔧 Testing: minimal SSL (no command test)
+    📋 SSL Context: ["verify_peer","verify_peer_name","allow_self_signed"]
+    ✅ Redis TLS connection successful with minimal SSL (no command test)
+    ⏭️ Skipping command test as requested
+  ⚠️ WARNING: Using TLS connection without command validation
+  ⚠️ Commands may fail during actual test - this is a known issue
+  Running 13 iterations for Dragonfly (TLS)...
+  Initial keys in database: 
+  Flushing database before test...
+  ERROR: Test failed for Dragonfly (TLS): read error on connection to 127.0.0.1:6392
+
+Testing Valkey...
+  Configuration: IO Threads: 2
+  Running 13 iterations for Valkey (non-TLS)...
+  Initial keys in database: 0
+  Flushing database before test...
+  Database flushed in 0.09ms. Keys remaining: 0
+    Iteration 1/13... 15778 ops/sec, 0.063ms latency
+    Iteration 2/13... 15875 ops/sec, 0.062ms latency
+    Iteration 3/13... 15930 ops/sec, 0.062ms latency
+    Iteration 4/13... 15873 ops/sec, 0.062ms latency
+    Iteration 5/13... 16595 ops/sec, 0.060ms latency
+    Iteration 6/13... 16208 ops/sec, 0.061ms latency
+    Iteration 7/13... 15972 ops/sec, 0.062ms latency
+    Iteration 8/13... 16781 ops/sec, 0.059ms latency
+    Iteration 9/13... 16849 ops/sec, 0.059ms latency
+    Iteration 10/13... 16702 ops/sec, 0.059ms latency
+    Iteration 11/13... 16384 ops/sec, 0.060ms latency
+    Iteration 12/13... 17146 ops/sec, 0.058ms latency
+    Iteration 13/13... 16448 ops/sec, 0.060ms latency
+  Valkey (non-TLS): 16349.27±445.62 ops/sec (CV: 2.7%), 0.061±0.002ms latency, Quality: good
+  Final keys in database: 395423
+  🔐 Starting detailed TLS connection debugging for 127.0.0.1:6393
+    🔍 Debugging certificate files:
+    📄 local_cert: ./client_cert.pem (1233 bytes, perms: 0644)
+      Subject CN: test.server.com
+      Issuer CN: CA
+      Valid from: 2025-06-08 18:51:16
+      Valid to: 2026-06-08 18:51:16
+    📄 local_pk: ./client_priv.pem (1700 bytes, perms: 0600)
+    📄 cafile: ./ca.crt (1338 bytes, perms: 0644)
+      Subject CN: CA
+      Issuer CN: CA
+      Valid from: 2025-06-08 18:51:16
+      Valid to: 2026-06-08 18:51:16
+  📡 Test 1: Raw SSL socket connection...
+    🔍 Testing raw SSL socket to 127.0.0.1:6393
+    ✅ Raw SSL socket connection successful
+    📜 Server certificate subject: test.com
+    📜 Server certificate issuer: CA
+  📡 Test 2: Minimal SSL context...
+    🔧 Testing: minimal SSL
+    📋 SSL Context: ["verify_peer","verify_peer_name","allow_self_signed"]
+    ✅ Redis TLS connection successful with minimal SSL
+    🧪 Testing Redis commands over TLS...
+      📞 Testing PING...
+      ❌ PING failed: socket error on read socket
+    ⚠️ Command test failed for minimal SSL: socket error on read socket
+  📡 Test 3: SSL context with certificates...
+    🔧 Testing: with certificates
+    📋 SSL Context: ["verify_peer","verify_peer_name","allow_self_signed","local_cert","local_pk","cafile"]
+    ✅ Redis TLS connection successful with with certificates
+    🧪 Testing Redis commands over TLS...
+      📞 Testing PING...
+      ❌ PING failed: socket error on read socket
+    ⚠️ Command test failed for with certificates: socket error on read socket
+  📡 Test 4: Full SSL context with all options...
+    🔧 Testing: full SSL context
+    📋 SSL Context: ["verify_peer","verify_peer_name","allow_self_signed","local_cert","local_pk","cafile","capture_peer_cert","disable_compression","SNI_enabled"]
+    ✅ Redis TLS connection successful with full SSL context
+    🧪 Testing Redis commands over TLS...
+      📞 Testing PING...
+      ❌ PING failed: socket error on read socket
+    ⚠️ Command test failed for full SSL context: socket error on read socket
+  📡 Test 5: Alternative TLS versions...
+    🔧 Testing: TLSv1.2
+    📋 SSL Context: ["verify_peer","verify_peer_name","allow_self_signed","crypto_method"]
+    ✅ Redis TLS connection successful with TLSv1.2
+    🧪 Testing Redis commands over TLS...
+      📞 Testing PING...
+      ❌ PING failed: socket error on read socket
+    ⚠️ Command test failed for TLSv1.2: socket error on read socket
+    🔧 Testing: TLSv1.3
+    📋 SSL Context: ["verify_peer","verify_peer_name","allow_self_signed","crypto_method"]
+    ✅ Redis TLS connection successful with TLSv1.3
+    🧪 Testing Redis commands over TLS...
+      📞 Testing PING...
+      ❌ PING failed: socket error on read socket
+    ⚠️ Command test failed for TLSv1.3: socket error on read socket
+    🔧 Testing: ANY_TLS
+    📋 SSL Context: ["verify_peer","verify_peer_name","allow_self_signed","crypto_method"]
+    ✅ Redis TLS connection successful with ANY_TLS
+    🧪 Testing Redis commands over TLS...
+      📞 Testing PING...
+      ❌ PING failed: socket error on read socket
+    ⚠️ Command test failed for ANY_TLS: socket error on read socket
+  📡 Test 6: Minimal SSL without command validation...
+    🔧 Testing: minimal SSL (no command test)
+    📋 SSL Context: ["verify_peer","verify_peer_name","allow_self_signed"]
+    ✅ Redis TLS connection successful with minimal SSL (no command test)
+    ⏭️ Skipping command test as requested
+  ⚠️ WARNING: Using TLS connection without command validation
+  ⚠️ Commands may fail during actual test - this is a known issue
+  Running 13 iterations for Valkey (TLS)...
+  ERROR: Test failed for Valkey (TLS): read error on connection to 127.0.0.1:6393
+
+Enhanced results saved:
+  CSV: ./benchmarklogs-2t/wordpress_object_cache_test.csv
+  JSON: ./benchmarklogs-2t/wordpress_object_cache_test.json
+  Markdown: ./benchmarklogs-2t/wordpress_object_cache_test.md
+  Raw Data: ./benchmarklogs-2t/wordpress_object_cache_test_raw.json
+============================================================
+Enhanced test suite completed!
+Total execution time: 427.28 seconds
+Total tests run: 4
+Statistical iterations per test: 13
+Results saved to ./benchmarklogs-2t/
+
+====================================================================================================
+ENHANCED STATISTICAL PERFORMANCE SUMMARY
+Thread Variant: 2 | Iterations per test: 13
+====================================================================================================
+Rank Database                  Ops/sec   ±StdDev      CV%  Latency  Quality     95% CI     Reliable
+----------------------------------------------------------------------------------------------------
+#1  Valkey                  16349      446    2.7%  0.061ms 🟡good    16,102-16,596      ✅
+#2  KeyDB                   14224      303    2.1%  0.070ms 🟡good    14,056-14,392      ✅
+#3  Dragonfly               11683      122    1.0%  0.085ms 🟢excellent 11,616-11,751      ✅
+#4  Redis                   10937      278    2.5%  0.091ms 🟡good    10,783-11,091      ✅
+====================================================================================================
+Quick Insights:
+- Reliable measurements: 4/4
+- 🏆 Best: Valkey - 16,349 ops/sec
+- 📊 Average precision: 2.1% CV
+
+================================================================================
+WORDPRESS PERFORMANCE ANALYSIS
+================================================================================
+Redis                | Light pages:   1094/sec | Heavy pages:    219/sec
+KeyDB                | Light pages:   1422/sec | Heavy pages:    284/sec
+Dragonfly            | Light pages:   1168/sec | Heavy pages:    234/sec
+Valkey               | Light pages:   1635/sec | Heavy pages:    327/sec
+
+WordPress Cache Recommendations:
+- 🏆 Best performer: Valkey
+- 📊 Estimated capacity: 545 concurrent users (30 cache ops/user/sec)
+- 💡 For production WordPress, consider read/write ratios: 90/10 for cached sites, 70/30 for dynamic sites
+================================================================================
+
+============================================================
+TLS PERFORMANCE COMPARISON
+Thread Variant: 2
+============================================================
+No successful TLS connections for performance comparison.
+All databases tested with non-TLS only.
+============================================================
+
+================================================================================
+STATISTICAL INSIGHTS
+Thread Variant: 2 | Iterations: 13
+================================================================================
+Measurement Quality Distribution:
+  🟢 Excellent :  1 tests (25.0%)
+  🟡 Good      :  3 tests (75.0%)
+
+Coefficient of Variation Analysis:
+  Average CV: 2.1% (lower is better)
+  Range: 1.0% - 2.7%
+  📊 Good measurement consistency
+
+Performance Analysis:
+  Performance range: 10937 - 16349 ops/sec (49.5% spread)
+  📈 Relatively similar performance across databases
+
+Statistical Recommendations:
+  ✅ High confidence in results - good statistical reliability
+================================================================================
+Enhanced WordPress Object Cache Test - Statistical Analysis
+=========================================================
+
+Checking system requirements...
+✅ PHP version: 8.4.7
+✅ Redis extension version: 6.2.0
+✅ All system requirements met
+
+Loading configuration from test_config.php...
+✅ Configuration loaded successfully from file
+
+============================================================
+ENHANCED WORDPRESS OBJECT CACHE TEST CONFIGURATION
+============================================================
+Test Parameters:
+  Duration per iteration: 30 seconds
+  Test iterations: 13
+  Iteration pause: 500ms
+  Operations per iteration: 100,000
+  Read/Write ratio: 70% / 30%
+
+Statistical Analysis:
+  Multi-run testing: Enabled
+  Raw data logging: Enabled
+  Quality assessment: Enabled (CV-based)
+  Confidence intervals: 95%
+
+Thread Configuration:
+  Thread variant: 2
+  redis_io_threads: 2 threads
+  keydb_server_threads: 2 threads
+  dragonfly_proactor_threads: 2 threads
+  valkey_io_threads: 2 threads
+
+Database Configuration:
+  Redis: 127.0.0.1:6379 (TLS: 6390) [IO: 2]
+  KeyDB: 127.0.0.1:6380 (TLS: 6391) [Server: 2]
+  Dragonfly: 127.0.0.1:6381 (TLS: 6392) [Proactor: 2]
+  Valkey: 127.0.0.1:6382 (TLS: 6393) [IO: 2]
+
+Test Environment:
+  PHP version: 8.4.7
+  Redis extension: Loaded
+  Redis extension version: 6.2.0
+  Output directory: ./benchmarklogs-2t
+  TLS testing: Enabled
+  Database flush: Enabled
+  Debug mode: Disabled
+============================================================
+
+Initializing WordPress Object Cache Test...
+
+Starting WordPress Object Cache Test...
+Timestamp: 2025-06-08 19:21:47 UTC
+Redis Extension Version: 6.2.0
+Enhanced Testing Configuration:
+- Iterations per test: 13
+- Iteration pause: 500ms
+- Statistical analysis: Enabled
+- Raw data logging: Enabled
+Thread Variant: 2
+Thread Configuration:
+  redis_io_threads: 2 threads
+  keydb_server_threads: 2 threads
+  dragonfly_proactor_threads: 2 threads
+  valkey_io_threads: 2 threads
+TLS Certificates: Found and validated
+
+Checking TLS readiness...
+  Redis: TLS port accessible ✓
+  KeyDB: TLS port accessible ✓
+  Dragonfly: TLS port accessible ✓
+  Valkey: TLS port accessible ✓
+
+TLS testing will be attempted for: Redis, KeyDB, Dragonfly, Valkey
+============================================================
+Testing Redis...
+  Configuration: IO Threads: 2
+  Running 13 iterations for Redis (non-TLS)...
+  Initial keys in database: 394940
+  Flushing database before test...
+  Database flushed in 198.02ms. Keys remaining: 0
+    Iteration 1/13... 10626 ops/sec, 0.093ms latency
+    Iteration 2/13... 10653 ops/sec, 0.093ms latency
+    Iteration 3/13... 10695 ops/sec, 0.093ms latency
+    Iteration 4/13... 10695 ops/sec, 0.093ms latency
+    Iteration 5/13... 10852 ops/sec, 0.091ms latency
+    Iteration 6/13... 10989 ops/sec, 0.090ms latency
+    Iteration 7/13... 10963 ops/sec, 0.091ms latency
+    Iteration 8/13... 10883 ops/sec, 0.091ms latency
+    Iteration 9/13... 11101 ops/sec, 0.089ms latency
+    Iteration 10/13... 11229 ops/sec, 0.088ms latency
+    Iteration 11/13... 11221 ops/sec, 0.088ms latency
+    Iteration 12/13... 11229 ops/sec, 0.088ms latency
+    Iteration 13/13... 11351 ops/sec, 0.087ms latency
+  Redis (non-TLS): 10960.52±250.13 ops/sec (CV: 2.3%), 0.091±0.002ms latency, Quality: good
+  Final keys in database: 395037
+  🔐 Starting detailed TLS connection debugging for 127.0.0.1:6390
+    🔍 Debugging certificate files:
+    📄 local_cert: ./client_cert.pem (1233 bytes, perms: 0644)
+      Subject CN: test.server.com
+      Issuer CN: CA
+      Valid from: 2025-06-08 18:51:16
+      Valid to: 2026-06-08 18:51:16
+    📄 local_pk: ./client_priv.pem (1700 bytes, perms: 0600)
+    📄 cafile: ./ca.crt (1338 bytes, perms: 0644)
+      Subject CN: CA
+      Issuer CN: CA
+      Valid from: 2025-06-08 18:51:16
+      Valid to: 2026-06-08 18:51:16
+  📡 Test 1: Raw SSL socket connection...
+    🔍 Testing raw SSL socket to 127.0.0.1:6390
+    ✅ Raw SSL socket connection successful
+    📜 Server certificate subject: test.com
+    📜 Server certificate issuer: CA
+  📡 Test 2: Minimal SSL context...
+    🔧 Testing: minimal SSL
+    📋 SSL Context: ["verify_peer","verify_peer_name","allow_self_signed"]
+    ✅ Redis TLS connection successful with minimal SSL
+    🧪 Testing Redis commands over TLS...
+      📞 Testing PING...
+      ❌ PING failed: socket error on read socket
+    ⚠️ Command test failed for minimal SSL: socket error on read socket
+  📡 Test 3: SSL context with certificates...
+    🔧 Testing: with certificates
+    📋 SSL Context: ["verify_peer","verify_peer_name","allow_self_signed","local_cert","local_pk","cafile"]
+    ✅ Redis TLS connection successful with with certificates
+    🧪 Testing Redis commands over TLS...
+      📞 Testing PING...
+      ❌ PING failed: socket error on read socket
+    ⚠️ Command test failed for with certificates: socket error on read socket
+  📡 Test 4: Full SSL context with all options...
+    🔧 Testing: full SSL context
+    📋 SSL Context: ["verify_peer","verify_peer_name","allow_self_signed","local_cert","local_pk","cafile","capture_peer_cert","disable_compression","SNI_enabled"]
+    ✅ Redis TLS connection successful with full SSL context
+    🧪 Testing Redis commands over TLS...
+      📞 Testing PING...
+      ❌ PING failed: socket error on read socket
+    ⚠️ Command test failed for full SSL context: socket error on read socket
+  📡 Test 5: Alternative TLS versions...
+    🔧 Testing: TLSv1.2
+    📋 SSL Context: ["verify_peer","verify_peer_name","allow_self_signed","crypto_method"]
+    ✅ Redis TLS connection successful with TLSv1.2
+    🧪 Testing Redis commands over TLS...
+      📞 Testing PING...
+      ❌ PING failed: socket error on read socket
+    ⚠️ Command test failed for TLSv1.2: socket error on read socket
+    🔧 Testing: TLSv1.3
+    📋 SSL Context: ["verify_peer","verify_peer_name","allow_self_signed","crypto_method"]
+    ✅ Redis TLS connection successful with TLSv1.3
+    🧪 Testing Redis commands over TLS...
+      📞 Testing PING...
+      ❌ PING failed: socket error on read socket
+    ⚠️ Command test failed for TLSv1.3: socket error on read socket
+    🔧 Testing: ANY_TLS
+    📋 SSL Context: ["verify_peer","verify_peer_name","allow_self_signed","crypto_method"]
+    ✅ Redis TLS connection successful with ANY_TLS
+    🧪 Testing Redis commands over TLS...
+      📞 Testing PING...
+      ❌ PING failed: socket error on read socket
+    ⚠️ Command test failed for ANY_TLS: socket error on read socket
+  📡 Test 6: Minimal SSL without command validation...
+    🔧 Testing: minimal SSL (no command test)
+    📋 SSL Context: ["verify_peer","verify_peer_name","allow_self_signed"]
+    ✅ Redis TLS connection successful with minimal SSL (no command test)
+    ⏭️ Skipping command test as requested
+  ⚠️ WARNING: Using TLS connection without command validation
+  ⚠️ Commands may fail during actual test - this is a known issue
+  Running 13 iterations for Redis (TLS)...
+  ERROR: Test failed for Redis (TLS): read error on connection to 127.0.0.1:6390
+
+Testing KeyDB...
+  Configuration: Server Threads: 2
+  Running 13 iterations for KeyDB (non-TLS)...
+  Initial keys in database: 394816
+  Flushing database before test...
+  Database flushed in 203.85ms. Keys remaining: 0
+    Iteration 1/13... 13782 ops/sec, 0.072ms latency
+    Iteration 2/13... 13764 ops/sec, 0.072ms latency
+    Iteration 3/13... 13886 ops/sec, 0.071ms latency
+    Iteration 4/13... 13947 ops/sec, 0.071ms latency
+    Iteration 5/13... 14063 ops/sec, 0.070ms latency
+    Iteration 6/13... 14099 ops/sec, 0.070ms latency
+    Iteration 7/13... 14210 ops/sec, 0.070ms latency
+    Iteration 8/13... 14116 ops/sec, 0.070ms latency
+    Iteration 9/13... 14378 ops/sec, 0.069ms latency
+    Iteration 10/13... 14388 ops/sec, 0.069ms latency
+    Iteration 11/13... 14461 ops/sec, 0.068ms latency
+    Iteration 12/13... 14526 ops/sec, 0.068ms latency
+    Iteration 13/13... 14618 ops/sec, 0.068ms latency
+  KeyDB (non-TLS): 14172.07±284.17 ops/sec (CV: 2.0%), 0.070±0.001ms latency, Quality: good
+  Final keys in database: 396326
+  🔐 Starting detailed TLS connection debugging for 127.0.0.1:6391
+    🔍 Debugging certificate files:
+    📄 local_cert: ./client_cert.pem (1233 bytes, perms: 0644)
+      Subject CN: test.server.com
+      Issuer CN: CA
+      Valid from: 2025-06-08 18:51:16
+      Valid to: 2026-06-08 18:51:16
+    📄 local_pk: ./client_priv.pem (1700 bytes, perms: 0600)
+    📄 cafile: ./ca.crt (1338 bytes, perms: 0644)
+      Subject CN: CA
+      Issuer CN: CA
+      Valid from: 2025-06-08 18:51:16
+      Valid to: 2026-06-08 18:51:16
+  📡 Test 1: Raw SSL socket connection...
+    🔍 Testing raw SSL socket to 127.0.0.1:6391
+    ✅ Raw SSL socket connection successful
+    📜 Server certificate subject: test.com
+    📜 Server certificate issuer: CA
+  📡 Test 2: Minimal SSL context...
+    🔧 Testing: minimal SSL
+    📋 SSL Context: ["verify_peer","verify_peer_name","allow_self_signed"]
+    ✅ Redis TLS connection successful with minimal SSL
+    🧪 Testing Redis commands over TLS...
+      📞 Testing PING...
+      ❌ PING failed: socket error on read socket
+    ⚠️ Command test failed for minimal SSL: socket error on read socket
+  📡 Test 3: SSL context with certificates...
+    🔧 Testing: with certificates
+    📋 SSL Context: ["verify_peer","verify_peer_name","allow_self_signed","local_cert","local_pk","cafile"]
+    ✅ Redis TLS connection successful with with certificates
+    🧪 Testing Redis commands over TLS...
+      📞 Testing PING...
+      ❌ PING failed: socket error on read socket
+    ⚠️ Command test failed for with certificates: socket error on read socket
+  📡 Test 4: Full SSL context with all options...
+    🔧 Testing: full SSL context
+    📋 SSL Context: ["verify_peer","verify_peer_name","allow_self_signed","local_cert","local_pk","cafile","capture_peer_cert","disable_compression","SNI_enabled"]
+    ✅ Redis TLS connection successful with full SSL context
+    🧪 Testing Redis commands over TLS...
+      📞 Testing PING...
+      ❌ PING failed: socket error on read socket
+    ⚠️ Command test failed for full SSL context: socket error on read socket
+  📡 Test 5: Alternative TLS versions...
+    🔧 Testing: TLSv1.2
+    📋 SSL Context: ["verify_peer","verify_peer_name","allow_self_signed","crypto_method"]
+    ✅ Redis TLS connection successful with TLSv1.2
+    🧪 Testing Redis commands over TLS...
+      📞 Testing PING...
+      ❌ PING failed: socket error on read socket
+    ⚠️ Command test failed for TLSv1.2: socket error on read socket
+    🔧 Testing: TLSv1.3
+    📋 SSL Context: ["verify_peer","verify_peer_name","allow_self_signed","crypto_method"]
+    ✅ Redis TLS connection successful with TLSv1.3
+    🧪 Testing Redis commands over TLS...
+      📞 Testing PING...
+      ❌ PING failed: socket error on read socket
+    ⚠️ Command test failed for TLSv1.3: socket error on read socket
+    🔧 Testing: ANY_TLS
+    📋 SSL Context: ["verify_peer","verify_peer_name","allow_self_signed","crypto_method"]
+    ✅ Redis TLS connection successful with ANY_TLS
+    🧪 Testing Redis commands over TLS...
+      📞 Testing PING...
+      ❌ PING failed: socket error on read socket
+    ⚠️ Command test failed for ANY_TLS: socket error on read socket
+  📡 Test 6: Minimal SSL without command validation...
+    🔧 Testing: minimal SSL (no command test)
+    📋 SSL Context: ["verify_peer","verify_peer_name","allow_self_signed"]
+    ✅ Redis TLS connection successful with minimal SSL (no command test)
+    ⏭️ Skipping command test as requested
+  ⚠️ WARNING: Using TLS connection without command validation
+  ⚠️ Commands may fail during actual test - this is a known issue
+  Running 13 iterations for KeyDB (TLS)...
+  ERROR: Test failed for KeyDB (TLS): read error on connection to 127.0.0.1:6391
+
+Testing Dragonfly...
+  Configuration: Proactor Threads: 2
+  Running 13 iterations for Dragonfly (non-TLS)...
+  Initial keys in database: 394940
+  Flushing database before test...
+  Database flushed in 22.31ms. Keys remaining: 0
+    Iteration 1/13... 11502 ops/sec, 0.086ms latency
+    Iteration 2/13... 11515 ops/sec, 0.086ms latency
+    Iteration 3/13... 11506 ops/sec, 0.086ms latency
+    Iteration 4/13... 11638 ops/sec, 0.085ms latency
+    Iteration 5/13... 11746 ops/sec, 0.084ms latency
+    Iteration 6/13... 11819 ops/sec, 0.084ms latency
+    Iteration 7/13... 11731 ops/sec, 0.084ms latency
+    Iteration 8/13... 11565 ops/sec, 0.086ms latency
+    Iteration 9/13... 11723 ops/sec, 0.085ms latency
+    Iteration 10/13... 11903 ops/sec, 0.083ms latency
+    Iteration 11/13... 12056 ops/sec, 0.082ms latency
+    Iteration 12/13... 11952 ops/sec, 0.083ms latency
+    Iteration 13/13... 11993 ops/sec, 0.083ms latency
+  Dragonfly (non-TLS): 11742.28±192.65 ops/sec (CV: 1.6%), 0.084±0.001ms latency, Quality: excellent
+  Final keys in database: 395265
+  🔐 Starting detailed TLS connection debugging for 127.0.0.1:6392
+    🔍 Debugging certificate files:
+    📄 local_cert: ./client_cert.pem (1233 bytes, perms: 0644)
+      Subject CN: test.server.com
+      Issuer CN: CA
+      Valid from: 2025-06-08 18:51:16
+      Valid to: 2026-06-08 18:51:16
+    📄 local_pk: ./client_priv.pem (1700 bytes, perms: 0600)
+    📄 cafile: ./ca.crt (1338 bytes, perms: 0644)
+      Subject CN: CA
+      Issuer CN: CA
+      Valid from: 2025-06-08 18:51:16
+      Valid to: 2026-06-08 18:51:16
+  📡 Test 1: Raw SSL socket connection...
+    🔍 Testing raw SSL socket to 127.0.0.1:6392
+    ✅ Raw SSL socket connection successful
+    📜 Server certificate subject: test.com
+    📜 Server certificate issuer: CA
+  📡 Test 2: Minimal SSL context...
+    🔧 Testing: minimal SSL
+    📋 SSL Context: ["verify_peer","verify_peer_name","allow_self_signed"]
+    ✅ Redis TLS connection successful with minimal SSL
+    🧪 Testing Redis commands over TLS...
+      📞 Testing PING...
+      ✅ PING successful: false
+      💾 Testing SET with key: tls_test_6845e420b7f70...
+      ✅ SET successful: false
+      📖 Testing GET...
+      ❌ Command failed: read error on connection to 127.0.0.1:6392
+      🔍 Error details: RedisException
+      📊 Server still responsive, got info: non-array
+    ⚠️ Command test failed for minimal SSL: read error on connection to 127.0.0.1:6392
+  📡 Test 3: SSL context with certificates...
+    🔧 Testing: with certificates
+    📋 SSL Context: ["verify_peer","verify_peer_name","allow_self_signed","local_cert","local_pk","cafile"]
+    ✅ Redis TLS connection successful with with certificates
+    🧪 Testing Redis commands over TLS...
+      📞 Testing PING...
+      ✅ PING successful: false
+      💾 Testing SET with key: tls_test_6845e420b852a...
+      ❌ Command failed: read error on connection to 127.0.0.1:6392
+      🔍 Error details: RedisException
+      📊 Server still responsive, got info: non-array
+    ⚠️ Command test failed for with certificates: read error on connection to 127.0.0.1:6392
+  📡 Test 4: Full SSL context with all options...
+    🔧 Testing: full SSL context
+    📋 SSL Context: ["verify_peer","verify_peer_name","allow_self_signed","local_cert","local_pk","cafile","capture_peer_cert","disable_compression","SNI_enabled"]
+    ✅ Redis TLS connection successful with full SSL context
+    🧪 Testing Redis commands over TLS...
+      📞 Testing PING...
+      ✅ PING successful: false
+      💾 Testing SET with key: tls_test_6845e420b86d7...
+      ❌ Command failed: read error on connection to 127.0.0.1:6392
+      🔍 Error details: RedisException
+      📊 Server still responsive, got info: non-array
+    ⚠️ Command test failed for full SSL context: read error on connection to 127.0.0.1:6392
+  📡 Test 5: Alternative TLS versions...
+    🔧 Testing: TLSv1.2
+    📋 SSL Context: ["verify_peer","verify_peer_name","allow_self_signed","crypto_method"]
+    ✅ Redis TLS connection successful with TLSv1.2
+    🧪 Testing Redis commands over TLS...
+      📞 Testing PING...
+      ✅ PING successful: false
+      💾 Testing SET with key: tls_test_6845e420b8b7f...
+      ❌ Command failed: read error on connection to 127.0.0.1:6392
+      🔍 Error details: RedisException
+      📊 Server still responsive, got info: non-array
+    ⚠️ Command test failed for TLSv1.2: read error on connection to 127.0.0.1:6392
+    🔧 Testing: TLSv1.3
+    📋 SSL Context: ["verify_peer","verify_peer_name","allow_self_signed","crypto_method"]
+    ✅ Redis TLS connection successful with TLSv1.3
+    🧪 Testing Redis commands over TLS...
+      📞 Testing PING...
+      ✅ PING successful: false
+      💾 Testing SET with key: tls_test_6845e420b8cfe...
+      ❌ Command failed: read error on connection to 127.0.0.1:6392
+      🔍 Error details: RedisException
+      📊 Server still responsive, got info: non-array
+    ⚠️ Command test failed for TLSv1.3: read error on connection to 127.0.0.1:6392
+    🔧 Testing: ANY_TLS
+    📋 SSL Context: ["verify_peer","verify_peer_name","allow_self_signed","crypto_method"]
+    ✅ Redis TLS connection successful with ANY_TLS
+    🧪 Testing Redis commands over TLS...
+      📞 Testing PING...
+      ✅ PING successful: false
+      💾 Testing SET with key: tls_test_6845e420b8e85...
+      ❌ Command failed: read error on connection to 127.0.0.1:6392
+      🔍 Error details: RedisException
+      📊 Server still responsive, got info: non-array
+    ⚠️ Command test failed for ANY_TLS: read error on connection to 127.0.0.1:6392
+  📡 Test 6: Minimal SSL without command validation...
+    🔧 Testing: minimal SSL (no command test)
+    📋 SSL Context: ["verify_peer","verify_peer_name","allow_self_signed"]
+    ✅ Redis TLS connection successful with minimal SSL (no command test)
+    ⏭️ Skipping command test as requested
+  ⚠️ WARNING: Using TLS connection without command validation
+  ⚠️ Commands may fail during actual test - this is a known issue
+  Running 13 iterations for Dragonfly (TLS)...
+  Initial keys in database: 
+  Flushing database before test...
+  ERROR: Test failed for Dragonfly (TLS): read error on connection to 127.0.0.1:6392
+
+Testing Valkey...
+  Configuration: IO Threads: 2
+  Running 13 iterations for Valkey (non-TLS)...
+  Initial keys in database: 395415
+  Flushing database before test...
+  Database flushed in 0.10ms. Keys remaining: 0
+    Iteration 1/13... 15668 ops/sec, 0.063ms latency
+    Iteration 2/13... 16219 ops/sec, 0.061ms latency
+    Iteration 3/13... 15792 ops/sec, 0.063ms latency
+    Iteration 4/13... 16359 ops/sec, 0.061ms latency
+    Iteration 5/13... 16600 ops/sec, 0.060ms latency
+    Iteration 6/13... 16730 ops/sec, 0.059ms latency
+    Iteration 7/13... 16223 ops/sec, 0.061ms latency
+    Iteration 8/13... 16870 ops/sec, 0.059ms latency
+    Iteration 9/13... 16966 ops/sec, 0.058ms latency
+    Iteration 10/13... 16829 ops/sec, 0.059ms latency
+    Iteration 11/13... 16714 ops/sec, 0.059ms latency
+    Iteration 12/13... 17225 ops/sec, 0.057ms latency
+    Iteration 13/13... 16750 ops/sec, 0.059ms latency
+  Valkey (non-TLS): 16534.29±457.78 ops/sec (CV: 2.8%), 0.060±0.002ms latency, Quality: good
+  Final keys in database: 394593
+  🔐 Starting detailed TLS connection debugging for 127.0.0.1:6393
+    🔍 Debugging certificate files:
+    📄 local_cert: ./client_cert.pem (1233 bytes, perms: 0644)
+      Subject CN: test.server.com
+      Issuer CN: CA
+      Valid from: 2025-06-08 18:51:16
+      Valid to: 2026-06-08 18:51:16
+    📄 local_pk: ./client_priv.pem (1700 bytes, perms: 0600)
+    📄 cafile: ./ca.crt (1338 bytes, perms: 0644)
+      Subject CN: CA
+      Issuer CN: CA
+      Valid from: 2025-06-08 18:51:16
+      Valid to: 2026-06-08 18:51:16
+  📡 Test 1: Raw SSL socket connection...
+    🔍 Testing raw SSL socket to 127.0.0.1:6393
+    ✅ Raw SSL socket connection successful
+    📜 Server certificate subject: test.com
+    📜 Server certificate issuer: CA
+  📡 Test 2: Minimal SSL context...
+    🔧 Testing: minimal SSL
+    📋 SSL Context: ["verify_peer","verify_peer_name","allow_self_signed"]
+    ✅ Redis TLS connection successful with minimal SSL
+    🧪 Testing Redis commands over TLS...
+      📞 Testing PING...
+      ❌ PING failed: socket error on read socket
+    ⚠️ Command test failed for minimal SSL: socket error on read socket
+  📡 Test 3: SSL context with certificates...
+    🔧 Testing: with certificates
+    📋 SSL Context: ["verify_peer","verify_peer_name","allow_self_signed","local_cert","local_pk","cafile"]
+    ✅ Redis TLS connection successful with with certificates
+    🧪 Testing Redis commands over TLS...
+      📞 Testing PING...
+      ❌ PING failed: socket error on read socket
+    ⚠️ Command test failed for with certificates: socket error on read socket
+  📡 Test 4: Full SSL context with all options...
+    🔧 Testing: full SSL context
+    📋 SSL Context: ["verify_peer","verify_peer_name","allow_self_signed","local_cert","local_pk","cafile","capture_peer_cert","disable_compression","SNI_enabled"]
+    ✅ Redis TLS connection successful with full SSL context
+    🧪 Testing Redis commands over TLS...
+      📞 Testing PING...
+      ❌ PING failed: socket error on read socket
+    ⚠️ Command test failed for full SSL context: socket error on read socket
+  📡 Test 5: Alternative TLS versions...
+    🔧 Testing: TLSv1.2
+    📋 SSL Context: ["verify_peer","verify_peer_name","allow_self_signed","crypto_method"]
+    ✅ Redis TLS connection successful with TLSv1.2
+    🧪 Testing Redis commands over TLS...
+      📞 Testing PING...
+      ❌ PING failed: socket error on read socket
+    ⚠️ Command test failed for TLSv1.2: socket error on read socket
+    🔧 Testing: TLSv1.3
+    📋 SSL Context: ["verify_peer","verify_peer_name","allow_self_signed","crypto_method"]
+    ✅ Redis TLS connection successful with TLSv1.3
+    🧪 Testing Redis commands over TLS...
+      📞 Testing PING...
+      ❌ PING failed: socket error on read socket
+    ⚠️ Command test failed for TLSv1.3: socket error on read socket
+    🔧 Testing: ANY_TLS
+    📋 SSL Context: ["verify_peer","verify_peer_name","allow_self_signed","crypto_method"]
+    ✅ Redis TLS connection successful with ANY_TLS
+    🧪 Testing Redis commands over TLS...
+      📞 Testing PING...
+      ❌ PING failed: socket error on read socket
+    ⚠️ Command test failed for ANY_TLS: socket error on read socket
+  📡 Test 6: Minimal SSL without command validation...
+    🔧 Testing: minimal SSL (no command test)
+    📋 SSL Context: ["verify_peer","verify_peer_name","allow_self_signed"]
+    ✅ Redis TLS connection successful with minimal SSL (no command test)
+    ⏭️ Skipping command test as requested
+  ⚠️ WARNING: Using TLS connection without command validation
+  ⚠️ Commands may fail during actual test - this is a known issue
+  Running 13 iterations for Valkey (TLS)...
+  ERROR: Test failed for Valkey (TLS): read error on connection to 127.0.0.1:6393
+
+Enhanced results saved:
+  CSV: ./benchmarklogs-2t/wordpress_object_cache_test.csv
+  JSON: ./benchmarklogs-2t/wordpress_object_cache_test.json
+  Markdown: ./benchmarklogs-2t/wordpress_object_cache_test.md
+  Raw Data: ./benchmarklogs-2t/wordpress_object_cache_test_raw.json
+============================================================
+Enhanced test suite completed!
+Total execution time: 426.32 seconds
+Total tests run: 4
+Statistical iterations per test: 13
+Results saved to ./benchmarklogs-2t/
+
+====================================================================================================
+ENHANCED STATISTICAL PERFORMANCE SUMMARY
+Thread Variant: 2 | Iterations per test: 13
+====================================================================================================
+Rank Database                  Ops/sec   ±StdDev      CV%  Latency  Quality     95% CI     Reliable
+----------------------------------------------------------------------------------------------------
+#1  Valkey                  16534      458    2.8%  0.060ms 🟡good    16,280-16,788      ✅
+#2  KeyDB                   14172      284    2.0%  0.070ms 🟡good    14,014-14,330      ✅
+#3  Dragonfly               11742      193    1.6%  0.084ms 🟢excellent 11,635-11,849      ✅
+#4  Redis                   10961      250    2.3%  0.091ms 🟡good    10,822-11,099      ✅
+====================================================================================================
+Quick Insights:
+- Reliable measurements: 4/4
+- 🏆 Best: Valkey - 16,534 ops/sec
+- 📊 Average precision: 2.2% CV
+
+================================================================================
+WORDPRESS PERFORMANCE ANALYSIS
+================================================================================
+Redis                | Light pages:   1096/sec | Heavy pages:    219/sec
+KeyDB                | Light pages:   1417/sec | Heavy pages:    283/sec
+Dragonfly            | Light pages:   1174/sec | Heavy pages:    235/sec
+Valkey               | Light pages:   1653/sec | Heavy pages:    331/sec
+
+WordPress Cache Recommendations:
+- 🏆 Best performer: Valkey
+- 📊 Estimated capacity: 551 concurrent users (30 cache ops/user/sec)
+- 💡 For production WordPress, consider read/write ratios: 90/10 for cached sites, 70/30 for dynamic sites
+================================================================================
+
+============================================================
+TLS PERFORMANCE COMPARISON
+Thread Variant: 2
+============================================================
+No successful TLS connections for performance comparison.
+All databases tested with non-TLS only.
+============================================================
+
+================================================================================
+STATISTICAL INSIGHTS
+Thread Variant: 2 | Iterations: 13
+================================================================================
+Measurement Quality Distribution:
+  🟢 Excellent :  1 tests (25.0%)
+  🟡 Good      :  3 tests (75.0%)
+
+Coefficient of Variation Analysis:
+  Average CV: 2.2% (lower is better)
+  Range: 1.6% - 2.8%
+  📊 Good measurement consistency
+
+Performance Analysis:
+  Performance range: 10961 - 16534 ops/sec (50.9% spread)
+  📈 Moderate performance differences between databases
+
+Statistical Recommendations:
+  ✅ High confidence in results - good statistical reliability
+================================================================================
+
+============================================================
+TEST SUITE COMPLETED SUCCESSFULLY!
+============================================================
+Total execution time: 426.33 seconds
+Statistical iterations per database: 13
+Results saved to: ./benchmarklogs-2t
+
+Generated files:
+  JSON results: 2 files
+  CSV exports: 1 files
+  Markdown reports: 43 files
+  📊 Raw data: Available
+
+🎉 Enhanced benchmarking with statistical analysis complete!
+📈 Results include confidence intervals and measurement quality indicators
+📊 Use the enhanced chart generator to visualize statistical analysis
+

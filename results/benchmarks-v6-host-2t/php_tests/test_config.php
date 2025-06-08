@@ -1,6 +1,7 @@
 <?php
 return [
     'duration' => 30,
+    'implementation' => 'phpredis',
     'test_iterations' => 13,
     'iteration_pause_ms' => 500,
     'save_raw_results' => true,

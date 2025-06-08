@@ -1,0 +1,46 @@
+{
+    "name": "redis-benchmark/php-tests",
+    "description": "PHP Redis client comparison tests for Redis, KeyDB, Dragonfly, and Valkey",
+    "type": "project",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Redis Benchmark Project",
+            "email": "benchmark@example.com"
+        }
+    ],
+    "minimum-stability": "stable",
+    "prefer-stable": true,
+    "require": {
+        "php": ">=8.1",
+        "predis/predis": "^2.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^10.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "RedisBenchmark\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "RedisBenchmark\\Tests\\": "tests/"
+        }
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "prefer-dist": true,
+        "sort-packages": true
+    },
+    "scripts": {
+        "test": "phpunit",
+        "test-phpredis": "php wp_object_cache_test_configured.php",
+        "test-predis": "php wp_object_cache_test_predis_configured.php",
+        "test-both": [
+            "@test-phpredis",
+            "@test-predis"
+        ],
+        "validate-implementations": "php validate_implementations.php"
+    }
+}
