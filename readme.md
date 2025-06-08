@@ -229,3 +229,164 @@ For 4 threads:
 | **Valkey**     | Redis-fork projects with moderate scaling needs     | 2–4 threads       |
 
 > For TLS workloads, budget ~30–35% more CPU and expect ~1.4–1.5× higher latencies.
+
+---
+
+## 8. Addendum: PHP Redis Benchmark Results
+
+> **Supplemental WordPress Object Cache Test:** PHP-based benchmarks (PHP 8.4) using actual WordPress cache patterns  
+> **Test Date:** June 8, 2025  
+> **Environment:** GitHub Actions Azure Hosted runners with Ubuntu (4 vCPU, 16 GB RAM), Docker host network
+
+![PHP Redis Test](/results/benchmarks-v6-host-1t-jun8-2025/php_redis_iteration_variance.png)
+
+![PHP Redis Test](/results/benchmarks-v6-host-1t-jun8-2025/php_redis_statistical_performance.png)
+
+### 8.1 PHP WordPress Object Cache Test Overview
+
+In addition to the memtier_benchmark results above, conducted a specialized PHP-based test simulating real WordPress Redis object caching patterns. This test provides insights into how these databases perform with actual WordPress workloads.
+
+**Test Configuration:**
+
+**Tool:** Custom PHP WordPress Redis benchmark suite
+- **Implementation:** Native PHP 8.4.7 with Redis extension 6.2.0
+- **Architecture:** Single-threaded PHP application simulating WordPress object cache patterns
+- **Framework:** Custom `RedisTestBase` class with WordPress-specific implementations
+
+**Thread Configuration:** 1 thread per database
+- `redis_io_threads=1` (Redis I/O thread configuration)
+- `keydb_server_threads=1` (KeyDB server thread configuration) 
+- `dragonfly_proactor_threads=1` (Dragonfly proactor thread configuration)
+- `valkey_io_threads=1` (Valkey I/O thread configuration)
+
+**Test Methodology:**
+- **Operations:** 100,000 operations per iteration (configurable via `$operations` parameter)
+- **Duration Control:** Both operation count and time-based limits (30 seconds max per iteration)
+- **Read/Write Ratio:** 70% reads (GET), 30% writes (SETEX with TTL)
+- **Cache Warmup:** 100 initial keys populated before each test iteration
+- **Pause Strategy:** 0.1ms pause every 1,000 operations to simulate real-world usage patterns
+
+**WordPress-Specific Key Patterns:**
+- **Cache Groups:** `posts`, `terms`, `users`, `options`, `comments`, `themes`, `plugins`, `transients`, `site-options`
+- **Key Formats:** 
+  - `wp_cache_{group}_{id}` (standard WordPress cache keys)
+  - `{group}_meta_{id}` (metadata cache keys)
+  - `wp_option_{group}_{id}` (options cache keys)
+  - `query_{group}_{hash}` (query result cache keys)
+  - `transient_{group}_{id}` (transient cache keys)
+  - `user_meta_{id}_{group}`, `post_meta_{id}_{group}`, `taxonomy_{group}_{id}`
+
+**WordPress-Realistic Data Values:**
+- **Simple values:** Strings, numbers, booleans (typical WordPress cache data)
+- **Serialized PHP arrays:** Post objects, user metadata, complex WordPress data structures
+- **JSON data:** API responses, structured data (100-1000 character payloads)
+- **Large content:** Page cache content (simulated with 50-200 repeated content blocks)
+- **Variable size:** Randomized content sizes reflecting real WordPress cache diversity
+
+**TTL (Time-To-Live) Configuration:**
+- **Range:** 5 minutes to 24 hours (300-86,400 seconds)
+- **Distribution:** Random TTL assignment per operation
+- **WordPress-typical:** Mirrors real WordPress cache expiration patterns
+- **Cache Miss Simulation:** 20% chance to populate missing keys during read operations
+
+**Statistical Methodology:**
+- **Iterations:** 13 iterations per database (statistically significant sample size)
+- **Inter-iteration Pause:** 500ms between iterations to ensure clean separation
+- **Quality Measurement:** Coefficient of Variation (CV) analysis
+  - Excellent: <2% CV
+  - Good: <5% CV  
+  - Fair: <10% CV
+- **Confidence Intervals:** 95% confidence level with margin of error calculation
+- **Latency Sampling:** Full latency measurement for all 100,000 operations per iteration
+
+**Database State Management:**
+- **Pre-test Cleanup:** `FLUSHALL` executed before each database test
+- **Initial State:** Clean database with zero existing keys
+- **Final State:** ~395,000 keys remaining after test completion
+- **Connection Management:** Fresh Redis connections per test iteration
+
+**Error Handling & Reliability:**
+- **Exception Tracking:** Full error capture with detailed logging
+- **Operation Counting:** Separate tracking of successful operations vs. errors
+- **Timeout Protection:** Maximum duration limits prevent hung tests
+- **Connection Recovery:** Automatic retry mechanisms for transient failures
+
+**Performance Metrics Captured:**
+- **Throughput:** Operations per second (primary performance indicator)
+- **Latency Distribution:** Average, P95, P99 percentiles in milliseconds
+- **Error Rates:** Failed operations as percentage of total attempts
+- **Statistical Confidence:** CV, standard deviation, confidence intervals
+- **WordPress-Specific:** Estimated page load capacity and concurrent user support
+
+### 8.2 Single-Thread PHP Test Results
+
+| Database | TLS | Avg Ops/sec | Avg Latency (ms) | P95 Latency (ms) | P99 Latency (ms) | Measurement Quality | CV |
+|----------|-----|-------------|------------------|------------------|------------------|--------------------|----|
+| Redis | Non-TLS | 16,605 | 0.0597 | 0.102 | 0.130 | Good | 2.14% |
+| KeyDB | Non-TLS | 14,054 | 0.0705 | 0.127 | 0.146 | Good | 2.14% |
+| Dragonfly | Non-TLS | 11,507 | 0.0861 | 0.160 | 0.186 | Good | 2.57% |
+| Valkey | Non-TLS | 16,561 | 0.0598 | 0.103 | 0.131 | Good | 2.04% |
+
+### 8.3 WordPress Performance Analysis
+
+**Real-World WordPress Capacity Estimates:**
+
+| Database | Light Pages/sec** | Heavy Pages/sec*** | Concurrent Users**** | Daily Page Views |
+|----------|-------------------|--------------------|--------------------|------------------|
+| Redis | 1,661 | 332 | 553 | 143,462,400 |
+| KeyDB | 1,405 | 281 | 468 | 121,427,200 |
+| Dragonfly | 1,151 | 230 | 384 | 99,420,800 |
+| Valkey | 1,656 | 331 | 552 | 143,086,400 |
+
+**Calculation Notes:**
+- **Light Pages/sec: Assuming 10 cache operations per page load
+- ***Heavy Pages/sec: Assuming 50 cache operations per page load  
+- ****Concurrent Users: Assuming 30 cache operations per user per second
+- Daily calculations: Light pages/sec × 86,400 seconds
+
+### 8.4 PHP vs Memtier Performance Comparison
+
+**Single Thread Comparison (1T Non-TLS):**
+
+| Database | Memtier Ops/sec | PHP Ops/sec | Performance Ratio | Difference |
+|----------|-----------------|-------------|-------------------|------------|
+| Redis | 61,112 | 16,605 | 3.68× | Memtier +268% |
+| KeyDB | 66,443 | 14,054 | 4.73× | Memtier +373% |
+| Dragonfly | 53,113 | 11,507 | 4.61× | Memtier +361% |
+| Valkey | 56,000 | 16,561 | 3.38× | Memtier +238% |
+
+### 8.5 Key Insights from PHP Testing
+
+**Performance Characteristics:**
+1. **Redis leads in PHP-based tests** with highest ops/sec (16,605 ops/sec, 0.0597ms latency)
+2. **Valkey just slightly behind (16,561) and lowest latency (0.0598ms)
+3. **KeyDB performance gap is significant** in PHP tests, showing 15-18% lower throughput than Redis/Valkey
+4. **Dragonfly shows consistent behavior** across both test methodologies with lowest throughput but stable performance
+
+**Latency Analysis:**
+- **Sub-millisecond latencies** achieved by Redis (0.0597ms) and Valkey (0.0598ms)
+- **P99 latencies remain excellent** across all databases (<200ms, specifically 130-186ms range)
+
+**Statistical Reliability:**
+- All measurements achieved "Good" quality rating (CV < 5%)
+- **Valkey most consistent** with lowest coefficient of variation (2.04%)
+- **KeyDB and Redis tied** for second-best consistency (2.14% CV each)
+- **13-iteration methodology** provides robust statistical confidence
+
+### 8.6 WordPress Deployment Recommendations
+
+**Database Selection for WordPress:**
+
+| Use Case | Recommended Database | Rationale |
+|----------|---------------------|-----------|
+| **High-Traffic WordPress** | Valkey or Redis | Highest throughput, lowest latency, Redis-compatible |
+| **WordPress Multisite** | Valkey | Best performance, Redis-compatible, active development |
+| **Budget-Conscious WordPress** | KeyDB | Good performance, multi-threading benefits for mixed workloads |
+| **Modern WordPress Stack** | Dragonfly | Excellent scaling characteristics, modern architecture |
+
+**Capacity Planning:**
+- **Redis:** Support ~1,661 light pages/sec or ~332 heavy pages/sec  
+- **Valkey:** Support ~1,656 light pages/sec or ~331 heavy pages/sec
+- **KeyDB:** Support ~1,405 light pages/sec or ~281 heavy pages/sec  
+- **Dragonfly:** Support ~1,151 light pages/sec or ~230 heavy pages/sec
+
