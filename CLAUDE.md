@@ -306,8 +306,12 @@ The PHP Redis extension has a documented TLS implementation bug that affects the
 - **Symptom**: TLS handshake succeeds, but Redis commands fail
 - **Current Status**: Partial workaround implemented with progressive testing strategy
 
-### Solution Implemented
+### Solution Implemented (Updated: June 2025)
+
+**Phase 1: TLS Debugging Framework**
+
 Enhanced TLS debugging with 6-stage progressive testing in `connectRedis()` method:
+
 1. Raw SSL socket connection verification
 2. Minimal SSL context testing
 3. Certificate-based SSL context
@@ -315,19 +319,50 @@ Enhanced TLS debugging with 6-stage progressive testing in `connectRedis()` meth
 5. Alternative TLS versions
 6. **Fallback**: Skip command validation (allows connection but tests may still fail)
 
+**Phase 2: TLSv1.2 Forcing (June 2025)**
+
+Implemented TLSv1.2 forcing across all PHP Redis implementations to improve TLS reliability:
+
+**PHPRedis Changes (tests/php/RedisTestBase.php):**
+
+- Added `'crypto_method' => STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT` to all SSL contexts
+- Minimal SSL context (line ~839)
+- Certificate-based SSL context (line ~861)
+- Full SSL context (line ~882)
+- Simplified crypto_methods array to only test TLSv1.2 (line ~894)
+- Enhanced logging to indicate TLSv1.2 usage throughout connection process
+
+**Predis Changes (tests/php/RedisTestBase-predis.php):**
+
+- Added `'crypto_method' => STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT` to SSL options (line ~256)
+- Connection validation already uses SET/GET test instead of PING (resolves serialization issues)
+- Enhanced TLS configuration logging to mention TLSv1.2 forcing
+
 ### Files Modified
-- `tests/php/RedisTestBase.php`: Lines 788-994 enhanced with comprehensive TLS debugging
+
+- `tests/php/RedisTestBase.php`: Lines 788-994 enhanced with comprehensive TLS debugging + TLSv1.2 forcing
+- `tests/php/RedisTestBase-predis.php`: Lines 240-316 updated with TLSv1.2 forcing + SET/GET validation
 - Added debugging functions: `debugSSLSocket()`, `tryRedisConnection()`, `debugCertificates()`
 - Implemented `$connection_established` flag for proper control flow
 
-### Current Limitations
-- TLS tests start successfully but commands fail during execution
-- WordPress cache TLS vs non-TLS performance comparisons are limited
-- Issue persists across different SSL contexts and TLS versions
+### Current Status
 
-### Recommendations
-- Consider alternative PHP Redis libraries with better TLS support
-- Test with different PHP/Redis extension versions
-- Investigate server-side TLS configuration alternatives
+- **TLSv1.2 forcing implemented** to eliminate TLS version negotiation issues
+- **Predis connection validation fixed** (no more `Response\Status` serialization errors)
+- Both PHPRedis and Predis now use identical TLS configuration for fair comparison
+- Testing needed to verify if TLSv1.2 forcing resolves command execution failures
+
+### Rationale for TLSv1.2 Forcing
+
+- TLSv1.3 introduced significant protocol changes that may cause compatibility issues
+- Many Redis implementations are optimized for TLSv1.2
+- Eliminates TLS version negotiation complexity
+- Provides consistent TLS behavior across all PHP Redis implementations
 
 For detailed troubleshooting information, see CLAUDE-troubleshooting.md.
+
+# important-instruction-reminders
+Do what has been asked; nothing more, nothing less.
+NEVER create files unless they're absolutely necessary for achieving your goal.
+ALWAYS prefer editing an existing file to creating a new one.
+NEVER proactively create documentation files (*.md) or README files. Only create documentation files if explicitly requested by the User.
