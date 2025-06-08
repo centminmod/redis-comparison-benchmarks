@@ -456,9 +456,10 @@ class EnhancedPHPRedisChartsGenerator:
                     ax.grid(True, alpha=0.3)
                     ax.legend()
                     
-                    # Calculate and display CV
+                    # Calculate and display CV + P99 in the text box
                     cv = (std_ops / mean_ops) * 100 if mean_ops > 0 else 0
-                    ax.text(0.02, 0.98, f'CV: {cv:.1f}%', 
+                    p99_ops = np.percentile(ops_per_sec, 99)
+                    ax.text(0.02, 0.98, f'CV: {cv:.1f}%\nP99: {int(p99_ops)}', 
                            transform=ax.transAxes, fontsize=10, fontweight='bold',
                            verticalalignment='top', 
                            bbox=dict(boxstyle='round', facecolor='white', alpha=0.8))
