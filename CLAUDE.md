@@ -2,6 +2,19 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Memory Bank System
+
+This project uses a structured memory bank system with specialized context files. Always check these files for relevant information before starting work:
+
+- **CLAUDE-activeContext.md** - Current session state, goals, and progress
+- **CLAUDE-patterns.md** - Established code patterns and conventions to follow
+- **CLAUDE-decisions.md** - Architecture decisions and rationale  
+- **CLAUDE-shortcuts.md** - Frequently used commands and workflows
+- **CLAUDE-troubleshooting.md** - Common issues and proven solutions
+- **CLAUDE-codebase.md** - File structure and key component documentation
+
+**Important**: Always reference the active context file first to understand what's currently being worked on and maintain session continuity.
+
 ## Project Overview
 
 This is a Redis-compatible database benchmarking project that compares performance across Redis, KeyDB, Dragonfly, and Valkey. The project supports **two distinct testing approaches**:
@@ -236,3 +249,46 @@ python scripts/benchmark_charts.py --tls --input-dir . --output-dir results/
 - **Local Results**: Available immediately in `./benchmarklogs/` and root directory
 - **CI/CD Results**: Downloaded from workflow artifacts or archived in `/results/`
 - **Comparison**: Use same analysis scripts for both local and CI/CD results
+
+## Working with Memory Bank Files
+
+When working with Claude Code, always:
+
+1. **Check CLAUDE-activeContext.md first** to understand current session state and continue where you left off
+2. **Reference CLAUDE-patterns.md** for established coding conventions and patterns to follow
+3. **Consult CLAUDE-decisions.md** for context on architectural choices and their rationale
+4. **Use CLAUDE-shortcuts.md** for project-specific commands and workflows
+5. **Check CLAUDE-troubleshooting.md** for known issues and proven solutions
+6. **Refer to CLAUDE-codebase.md** for file structure and component organization
+
+### Memory Bank Integration Workflow
+
+```bash
+# Before starting work
+cat CLAUDE-activeContext.md    # Understand current session
+cat CLAUDE-patterns.md         # Review coding standards
+
+# During development
+# Update context with progress and insights
+
+# When encountering issues
+grep -i "error_keyword" CLAUDE-troubleshooting.md
+
+# When making architectural decisions
+echo "## Decision: [Title]" >> CLAUDE-decisions.md
+echo "Date: $(date)" >> CLAUDE-decisions.md
+echo "Context: [Why this decision was needed]" >> CLAUDE-decisions.md
+echo "Decision: [What was decided]" >> CLAUDE-decisions.md
+echo "Rationale: [Why this was the best choice]" >> CLAUDE-decisions.md
+```
+
+## Context Management Guidelines
+
+- **Update CLAUDE-activeContext.md** at the start of each development session
+- **Document new patterns** in CLAUDE-patterns.md when establishing conventions
+- **Record architectural decisions** in CLAUDE-decisions.md with full context and rationale
+- **Add troubleshooting solutions** to CLAUDE-troubleshooting.md when resolving issues
+- **Maintain CLAUDE-shortcuts.md** with frequently used commands and workflows
+- **Keep CLAUDE-codebase.md** current with file structure changes
+
+This memory bank system ensures continuity between sessions and provides comprehensive context for effective development work.
