@@ -1,0 +1,9 @@
+FROM valkey/valkey:latest
+
+# Copy the Valkey configuration file
+COPY valkey.conf /usr/local/etc/valkey/valkey.conf
+
+# Expose the default Valkey port
+EXPOSE 6379
+
+CMD [ "valkey-server", "/usr/local/etc/valkey/valkey.conf" ]
