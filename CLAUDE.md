@@ -292,3 +292,42 @@ echo "Rationale: [Why this was the best choice]" >> CLAUDE-decisions.md
 - **Keep CLAUDE-codebase.md** current with file structure changes
 
 This memory bank system ensures continuity between sessions and provides comprehensive context for effective development work.
+
+# Important Known Issues
+
+## PHP Redis TLS Connection Issue
+
+### Overview
+The PHP Redis extension has a documented TLS implementation bug that affects the WordPress object cache benchmarking in `benchmarks-v6-host-phptests.yml`. While TLS connections establish successfully, Redis commands fail immediately with "read error on connection" errors.
+
+### Technical Details
+- **Affected File**: `tests/php/RedisTestBase.php`
+- **Root Cause**: PHP Redis extension TLS protocol implementation bug
+- **Symptom**: TLS handshake succeeds, but Redis commands fail
+- **Current Status**: Partial workaround implemented with progressive testing strategy
+
+### Solution Implemented
+Enhanced TLS debugging with 6-stage progressive testing in `connectRedis()` method:
+1. Raw SSL socket connection verification
+2. Minimal SSL context testing
+3. Certificate-based SSL context
+4. Full SSL context with all options
+5. Alternative TLS versions
+6. **Fallback**: Skip command validation (allows connection but tests may still fail)
+
+### Files Modified
+- `tests/php/RedisTestBase.php`: Lines 788-994 enhanced with comprehensive TLS debugging
+- Added debugging functions: `debugSSLSocket()`, `tryRedisConnection()`, `debugCertificates()`
+- Implemented `$connection_established` flag for proper control flow
+
+### Current Limitations
+- TLS tests start successfully but commands fail during execution
+- WordPress cache TLS vs non-TLS performance comparisons are limited
+- Issue persists across different SSL contexts and TLS versions
+
+### Recommendations
+- Consider alternative PHP Redis libraries with better TLS support
+- Test with different PHP/Redis extension versions
+- Investigate server-side TLS configuration alternatives
+
+For detailed troubleshooting information, see CLAUDE-troubleshooting.md.
