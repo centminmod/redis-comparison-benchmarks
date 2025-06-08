@@ -46,6 +46,37 @@ CLEANUP=y ./redis-benchmarks.sh  # Auto-cleanup after tests
 - **Host Network**: `.github/workflows/benchmarks-v5-host.yml` (host networking, matrix strategy)
 - **Legacy**: `.github/workflows/benchmarks-v[1-4].yml` (historical versions)
 
+##### Latest Workflow Details: benchmarks-v6-host-phptests.yml
+
+**Overview**: Advanced multi-database benchmarking workflow that tests Redis, KeyDB, Dragonfly, and Valkey performance using both traditional memtier benchmarking and real-world WordPress PHP object cache testing.
+
+**Key Features**:
+- **Matrix Strategy**: Dynamically generates thread combinations (1-4 threads) for each database based on configurable maximums
+- **Dual Testing Approach**: 
+  - Traditional memtier benchmarks: 32 performance tests per thread variant (4 databases × 2 TLS variants × 4 thread counts)
+  - PHP WordPress simulation: Real-world cache operations with 13 statistical iterations per database
+- **Performance Optimizations**: Host networking, CPU pinning to cores 0-3, disabled persistence for pure performance testing
+- **Comprehensive Analysis**: Basic charts (latency avg/P50/P99, ops/sec), advanced visualizations (radar charts, heatmaps, scaling analysis), statistical analysis with confidence intervals
+- **Security Testing**: Full TLS support with self-signed certificates for encrypted connection benchmarking
+- **Result Management**: Thread-specific archiving (`results/benchmarks-v6-host-{threads}t/`), automated git commits with detailed metadata
+
+**Configurable Parameters**:
+- `requests`: Number of requests per thread (default: 5000)
+- `clients`: Number of clients per thread (default: 100)
+- `pipeline`: Pipeline depth (default: 1)
+- `data_size`: Data size in bytes (default: 512)
+- `key_maximum`: Maximum key value (default: 3,000,000)
+- `intrinsic_latency`: Intrinsic latency test duration (default: 5 seconds)
+- Individual thread limits for each database (max_redis_io_threads, max_keydb_server_threads, etc.)
+
+**Execution Time**: ~45-60 minutes per thread variant, generates 50+ charts plus comprehensive reports
+
+##### Host Network Workflow: benchmarks-v5-host.yml
+Foundation workflow that introduced host networking and matrix strategy capabilities, serving as the base for v6 enhancements.
+
+##### Legacy Workflows: benchmarks-v[1-4].yml
+Historical workflow versions preserved for reference and comparison, representing the evolution of the benchmarking system.
+
 #### Trigger Methods
 1. **Manual Dispatch**: GitHub UI → Actions → Select workflow → "Run workflow"
 2. **Workflow Dispatch Parameters**:
