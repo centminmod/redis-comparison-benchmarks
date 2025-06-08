@@ -4,7 +4,7 @@
 
 ## Summary
 
-This **v5 host-networked benchmark** compares four Redis-compatible engines - **Redis**, **KeyDB**, **Dragonfly**, and **Valkey** - on a 4 vCPU, 16 GB GitHub Actions Ubuntu runner. Each database runs in Docker **host** network mode (no NAT overhead), pinned to CPUs 0–3, and configured with 4 I/O threads (or proactors).
+This **v5 host-networked benchmark** compares four Redis-compatible engines - **Redis**, **KeyDB**, **Dragonfly**, and **Valkey** - on a 4 vCPU, 16 GB GitHub Actions Ubuntu runner. Each database runs in Docker **host** network mode (no NAT overhead), pinned to CPUs 0–3, and configured with 4 I/O threads (or proactors). Update: add [PHP Redis Benchmark Results](#8-addendum-php-redis-benchmark-results).
 
 - [memtier_benchmark](https://github.com/RedisLabs/memtier_benchmark) (1:15 SET:GET, 512 B payload, Gaussian 3 M-key distribution)  
 - Client threads = 1, 2, 4, 8  
