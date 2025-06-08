@@ -234,9 +234,9 @@ For 4 threads:
 
 ## 8. Addendum: PHP Redis Benchmark Results
 
-> **Supplemental WordPress Object Cache Test:** PHP-based benchmarks (PHP 8.4) using actual WordPress cache patterns  
-> **Test Date:** June 8, 2025  
-> **Environment:** GitHub Actions Azure Hosted runners with Ubuntu (4 vCPU, 16 GB RAM), Docker host network
+* **Supplemental WordPress Object Cache Test:** PHP-based benchmarks (PHP 8.4) using actual WordPress cache patterns  
+* **Test Date:** June 8, 2025  
+* **Environment:** GitHub Actions Azure Hosted runners with Ubuntu (4 vCPU, 16 GB RAM), Docker host network
 
 ![PHP Redis Test](/results/benchmarks-v6-host-1t-jun8-2025/php_redis_iteration_variance.png)
 
