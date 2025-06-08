@@ -1448,14 +1448,14 @@ jobs:
         chmod 644 tests/php/*.crt tests/php/*.pem
         chmod 600 tests/php/*.key
 
-        # Configure enhanced test with 5 iterations
+        # Configure enhanced test with 13 iterations
         sed -i "s/private \$test_duration = 30/private \$test_duration = ${PHP_TEST_DURATION}/" tests/php/wp_object_cache_test.php
         
         # Create enhanced thread-aware configuration with statistical testing
         echo '<?php' > tests/php/test_config.php
         echo 'return [' >> tests/php/test_config.php
         echo "    'duration' => ${PHP_TEST_DURATION}," >> tests/php/test_config.php
-        echo "    'test_iterations' => 11," >> tests/php/test_config.php  # NEW: 5 iterations
+        echo "    'test_iterations' => 13," >> tests/php/test_config.php  # NEW: 13 iterations
         echo "    'iteration_pause_ms' => 500," >> tests/php/test_config.php  # NEW: Pause between iterations
         echo "    'save_raw_results' => true," >> tests/php/test_config.php  # NEW: Save raw data
         echo "    'output_dir' => './benchmarklogs-${{ matrix.variant.threads }}t'," >> tests/php/test_config.php
