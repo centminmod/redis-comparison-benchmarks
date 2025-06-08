@@ -94,6 +94,14 @@ jobs:
     env:
       KEY_MINIMUM: 1
       PHP_TEST_DURATION: 30
+      
+      # PHP Redis Implementation Control (Environment Variables)
+      PHP_REDIS_IMPLEMENTATIONS: "both"  # phpredis, predis, both
+      PHP_REDIS_PHPREDIS_ENABLED: "true"
+      PHP_REDIS_PREDIS_ENABLED: "true" 
+      PHP_REDIS_TLS_FOCUS: "true"         # Enhanced TLS testing
+      PHP_REDIS_STATISTICAL_ITERATIONS: "13"
+      PHP_REDIS_DETAILED_DEBUG: "false"
     strategy:
       matrix:
         variant: ${{ fromJson(needs.generate-matrix.outputs.thread-variants) }}
@@ -1363,40 +1371,136 @@ jobs:
         
         echo "✅ Advanced benchmark charts generation completed" 
 
-    - name: Set up PHP for WordPress Redis Tests
+    - name: Set up PHP for WordPress Redis Tests (phpredis + Predis)
       uses: shivammathur/setup-php@v2
       with:
         php-version: '8.4'
-        extensions: redis, json
+        extensions: redis, json, curl, openssl  # Add SSL support for Predis
         coverage: none
+        tools: composer
 
-    - name: Verify PHP Redis Extension and Test Files
+    - name: Install Composer Dependencies (Predis)
       run: |
-        echo "=== PHP Version and Extensions ==="
-        php --version
-        echo
-        php --ri redis || true
-        echo
-        php -m | grep -E "(redis|json)" || echo "Extensions check"
+        echo "=== Installing Composer Dependencies for Predis ==="
+        cd tests/php
         
-        echo "=== Test Redis PHP Connection ==="
+        # Check if composer.json exists
+        if [ ! -f composer.json ]; then
+          echo "❌ composer.json not found in tests/php/"
+          exit 1
+        fi
+        
+        # Install Predis
+        echo "Installing Predis library..."
+        composer install --no-dev --optimize-autoloader
+        
+        echo "✅ Composer dependencies installed:"
+        composer show
+        
+        # Verify Predis installation
         php -r "
+        require_once 'vendor/autoload.php';
         try {
-            \$redis = new Redis();
-            echo 'Redis PHP extension: OK\n';
+            \$redis = new Predis\Client();
+            echo 'Predis library: OK\n';
         } catch (Exception \$e) {
-            echo 'Redis PHP extension failed: ' . \$e->getMessage() . '\n';
+            echo 'Predis library failed: ' . \$e->getMessage() . '\n';
             exit(1);
         }
         "
         
-        echo "=== Verify WordPress Redis Test Files ==="
-        ls -la tests/php/
-        if [ ! -f "tests/php/wp_object_cache_test.php" ]; then
-            echo "ERROR: WordPress Redis test files not found!"
+        echo "✅ Predis library verified"
+
+    - name: Configure PHP Redis Implementation Testing
+      run: |
+        echo "=== PHP Redis Implementation Configuration ==="
+        
+        # Read environment variable
+        IMPLEMENTATIONS="${PHP_REDIS_IMPLEMENTATIONS:-both}"
+        echo "PHP_REDIS_IMPLEMENTATIONS: $IMPLEMENTATIONS"
+        
+        # Set implementation flags
+        case "$IMPLEMENTATIONS" in
+          "phpredis"|"phpredis-only")
+            echo "REDIS_IMPL_PHPREDIS=true" >> $GITHUB_ENV
+            echo "REDIS_IMPL_PREDIS=false" >> $GITHUB_ENV
+            echo "📋 Configuration: phpredis ONLY"
+            ;;
+          "predis"|"predis-only")
+            echo "REDIS_IMPL_PHPREDIS=false" >> $GITHUB_ENV
+            echo "REDIS_IMPL_PREDIS=true" >> $GITHUB_ENV
+            echo "📋 Configuration: Predis ONLY"
+            ;;
+          "both"|"all"|*)
+            echo "REDIS_IMPL_PHPREDIS=true" >> $GITHUB_ENV
+            echo "REDIS_IMPL_PREDIS=true" >> $GITHUB_ENV
+            echo "📋 Configuration: BOTH implementations"
+            ;;
+        esac
+        
+        # Additional configuration
+        echo "REDIS_TLS_FOCUS=${PHP_REDIS_TLS_FOCUS:-true}" >> $GITHUB_ENV
+        echo "REDIS_STATISTICAL_ITERATIONS=${PHP_REDIS_STATISTICAL_ITERATIONS:-13}" >> $GITHUB_ENV
+        echo "REDIS_DETAILED_DEBUG=${PHP_REDIS_DETAILED_DEBUG:-false}" >> $GITHUB_ENV
+        
+        echo "✅ PHP Redis implementation configuration complete"
+
+    - name: Verify PHP Redis Extensions and Implementations
+      run: |
+        echo "=== PHP Version and Extensions ==="
+        php --version
+        echo
+        
+        echo "=== Testing phpredis Extension ==="
+        if [ "$REDIS_IMPL_PHPREDIS" = "true" ]; then
+          php --ri redis || echo "phpredis not available"
+          php -r "
+          try {
+              \$redis = new Redis();
+              echo 'phpredis extension: OK\n';
+          } catch (Exception \$e) {
+              echo 'phpredis failed: ' . \$e->getMessage() . '\n';
+              exit(1);
+          }
+          "
+        else
+          echo "phpredis testing skipped (not enabled)"
+        fi
+        
+        echo "=== Testing Predis Library ==="
+        if [ "$REDIS_IMPL_PREDIS" = "true" ]; then
+          cd tests/php
+          php -r "
+          require_once 'vendor/autoload.php';
+          try {
+              \$redis = new Predis\Client();
+              echo 'Predis library: OK\n';
+          } catch (Exception \$e) {
+              echo 'Predis failed: ' . \$e->getMessage() . '\n';
+              exit(1);
+          }
+          "
+          cd ../..
+        else
+          echo "Predis testing skipped (not enabled)"
+        fi
+        
+        echo "=== Verify Test Files ==="
+        ls -la tests/php/RedisTestBase*.php
+        ls -la tests/php/wp_object_cache_test*.php
+        
+        # Verify required files exist
+        if [ "$REDIS_IMPL_PHPREDIS" = "true" ] && [ ! -f "tests/php/wp_object_cache_test.php" ]; then
+            echo "ERROR: phpredis test files not found!"
             exit 1
         fi
-        echo "WordPress Redis test files verified"
+        
+        if [ "$REDIS_IMPL_PREDIS" = "true" ] && [ ! -f "tests/php/wp_object_cache_test_predis.php" ]; then
+            echo "ERROR: Predis test files not found!"
+            exit 1
+        fi
+        
+        echo "✅ All required test files verified"
 
     # PHP WordPress Tests Section - AFTER all memtier tests
     - name: Flush All Databases Before PHP Tests
@@ -1438,30 +1542,33 @@ jobs:
         echo "Dragonfly keys: $(docker exec dragonfly redis-cli -h 127.0.0.1 -p 6381 DBSIZE)"
         echo "Valkey keys: $(docker exec valkey redis-cli -h 127.0.0.1 -p 6382 DBSIZE)"
 
-    - name: Run WordPress Object Cache PHP Tests
+    - name: Run WordPress Object Cache PHP Tests (phpredis)
+      if: env.REDIS_IMPL_PHPREDIS == 'true'
       run: |
-        echo "=== Starting Enhanced WordPress Object Cache PHP Tests ==="
+        echo "=== Running phpredis WordPress Object Cache Tests ==="
+        echo "Implementation: phpredis (Redis PHP extension)"
         echo "Working directory: $(pwd)"
         
         # Copy TLS certs, keys and client PEMs to tests/php directory
         cp *.crt *.key *.pem tests/php/ 2>/dev/null || echo "TLS certificates not found, will skip TLS tests"
-        chmod 644 tests/php/*.crt tests/php/*.pem
-        chmod 600 tests/php/*.key
+        chmod 644 tests/php/*.crt tests/php/*.pem 2>/dev/null || true
+        chmod 600 tests/php/*.key 2>/dev/null || true
 
-        # Configure enhanced test with 13 iterations
+        # Configure enhanced test with iterations from environment
         sed -i "s/private \$test_duration = 30/private \$test_duration = ${PHP_TEST_DURATION}/" tests/php/wp_object_cache_test.php
         
         # Create enhanced thread-aware configuration with statistical testing
         echo '<?php' > tests/php/test_config.php
         echo 'return [' >> tests/php/test_config.php
         echo "    'duration' => ${PHP_TEST_DURATION}," >> tests/php/test_config.php
-        echo "    'test_iterations' => 13," >> tests/php/test_config.php  # NEW: 13 iterations
-        echo "    'iteration_pause_ms' => 500," >> tests/php/test_config.php  # NEW: Pause between iterations
-        echo "    'save_raw_results' => true," >> tests/php/test_config.php  # NEW: Save raw data
+        echo "    'implementation' => 'phpredis'," >> tests/php/test_config.php
+        echo "    'test_iterations' => ${REDIS_STATISTICAL_ITERATIONS}," >> tests/php/test_config.php
+        echo "    'iteration_pause_ms' => 500," >> tests/php/test_config.php
+        echo "    'save_raw_results' => true," >> tests/php/test_config.php
         echo "    'output_dir' => './benchmarklogs-${{ matrix.variant.threads }}t'," >> tests/php/test_config.php
-        echo "    'test_tls' => true," >> tests/php/test_config.php
+        echo "    'test_tls' => ${REDIS_TLS_FOCUS}," >> tests/php/test_config.php
         echo "    'flush_before_test' => true," >> tests/php/test_config.php
-        echo "    'debug' => false," >> tests/php/test_config.php
+        echo "    'debug' => ${REDIS_DETAILED_DEBUG}," >> tests/php/test_config.php
         echo "    'thread_variant' => '${{ matrix.variant.threads }}'," >> tests/php/test_config.php
         echo "    'thread_config' => [" >> tests/php/test_config.php
         echo "        'redis_io_threads' => ${{ matrix.variant.redis_io_threads }}," >> tests/php/test_config.php
@@ -1477,20 +1584,81 @@ jobs:
         echo "    ]" >> tests/php/test_config.php
         echo "];" >> tests/php/test_config.php
         
-        # Execute enhanced PHP test
-        echo "Running Enhanced WordPress Object Cache Test for ${{ matrix.variant.threads }}t configuration..."
+        # Execute phpredis test
+        echo "Running Enhanced WordPress Object Cache Test (phpredis) for ${{ matrix.variant.threads }}t configuration..."
         echo "Test duration: ${PHP_TEST_DURATION} seconds per iteration"
-        echo "Iterations: 5 per database"
+        echo "Iterations: ${REDIS_STATISTICAL_ITERATIONS} per database"
         echo "Thread variant: ${{ matrix.variant.threads }}"
+        echo "Implementation: phpredis"
         echo "Statistical analysis: Enabled"
         
-        php tests/php/wp_object_cache_test_configured.php 2>&1 | tee ./benchmarklogs-${{ matrix.variant.threads }}t/php_wordpress_test_enhanced.log
+        php tests/php/wp_object_cache_test_configured.php 2>&1 | tee ./benchmarklogs-${{ matrix.variant.threads }}t/php_wordpress_test_phpredis.log
         
-        echo "Enhanced WordPress Object Cache PHP test completed"
+        echo "phpredis WordPress Object Cache test completed"
 
-    - name: Generate PHP WordPress Test Charts
+    - name: Run WordPress Object Cache PHP Tests (Predis)
+      if: env.REDIS_IMPL_PREDIS == 'true'
       run: |
-        echo "=== Generating PHP WordPress Test Charts ==="
+        echo "=== Running Predis WordPress Object Cache Tests ==="
+        echo "Implementation: Predis (Pure PHP Redis client)"
+        echo "Working directory: $(pwd)"
+        
+        # Copy TLS certs for Predis (if needed)
+        cp *.crt *.key *.pem tests/php/ 2>/dev/null || echo "TLS certificates not found, will skip TLS tests"
+        chmod 644 tests/php/*.crt tests/php/*.pem 2>/dev/null || true
+        chmod 600 tests/php/*.key 2>/dev/null || true
+        
+        # Create Predis-specific configuration
+        echo '<?php' > tests/php/test_config_predis.php
+        echo 'return [' >> tests/php/test_config_predis.php
+        echo "    'duration' => ${PHP_TEST_DURATION}," >> tests/php/test_config_predis.php
+        echo "    'implementation' => 'predis'," >> tests/php/test_config_predis.php
+        echo "    'test_iterations' => ${REDIS_STATISTICAL_ITERATIONS}," >> tests/php/test_config_predis.php
+        echo "    'iteration_pause_ms' => 500," >> tests/php/test_config_predis.php
+        echo "    'save_raw_results' => true," >> tests/php/test_config_predis.php
+        echo "    'output_dir' => './benchmarklogs-${{ matrix.variant.threads }}t'," >> tests/php/test_config_predis.php
+        echo "    'test_tls' => ${REDIS_TLS_FOCUS}," >> tests/php/test_config_predis.php
+        echo "    'flush_before_test' => true," >> tests/php/test_config_predis.php
+        echo "    'debug' => ${REDIS_DETAILED_DEBUG}," >> tests/php/test_config_predis.php
+        echo "    'thread_variant' => '${{ matrix.variant.threads }}'," >> tests/php/test_config_predis.php
+        echo "    'thread_config' => [" >> tests/php/test_config_predis.php
+        echo "        'redis_io_threads' => ${{ matrix.variant.redis_io_threads }}," >> tests/php/test_config_predis.php
+        echo "        'keydb_server_threads' => ${{ matrix.variant.keydb_server_threads }}," >> tests/php/test_config_predis.php
+        echo "        'dragonfly_proactor_threads' => ${{ matrix.variant.dragonfly_proactor_threads }}," >> tests/php/test_config_predis.php
+        echo "        'valkey_io_threads' => ${{ matrix.variant.valkey_io_threads }}" >> tests/php/test_config_predis.php
+        echo "    ]," >> tests/php/test_config_predis.php
+        echo "    'databases' => [" >> tests/php/test_config_predis.php
+        echo "        'Redis' => ['host' => '127.0.0.1', 'port' => 6379, 'tls_port' => 6390, 'io_threads' => ${{ matrix.variant.redis_io_threads }}]," >> tests/php/test_config_predis.php
+        echo "        'KeyDB' => ['host' => '127.0.0.1', 'port' => 6380, 'tls_port' => 6391, 'server_threads' => ${{ matrix.variant.keydb_server_threads }}]," >> tests/php/test_config_predis.php
+        echo "        'Dragonfly' => ['host' => '127.0.0.1', 'port' => 6381, 'tls_port' => 6392, 'proactor_threads' => ${{ matrix.variant.dragonfly_proactor_threads }}]," >> tests/php/test_config_predis.php
+        echo "        'Valkey' => ['host' => '127.0.0.1', 'port' => 6382, 'tls_port' => 6393, 'io_threads' => ${{ matrix.variant.valkey_io_threads }}]" >> tests/php/test_config_predis.php
+        echo "    ]," >> tests/php/test_config_predis.php
+        
+        # Predis-specific configuration
+        echo "    'connection_timeout' => 5.0," >> tests/php/test_config_predis.php
+        echo "    'read_write_timeout' => 5.0," >> tests/php/test_config_predis.php
+        echo "    'tcp_keepalive' => true," >> tests/php/test_config_predis.php
+        echo "    'persistent_connections' => false," >> tests/php/test_config_predis.php
+        echo "    'connection_retry_attempts' => 3," >> tests/php/test_config_predis.php
+        echo "    'connection_retry_delay' => 1000" >> tests/php/test_config_predis.php
+        echo "];" >> tests/php/test_config_predis.php
+        
+        # Execute Predis test
+        echo "Running Enhanced WordPress Object Cache Test (Predis) for ${{ matrix.variant.threads }}t configuration..."
+        echo "Test duration: ${PHP_TEST_DURATION} seconds per iteration"
+        echo "Iterations: ${REDIS_STATISTICAL_ITERATIONS} per database"
+        echo "Thread variant: ${{ matrix.variant.threads }}"
+        echo "Implementation: Predis (Pure PHP)"
+        echo "Enhanced TLS support: Yes"
+        echo "Statistical analysis: Enabled"
+        
+        php tests/php/wp_object_cache_test_predis_configured.php tests/php/test_config_predis.php 2>&1 | tee ./benchmarklogs-${{ matrix.variant.threads }}t/php_wordpress_test_predis.log
+        
+        echo "Predis WordPress Object Cache test completed"
+
+    - name: Generate PHP WordPress Test Charts (Combined)
+      run: |
+        echo "=== Generating Combined PHP WordPress Test Charts ==="
         echo "Working directory: $(pwd)"
         
         # Install Python dependencies for charting
@@ -1509,20 +1677,41 @@ jobs:
         # Create PHP results subdirectory
         mkdir -p ./benchmarklogs-${{ matrix.variant.threads }}t/php_results
         
-        # Copy/move any PHP JSON results to the subdirectory
-        find ./benchmarklogs-${{ matrix.variant.threads }}t -name "*wordpress*" -type f -exec cp {} ./benchmarklogs-${{ matrix.variant.threads }}t/php_results/ \; 2>/dev/null || echo "No WordPress files to copy"
-        find ./benchmarklogs-${{ matrix.variant.threads }}t -name "*.json" -type f -exec cp {} ./benchmarklogs-${{ matrix.variant.threads }}t/php_results/ \; 2>/dev/null || echo "No JSON files to copy"
+        # Copy all PHP results (both phpredis and Predis)
+        find ./benchmarklogs-${{ matrix.variant.threads }}t -name "*wordpress*" -type f \
+          -exec cp {} ./benchmarklogs-${{ matrix.variant.threads }}t/php_results/ \; 2>/dev/null || echo "No WordPress files to copy"
+        find ./benchmarklogs-${{ matrix.variant.threads }}t -name "*predis*.json" -type f \
+          -exec cp {} ./benchmarklogs-${{ matrix.variant.threads }}t/php_results/ \; 2>/dev/null || echo "No Predis JSON files to copy"
+        find ./benchmarklogs-${{ matrix.variant.threads }}t -name "*phpredis*.json" -type f \
+          -exec cp {} ./benchmarklogs-${{ matrix.variant.threads }}t/php_results/ \; 2>/dev/null || echo "No phpredis JSON files to copy"
+        find ./benchmarklogs-${{ matrix.variant.threads }}t -name "wordpress_object_cache*.json" -type f \
+          -exec cp {} ./benchmarklogs-${{ matrix.variant.threads }}t/php_results/ \; 2>/dev/null || echo "No WordPress cache JSON files to copy"
         
-        # Generate PHP charts if results exist - run from repository root with full path
+        # Generate implementation comparison charts if both implementations have results
         if [ -n "$(ls -A ./benchmarklogs-${{ matrix.variant.threads }}t/php_results/*.json 2>/dev/null)" ]; then
-            echo "Generating charts from PHP results..."
-            python3 tests/php/php_redis_charts.py \
-                --results-dir ./benchmarklogs-${{ matrix.variant.threads }}t/php_results \
-                --output-dir ./benchmarklogs-${{ matrix.variant.threads }}t 2>&1 | tee ./benchmarklogs-${{ matrix.variant.threads }}t/php_charts_generation.log
+            echo "Generating charts with implementation comparison..."
+            
+            # Check if we have both implementations
+            PHPREDIS_FILES=$(find ./benchmarklogs-${{ matrix.variant.threads }}t/php_results -name "*predis*.json" | wc -l)
+            PREDIS_FILES=$(find ./benchmarklogs-${{ matrix.variant.threads }}t/php_results -name "*phpredis*.json" | wc -l)
+            
+            if [ "$PHPREDIS_FILES" -gt 0 ] && [ "$PREDIS_FILES" -gt 0 ]; then
+                echo "Both implementations detected - generating comparison charts..."
+                python3 tests/php/php_redis_charts_comparison.py \
+                    --results-dir ./benchmarklogs-${{ matrix.variant.threads }}t/php_results \
+                    --output-dir ./benchmarklogs-${{ matrix.variant.threads }}t \
+                    --compare-implementations 2>&1 | tee ./benchmarklogs-${{ matrix.variant.threads }}t/php_charts_comparison.log
+            else
+                echo "Single implementation detected - generating standard charts..."
+                python3 tests/php/php_redis_charts.py \
+                    --results-dir ./benchmarklogs-${{ matrix.variant.threads }}t/php_results \
+                    --output-dir ./benchmarklogs-${{ matrix.variant.threads }}t 2>&1 | tee ./benchmarklogs-${{ matrix.variant.threads }}t/php_charts_generation.log
+            fi
                 
             echo "PHP chart generation completed"
             echo "Generated files:"
             ls -la ./benchmarklogs-${{ matrix.variant.threads }}t/php_redis_*.png || echo "No PNG charts generated"
+            ls -la ./benchmarklogs-${{ matrix.variant.threads }}t/php_*comparison*.png || echo "No comparison charts generated"
             ls -la ./benchmarklogs-${{ matrix.variant.threads }}t/php_redis_*.md || echo "No markdown reports generated"
         else
             echo "No PHP JSON results found, skipping chart generation"
@@ -1544,12 +1733,33 @@ jobs:
         echo "- Valkey IO Threads: ${{ matrix.variant.valkey_io_threads }}" >> ./benchmarklogs-${{ matrix.variant.threads }}t/php_wordpress_summary.md
         echo "" >> ./benchmarklogs-${{ matrix.variant.threads }}t/php_wordpress_summary.md
         echo "**Test Details:**" >> ./benchmarklogs-${{ matrix.variant.threads }}t/php_wordpress_summary.md
-        echo "- Test Type: WordPress Object Cache simulation" >> ./benchmarklogs-${{ matrix.variant.threads }}t/php_wordpress_summary.md
+        echo "- Test Type: WordPress Object Cache simulation with dual implementation comparison" >> ./benchmarklogs-${{ matrix.variant.threads }}t/php_wordpress_summary.md
         echo "- Operations: 70% reads (GET), 30% writes (SETEX with TTL)" >> ./benchmarklogs-${{ matrix.variant.threads }}t/php_wordpress_summary.md
         echo "- Key Pattern: WordPress cache groups (posts, terms, users, options, comments)" >> ./benchmarklogs-${{ matrix.variant.threads }}t/php_wordpress_summary.md
         echo "- TTL Range: 1-24 hours" >> ./benchmarklogs-${{ matrix.variant.threads }}t/php_wordpress_summary.md
         echo "- Databases Tested: Redis, KeyDB, Dragonfly, Valkey (both non-TLS and TLS)" >> ./benchmarklogs-${{ matrix.variant.threads }}t/php_wordpress_summary.md
         echo "- Database State: FLUSHALL executed before tests" >> ./benchmarklogs-${{ matrix.variant.threads }}t/php_wordpress_summary.md
+        echo "- Statistical Iterations: ${REDIS_STATISTICAL_ITERATIONS} per implementation per database" >> ./benchmarklogs-${{ matrix.variant.threads }}t/php_wordpress_summary.md
+        echo "" >> ./benchmarklogs-${{ matrix.variant.threads }}t/php_wordpress_summary.md
+        echo "**Implementation Testing:**" >> ./benchmarklogs-${{ matrix.variant.threads }}t/php_wordpress_summary.md
+        echo "- phpredis: " >> ./benchmarklogs-${{ matrix.variant.threads }}t/php_wordpress_summary.md
+        if [ "${REDIS_IMPL_PHPREDIS}" = "true" ]; then
+          echo "  - Status: ✅ Tested" >> ./benchmarklogs-${{ matrix.variant.threads }}t/php_wordpress_summary.md
+          echo "  - Implementation: Redis PHP extension (C-based)" >> ./benchmarklogs-${{ matrix.variant.threads }}t/php_wordpress_summary.md
+          echo "  - Performance: High (native C extension)" >> ./benchmarklogs-${{ matrix.variant.threads }}t/php_wordpress_summary.md
+          echo "  - TLS Support: Known issues with command execution" >> ./benchmarklogs-${{ matrix.variant.threads }}t/php_wordpress_summary.md
+        else
+          echo "  - Status: ⏭️ Skipped" >> ./benchmarklogs-${{ matrix.variant.threads }}t/php_wordpress_summary.md
+        fi
+        echo "- Predis: " >> ./benchmarklogs-${{ matrix.variant.threads }}t/php_wordpress_summary.md
+        if [ "${REDIS_IMPL_PREDIS}" = "true" ]; then
+          echo "  - Status: ✅ Tested" >> ./benchmarklogs-${{ matrix.variant.threads }}t/php_wordpress_summary.md
+          echo "  - Implementation: Pure PHP Redis client" >> ./benchmarklogs-${{ matrix.variant.threads }}t/php_wordpress_summary.md
+          echo "  - Performance: Moderate (pure PHP overhead)" >> ./benchmarklogs-${{ matrix.variant.threads }}t/php_wordpress_summary.md
+          echo "  - TLS Support: Enhanced reliability and SSL context handling" >> ./benchmarklogs-${{ matrix.variant.threads }}t/php_wordpress_summary.md
+        else
+          echo "  - Status: ⏭️ Skipped" >> ./benchmarklogs-${{ matrix.variant.threads }}t/php_wordpress_summary.md
+        fi
         echo "" >> ./benchmarklogs-${{ matrix.variant.threads }}t/php_wordpress_summary.md
         echo "**Workflow Information:**" >> ./benchmarklogs-${{ matrix.variant.threads }}t/php_wordpress_summary.md
         echo "- Workflow Run: ${{ github.run_number }}" >> ./benchmarklogs-${{ matrix.variant.threads }}t/php_wordpress_summary.md
@@ -1558,9 +1768,18 @@ jobs:
         echo "- Matrix Variant: ${{ matrix.variant.threads }}t" >> ./benchmarklogs-${{ matrix.variant.threads }}t/php_wordpress_summary.md
         echo "" >> ./benchmarklogs-${{ matrix.variant.threads }}t/php_wordpress_summary.md
         echo "**Files Generated:**" >> ./benchmarklogs-${{ matrix.variant.threads }}t/php_wordpress_summary.md
-        echo "- Raw test logs: php_wordpress_test.log" >> ./benchmarklogs-${{ matrix.variant.threads }}t/php_wordpress_summary.md
+        if [ "${REDIS_IMPL_PHPREDIS}" = "true" ]; then
+          echo "- phpredis test logs: php_wordpress_test_phpredis.log" >> ./benchmarklogs-${{ matrix.variant.threads }}t/php_wordpress_summary.md
+        fi
+        if [ "${REDIS_IMPL_PREDIS}" = "true" ]; then
+          echo "- Predis test logs: php_wordpress_test_predis.log" >> ./benchmarklogs-${{ matrix.variant.threads }}t/php_wordpress_summary.md
+        fi
         echo "- JSON results: php_results/*.json" >> ./benchmarklogs-${{ matrix.variant.threads }}t/php_wordpress_summary.md
-        echo "- Charts: php_redis_*.png" >> ./benchmarklogs-${{ matrix.variant.threads }}t/php_wordpress_summary.md
+        echo "- Performance charts: php_redis_*.png" >> ./benchmarklogs-${{ matrix.variant.threads }}t/php_wordpress_summary.md
+        if [ "${REDIS_IMPL_PHPREDIS}" = "true" ] && [ "${REDIS_IMPL_PREDIS}" = "true" ]; then
+          echo "- Implementation comparison charts: php_*comparison*.png" >> ./benchmarklogs-${{ matrix.variant.threads }}t/php_wordpress_summary.md
+          echo "- Comparison report: php_redis_implementation_comparison_report.md" >> ./benchmarklogs-${{ matrix.variant.threads }}t/php_wordpress_summary.md
+        fi
         echo "- Summary report: php_redis_benchmark_summary.md" >> ./benchmarklogs-${{ matrix.variant.threads }}t/php_wordpress_summary.md
         
         echo "PHP WordPress test summary created"
@@ -1571,13 +1790,30 @@ jobs:
         # Create thread-specific results directory structure
         mkdir -p results/benchmarks-v6-host-${{ matrix.variant.threads }}t
 
-        # Copy PHP test files and results
+        # Copy PHP test files and implementation-specific results
         mkdir -p results/benchmarks-v6-host-${{ matrix.variant.threads }}t/php_tests
+        mkdir -p results/benchmarks-v6-host-${{ matrix.variant.threads }}t/implementations
+        
+        # Copy all PHP test files
         cp tests/php/*.php results/benchmarks-v6-host-${{ matrix.variant.threads }}t/php_tests/ 2>/dev/null || echo "No PHP files to copy"
         cp tests/php/*.py results/benchmarks-v6-host-${{ matrix.variant.threads }}t/php_tests/ 2>/dev/null || echo "No Python files to copy"
+        cp tests/php/composer.json results/benchmarks-v6-host-${{ matrix.variant.threads }}t/php_tests/ 2>/dev/null || echo "No composer.json to copy"
 
-        # Copy PHP-specific results and summary
+        # Copy implementation-specific results
+        if [ "${REDIS_IMPL_PHPREDIS}" = "true" ]; then
+          mkdir -p results/benchmarks-v6-host-${{ matrix.variant.threads }}t/implementations/phpredis
+          cp ./benchmarklogs-${{ matrix.variant.threads }}t/*phpredis* results/benchmarks-v6-host-${{ matrix.variant.threads }}t/implementations/phpredis/ 2>/dev/null || echo "No phpredis results to copy"
+        fi
+        
+        if [ "${REDIS_IMPL_PREDIS}" = "true" ]; then
+          mkdir -p results/benchmarks-v6-host-${{ matrix.variant.threads }}t/implementations/predis
+          cp ./benchmarklogs-${{ matrix.variant.threads }}t/*predis* results/benchmarks-v6-host-${{ matrix.variant.threads }}t/implementations/predis/ 2>/dev/null || echo "No Predis results to copy"
+        fi
+
+        # Copy general PHP results and summaries
         cp ./benchmarklogs-${{ matrix.variant.threads }}t/php_wordpress_summary.md results/benchmarks-v6-host-${{ matrix.variant.threads }}t/ 2>/dev/null || echo "No PHP summary found"
+        cp ./benchmarklogs-${{ matrix.variant.threads }}t/php_*comparison*.png results/benchmarks-v6-host-${{ matrix.variant.threads }}t/ 2>/dev/null || echo "No comparison charts to copy"
+        cp ./benchmarklogs-${{ matrix.variant.threads }}t/php_redis_implementation_comparison_report.md results/benchmarks-v6-host-${{ matrix.variant.threads }}t/ 2>/dev/null || echo "No comparison report to copy"
         cp benchmarklogs-${{ matrix.variant.threads }}t/php_results/*.json results/benchmarks-v6-host-${{ matrix.variant.threads }}t/ 2>/dev/null || echo "No PHP JSON results to copy"
         
         # Copy files to thread-specific results directory
