@@ -164,9 +164,38 @@ pip install pandas matplotlib seaborn numpy
 ```
 
 ### Chart Types
-1. **Basic Charts**: `scripts/latency-charts.py`, `scripts/opssec-charts.py`
-2. **Advanced Charts**: `scripts/benchmark_charts.py` (radar, heatmap, scaling)
-3. **Matrix Charts**: `scripts/*-matrix.py` for multi-thread analysis
+
+#### 1. Basic Charts
+**Scripts**: `scripts/latency-charts.py`, `scripts/opssec-charts.py`
+- **Latency Charts**: Bar charts showing Average, P50, and P99 latency across thread counts
+  - **Filenames**: `latency-{prefix}-avg-{layout}.png`, `latency-{prefix}-p50-{layout}.png`, `latency-{prefix}-p99-{layout}.png`
+  - **Layouts**: `single` (grouped bars), `grid` (2×2 subplots)
+- **Operations Charts**: Bar charts showing operations per second throughput
+  - **Filenames**: `ops-{prefix}-{layout}.png`
+  - **Data**: Sets/Gets/Totals operations across 1-8 thread configurations
+
+#### 2. Advanced Charts  
+**Script**: `scripts/benchmark_charts.py`
+- **Scaling Analysis**: `advcharts-scaling{-tls}.png` - Line chart showing performance scaling across thread counts
+- **Database Comparison**: `advcharts-comparison{-tls}.png` - Grouped bar chart comparing database performance
+- **Trade-off Analysis**: `advcharts-tradeoff{-tls}.png` - Scatter plot of latency vs throughput with bubble sizing
+- **Cache Efficiency**: `advcharts-cache{-tls}.png` - Dual-panel chart showing hit rates and absolute values
+- **Latency Distribution**: `advcharts-latency-dist{-tls}.png` - Line charts comparing average and P99 latency
+- **Performance Radar**: `advcharts-radar{-tls}.png` - 2×2 polar radar charts showing normalized performance profiles
+- **Performance Heatmap**: `advcharts-heatmap{-tls}.png` - 2×2 heatmap grid with normalized performance scores
+- **TLS Comparison**: `advcharts-comparison-stack.png` - Stacked bar chart comparing non-TLS vs TLS performance
+
+#### 3. Matrix Charts
+**Scripts**: `scripts/latency-charts-matrix.py`, `scripts/opssec-charts-matrix.py`
+- **Same chart types as Basic Charts but with configurable output directories**
+- **Purpose**: Multi-thread analysis with flexible result placement for CI/CD workflows
+- **Output**: Thread-specific directories (`results/benchmarks-v[X]-{threads}t/`)
+
+#### Chart Filename Patterns
+- **TLS Variations**: Non-TLS (no suffix) vs TLS (`-tls` suffix)
+- **Layout Options**: `single` (26×10 figure) vs `grid` (18×12 figure) 
+- **Prefix Types**: `nonTLS`, `TLS` based on configuration tested
+- **Database Coverage**: Redis, KeyDB, Dragonfly, Valkey across 1-8 thread configurations
 
 ### Usage
 ```bash
