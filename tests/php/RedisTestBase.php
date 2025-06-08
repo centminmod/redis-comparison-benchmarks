@@ -128,6 +128,129 @@ class RedisTestBase {
     }
     
     /**
+     * Debug raw SSL socket connection to understand handshake issues
+     */
+    private function debugSSLSocket($host, $port) {
+        echo "    🔍 Testing raw SSL socket to {$host}:{$port}\n";
+        
+        $context = stream_context_create([
+            'ssl' => [
+                'verify_peer' => false,
+                'verify_peer_name' => false,
+                'allow_self_signed' => true,
+                'capture_peer_cert' => true
+            ]
+        ]);
+        
+        $socket = @stream_socket_client(
+            "ssl://{$host}:{$port}",
+            $errno,
+            $errstr,
+            5,
+            STREAM_CLIENT_CONNECT,
+            $context
+        );
+        
+        if ($socket) {
+            echo "    ✅ Raw SSL socket connection successful\n";
+            
+            // Get SSL info
+            $ssl_info = stream_context_get_options($context);
+            if (isset($ssl_info['ssl']['peer_certificate'])) {
+                $cert_info = openssl_x509_parse($ssl_info['ssl']['peer_certificate']);
+                echo "    📜 Server certificate subject: " . ($cert_info['subject']['CN'] ?? 'unknown') . "\n";
+                echo "    📜 Server certificate issuer: " . ($cert_info['issuer']['CN'] ?? 'unknown') . "\n";
+            }
+            fclose($socket);
+            return true;
+        } else {
+            echo "    ❌ Raw SSL socket failed: {$errstr} ({$errno})\n";
+            return false;
+        }
+    }
+
+    /**
+     * Try Redis connection with specific SSL context and detailed error reporting
+     */
+    private function tryRedisConnection($redis, $host, $port, $ssl_context, $test_name) {
+        echo "    🔧 Testing: {$test_name}\n";
+        echo "    📋 SSL Context: " . json_encode(array_keys($ssl_context)) . "\n";
+        
+        try {
+            // Enable error reporting for this test
+            $old_error_level = error_reporting(E_ALL);
+            
+            $connected = $redis->connect($host, $port, 5.0, null, 0, 0, $ssl_context);
+            
+            if ($connected) {
+                echo "    ✅ Redis TLS connection successful with {$test_name}\n";
+                
+                // Test basic Redis command
+                try {
+                    $test_key = 'tls_test_' . uniqid();
+                    $redis->set($test_key, 'test_value', 1);
+                    $result = $redis->get($test_key);
+                    $redis->del($test_key);
+                    
+                    if ($result === 'test_value') {
+                        echo "    ✅ Redis commands working with {$test_name}\n";
+                        return true;
+                    } else {
+                        echo "    ⚠️ Redis connected but commands failed with {$test_name}\n";
+                        return false;
+                    }
+                } catch (Exception $cmd_e) {
+                    echo "    ⚠️ Command test failed: " . $cmd_e->getMessage() . "\n";
+                    return false;
+                }
+            } else {
+                $last_error = error_get_last();
+                echo "    ❌ Redis connect() returned false for {$test_name}\n";
+                if ($last_error) {
+                    echo "    🐛 Last PHP error: " . $last_error['message'] . "\n";
+                }
+                return false;
+            }
+        } catch (Exception $e) {
+            echo "    ❌ {$test_name} exception: " . $e->getMessage() . "\n";
+            return false;
+        } finally {
+            error_reporting($old_error_level);
+        }
+    }
+
+    /**
+     * Validate and display certificate information
+     */
+    private function debugCertificates($cert_files) {
+        echo "    🔍 Debugging certificate files:\n";
+        
+        foreach ($cert_files as $type => $file) {
+            if (file_exists($file)) {
+                $size = filesize($file);
+                $perms = substr(sprintf('%o', fileperms($file)), -4);
+                echo "    📄 {$type}: {$file} ({$size} bytes, perms: {$perms})\n";
+                
+                if ($type === 'local_cert' || $type === 'cafile') {
+                    // Try to parse certificate
+                    $cert_content = file_get_contents($file);
+                    $cert_info = openssl_x509_parse($cert_content);
+                    if ($cert_info) {
+                        echo "      Subject CN: " . ($cert_info['subject']['CN'] ?? 'unknown') . "\n";
+                        echo "      Issuer CN: " . ($cert_info['issuer']['CN'] ?? 'unknown') . "\n";
+                        echo "      Valid from: " . date('Y-m-d H:i:s', $cert_info['validFrom_time_t']) . "\n";
+                        echo "      Valid to: " . date('Y-m-d H:i:s', $cert_info['validTo_time_t']) . "\n";
+                    } else {
+                        echo "      ⚠️ Failed to parse certificate\n";
+                    }
+                }
+            } else {
+                echo "    ❌ {$type}: {$file} - FILE NOT FOUND\n";
+            }
+        }
+    }
+
+    /**
      * Test if TLS port is accessible before attempting Redis connection
      */
     private function testTlsPortConnectivity($host, $port, $timeout = 2) {
@@ -652,26 +775,97 @@ class RedisTestBase {
                 $this->debugLog("TLS certificates found, attempting connection");
                 
                 try {
-                    // Try different TLS connection methods with better error handling
-                    $this->debugLog("Attempt: Using tls:// scheme with certificate verification disabled");
+                    // Enhanced SSL debugging and progressive connection testing
+                    echo "  🔐 Starting detailed TLS connection debugging for {$host}:{$port}\n";
                     
-                    $ssl_context = [
+                    // Debug certificate files first
+                    $this->debugCertificates($cert_files);
+                    
+                    // Test 1: Basic SSL socket connection
+                    echo "  📡 Test 1: Raw SSL socket connection...\n";
+                    if (!$this->debugSSLSocket($host, $port)) {
+                        throw new Exception("Raw SSL socket connection failed - server may not support TLS");
+                    }
+                    
+                    // Test 2: Redis connection with minimal SSL context
+                    echo "  📡 Test 2: Minimal SSL context...\n";
+                    $redis_test = new Redis(); // Fresh instance for testing
+                    $minimal_context = [
                         'verify_peer' => false,
                         'verify_peer_name' => false,
-                        'allow_self_signed' => true,
-                        'local_cert' => $cert_files['local_cert'],
-                        'local_pk' => $cert_files['local_pk'],
-                        'cafile' => $cert_files['cafile'],
-                        'capture_peer_cert' => false,
-                        'disable_compression' => true,
-                        'SNI_enabled' => false
+                        'allow_self_signed' => true
                     ];
                     
-                    $connected = $redis->connect($host, $port, 5.0, null, 0, 0, $ssl_context);
-                    if (!$connected) {
-                        throw new Exception("TLS connection failed");
+                    if ($this->tryRedisConnection($redis_test, $host, $port, $minimal_context, "minimal SSL")) {
+                        // Use the working connection
+                        $redis = $redis_test;
+                        $this->debugLog("SUCCESS: Minimal SSL context worked");
+                    } else {
+                        // Test 3: SSL context with certificates (current approach)
+                        echo "  📡 Test 3: SSL context with certificates...\n";
+                        $redis_test = new Redis();
+                        $cert_context = [
+                            'verify_peer' => false,
+                            'verify_peer_name' => false,
+                            'allow_self_signed' => true,
+                            'local_cert' => $cert_files['local_cert'],
+                            'local_pk' => $cert_files['local_pk'],
+                            'cafile' => $cert_files['cafile']
+                        ];
+                        
+                        if ($this->tryRedisConnection($redis_test, $host, $port, $cert_context, "with certificates")) {
+                            $redis = $redis_test;
+                            $this->debugLog("SUCCESS: Certificate SSL context worked");
+                        } else {
+                            // Test 4: Full SSL context (original approach)
+                            echo "  📡 Test 4: Full SSL context with all options...\n";
+                            $redis_test = new Redis();
+                            $full_context = [
+                                'verify_peer' => false,
+                                'verify_peer_name' => false,
+                                'allow_self_signed' => true,
+                                'local_cert' => $cert_files['local_cert'],
+                                'local_pk' => $cert_files['local_pk'],
+                                'cafile' => $cert_files['cafile'],
+                                'capture_peer_cert' => false,
+                                'disable_compression' => true,
+                                'SNI_enabled' => false
+                            ];
+                            
+                            if ($this->tryRedisConnection($redis_test, $host, $port, $full_context, "full SSL context")) {
+                                $redis = $redis_test;
+                                $this->debugLog("SUCCESS: Full SSL context worked");
+                            } else {
+                                // Test 5: Different TLS versions
+                                echo "  📡 Test 5: Alternative TLS versions...\n";
+                                $success = false;
+                                
+                                $crypto_methods = [
+                                    'TLSv1.2' => STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT,
+                                    'TLSv1.3' => defined('STREAM_CRYPTO_METHOD_TLSv1_3_CLIENT') ? STREAM_CRYPTO_METHOD_TLSv1_3_CLIENT : STREAM_CRYPTO_METHOD_TLS_CLIENT,
+                                    'ANY_TLS' => STREAM_CRYPTO_METHOD_TLS_CLIENT
+                                ];
+                                
+                                foreach ($crypto_methods as $method_name => $method_const) {
+                                    $redis_test = new Redis();
+                                    $method_context = array_merge($minimal_context, ['crypto_method' => $method_const]);
+                                    
+                                    if ($this->tryRedisConnection($redis_test, $host, $port, $method_context, $method_name)) {
+                                        $redis = $redis_test;
+                                        $this->debugLog("SUCCESS: {$method_name} worked");
+                                        $success = true;
+                                        break;
+                                    }
+                                }
+                                
+                                if (!$success) {
+                                    throw new Exception("All TLS connection methods failed - see detailed output above");
+                                }
+                            }
+                        }
                     }
-                    $this->debugLog("TLS connection successful");
+                    
+                    $this->debugLog("TLS connection successful with progressive testing");
                     
                 } catch (Exception $e) {
                     // Log the specific TLS error but don't fail the entire test
