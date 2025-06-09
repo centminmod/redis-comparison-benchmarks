@@ -826,7 +826,8 @@ class RedisTestBase {
                     'stream' => [
                         'verify_peer_name' => $verify_peer_name,
                         'verify_peer' => false,  // Allow self-signed certs
-                        'allow_self_signed' => true
+                        'allow_self_signed' => true,
+                        'crypto_method' => STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT
                     ]
                 ]
             );
@@ -865,7 +866,8 @@ class RedisTestBase {
                         'stream' => [
                             'verify_peer_name' => false,
                             'verify_peer' => false,
-                            'allow_self_signed' => true
+                            'allow_self_signed' => true,
+                            'crypto_method' => STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT
                         ]
                     ]
                 );
@@ -891,7 +893,8 @@ class RedisTestBase {
             $minimal_context = [
                 'verify_peer' => false,
                 'verify_peer_name' => false,
-                'allow_self_signed' => true
+                'allow_self_signed' => true,
+                'crypto_method' => STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT
             ];
             
             $success = $context_redis->connect(

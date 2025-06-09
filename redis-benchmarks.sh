@@ -113,7 +113,7 @@ setup_environment() {
     # Server certificate
     openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out test.key
     openssl req -new -key test.key -out test.csr \
-        -subj "/C=US/ST=Some-State/O=OrganizationName/OU=OrganizationalUnit/CN=test.com"
+        -subj "/C=US/ST=Some-State/O=OrganizationName/OU=OrganizationalUnit/CN=localhost"
     openssl x509 -req -in test.csr -CA ca.crt -CAkey ca.key -CAcreateserial \
         -out test.crt -days 365
     
