@@ -1687,32 +1687,75 @@ jobs:
         find ./benchmarklogs-${{ matrix.variant.threads }}t -name "wordpress_object_cache*.json" -type f \
           -exec cp {} ./benchmarklogs-${{ matrix.variant.threads }}t/php_results/ \; 2>/dev/null || echo "No WordPress cache JSON files to copy"
         
-        # Generate implementation comparison charts if both implementations have results
+        # Generate PHP Redis charts (both standard and comparison charts)
         if [ -n "$(ls -A ./benchmarklogs-${{ matrix.variant.threads }}t/php_results/*.json 2>/dev/null)" ]; then
-            echo "Generating charts with implementation comparison..."
+            echo "Generating PHP Redis charts..."
             
-            # Check if we have both implementations
-            PHPREDIS_FILES=$(find ./benchmarklogs-${{ matrix.variant.threads }}t/php_results -name "*predis*.json" | wc -l)
-            PREDIS_FILES=$(find ./benchmarklogs-${{ matrix.variant.threads }}t/php_results -name "*phpredis*.json" | wc -l)
+            # Check what implementations we have (fixed variable naming)
+            PREDIS_FILE_COUNT=$(find ./benchmarklogs-${{ matrix.variant.threads }}t/php_results -name "*predis*.json" | wc -l)
+            PHPREDIS_FILE_COUNT=$(find ./benchmarklogs-${{ matrix.variant.threads }}t/php_results -name "*phpredis*.json" | wc -l)
             
-            if [ "$PHPREDIS_FILES" -gt 0 ] && [ "$PREDIS_FILES" -gt 0 ]; then
+            echo "Found implementations:"
+            echo "  Predis files: $PREDIS_FILE_COUNT"
+            echo "  PHPRedis files: $PHPREDIS_FILE_COUNT"
+            
+            # Always generate standard charts if any PHP results exist
+            echo "=== Generating Standard PHP Redis Charts ==="
+            python3 tests/php/php_redis_charts.py \
+                --results-dir ./benchmarklogs-${{ matrix.variant.threads }}t/php_results \
+                --output-dir ./benchmarklogs-${{ matrix.variant.threads }}t 2>&1 | tee ./benchmarklogs-${{ matrix.variant.threads }}t/php_charts_standard.log || {
+                echo "⚠️ Standard chart generation failed, but continuing..."
+            }
+            
+            # Generate comparison charts if both implementations have results
+            if [ "$PREDIS_FILE_COUNT" -gt 0 ] && [ "$PHPREDIS_FILE_COUNT" -gt 0 ]; then
+                echo "=== Generating Implementation Comparison Charts ==="
                 echo "Both implementations detected - generating comparison charts..."
                 python3 tests/php/php_redis_charts_comparison.py \
                     --results-dir ./benchmarklogs-${{ matrix.variant.threads }}t/php_results \
                     --output-dir ./benchmarklogs-${{ matrix.variant.threads }}t \
-                    --compare-implementations 2>&1 | tee ./benchmarklogs-${{ matrix.variant.threads }}t/php_charts_comparison.log
+                    --compare-implementations 2>&1 | tee ./benchmarklogs-${{ matrix.variant.threads }}t/php_charts_comparison.log || {
+                    echo "⚠️ Comparison chart generation failed, but continuing..."
+                }
             else
-                echo "Single implementation detected - generating standard charts..."
-                python3 tests/php/php_redis_charts.py \
-                    --results-dir ./benchmarklogs-${{ matrix.variant.threads }}t/php_results \
-                    --output-dir ./benchmarklogs-${{ matrix.variant.threads }}t 2>&1 | tee ./benchmarklogs-${{ matrix.variant.threads }}t/php_charts_generation.log
+                echo "=== Skipping Comparison Charts ==="
+                if [ "$PREDIS_FILE_COUNT" -eq 0 ]; then
+                    echo "Missing Predis results - cannot generate comparison charts"
+                fi
+                if [ "$PHPREDIS_FILE_COUNT" -eq 0 ]; then
+                    echo "Missing PHPRedis results - cannot generate comparison charts"
+                fi
             fi
                 
-            echo "PHP chart generation completed"
-            echo "Generated files:"
-            ls -la ./benchmarklogs-${{ matrix.variant.threads }}t/php_redis_*.png || echo "No PNG charts generated"
-            ls -la ./benchmarklogs-${{ matrix.variant.threads }}t/php_*comparison*.png || echo "No comparison charts generated"
-            ls -la ./benchmarklogs-${{ matrix.variant.threads }}t/php_redis_*.md || echo "No markdown reports generated"
+            echo "=== PHP Chart Generation Summary ==="
+            echo "Chart generation completed for thread variant: ${{ matrix.variant.threads }}t"
+            
+            # Check and report what was generated
+            STANDARD_CHARTS=$(ls ./benchmarklogs-${{ matrix.variant.threads }}t/php_redis_*.png 2>/dev/null | wc -l)
+            COMPARISON_CHARTS=$(ls ./benchmarklogs-${{ matrix.variant.threads }}t/php_*comparison*.png 2>/dev/null | wc -l)
+            MARKDOWN_REPORTS=$(ls ./benchmarklogs-${{ matrix.variant.threads }}t/php_redis_*.md 2>/dev/null | wc -l)
+            
+            echo "Generated outputs:"
+            echo "  📊 Standard charts: $STANDARD_CHARTS files"
+            if [ "$STANDARD_CHARTS" -gt 0 ]; then
+                ls -la ./benchmarklogs-${{ matrix.variant.threads }}t/php_redis_*.png | head -5
+                [ "$STANDARD_CHARTS" -gt 5 ] && echo "    ... and $(($STANDARD_CHARTS - 5)) more files"
+            fi
+            
+            echo "  🔄 Comparison charts: $COMPARISON_CHARTS files"
+            if [ "$COMPARISON_CHARTS" -gt 0 ]; then
+                ls -la ./benchmarklogs-${{ matrix.variant.threads }}t/php_*comparison*.png
+            fi
+            
+            echo "  📄 Markdown reports: $MARKDOWN_REPORTS files"
+            if [ "$MARKDOWN_REPORTS" -gt 0 ]; then
+                ls -la ./benchmarklogs-${{ matrix.variant.threads }}t/php_redis_*.md
+            fi
+            
+            # Log file summary
+            echo "  📝 Generation logs:"
+            [ -f "./benchmarklogs-${{ matrix.variant.threads }}t/php_charts_standard.log" ] && echo "    ✅ Standard chart log available"
+            [ -f "./benchmarklogs-${{ matrix.variant.threads }}t/php_charts_comparison.log" ] && echo "    ✅ Comparison chart log available"
         else
             echo "No PHP JSON results found, skipping chart generation"
         fi
