@@ -249,6 +249,13 @@ class RedisTestBasePredis {
                 ]
             ];
             
+            // Add password authentication for Dragonfly (requires authentication for TLS)
+            if (strpos(strtolower($database_name), 'dragonfly') !== false) {
+                $dragonfly_password = getenv('DRAGONFLY_PASSWORD') ?: 'testpass';
+                $tls_params['password'] = $dragonfly_password;
+                echo "  🔐 Adding Dragonfly authentication to connection parameters...\n";
+            }
+            
             $redis = new Client($tls_params);
             
             // Test connection with SET/GET (more reliable than PING for TLS)
@@ -276,7 +283,15 @@ class RedisTestBasePredis {
             // Method 2: Predis 'rediss' URI scheme
             echo "  📡 Method 2: Predis 'rediss' URI scheme...\n";
             
-            $rediss_uri = "rediss://{$host}:{$port}?ssl[verify_peer]=0&ssl[verify_peer_name]=0&ssl[allow_self_signed]=1";
+            // Build rediss URI with optional authentication for Dragonfly
+            $rediss_uri = "rediss://";
+            if (strpos(strtolower($database_name), 'dragonfly') !== false) {
+                $dragonfly_password = getenv('DRAGONFLY_PASSWORD') ?: 'testpass';
+                $rediss_uri .= ":{$dragonfly_password}@";
+                echo "  🔐 Adding Dragonfly authentication to rediss URI...\n";
+            }
+            $rediss_uri .= "{$host}:{$port}?ssl[verify_peer]=0&ssl[verify_peer_name]=0&ssl[allow_self_signed]=1";
+            
             $redis = new Client($rediss_uri);
             
             // Test with SET/GET

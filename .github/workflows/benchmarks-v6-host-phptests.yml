@@ -94,6 +94,7 @@ jobs:
     env:
       KEY_MINIMUM: 1
       PHP_TEST_DURATION: 30
+      DRAGONFLY_PASSWORD: "testpass"      # Password for Dragonfly TLS authentication
       
       # PHP Redis Implementation Control (Environment Variables)
       PHP_REDIS_IMPLEMENTATIONS: "both"  # phpredis, predis, both
@@ -904,7 +905,7 @@ jobs:
     
     - name: Memtier 1 Threads Benchmark Dragonfly with TLS
       run: |
-        taskset -c 0 memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6392 --protocol=redis --tls --cert=${PWD}/client_cert.pem --key=${PWD}/client_priv.pem --cacert=${PWD}/ca.crt -t 1 --distinct-client-seed --hide-histogram --requests=$REQUESTS --clients=$CLIENTS --pipeline=$PIPELINE --data-size=$DATA_SIZE --key-pattern=G:G --key-minimum=${KEY_MINIMUM} --key-maximum=$KEY_MAXIMUM --key-median=$KEY_MEDIAN --key-stddev=$KEY_STDDEV | tee ./benchmarklogs-${{ matrix.variant.threads }}t/dragonfly_benchmarks_1threads_tls.txt || true
+        taskset -c 0 memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6392 --protocol=redis --tls --cert=${PWD}/client_cert.pem --key=${PWD}/client_priv.pem --cacert=${PWD}/ca.crt -a ${DRAGONFLY_PASSWORD} -t 1 --distinct-client-seed --hide-histogram --requests=$REQUESTS --clients=$CLIENTS --pipeline=$PIPELINE --data-size=$DATA_SIZE --key-pattern=G:G --key-minimum=${KEY_MINIMUM} --key-maximum=$KEY_MAXIMUM --key-median=$KEY_MEDIAN --key-stddev=$KEY_STDDEV | tee ./benchmarklogs-${{ matrix.variant.threads }}t/dragonfly_benchmarks_1threads_tls.txt || true
     
     - name: Memtier 1 Threads Benchmark Valkey with TLS
       run: |
@@ -920,7 +921,7 @@ jobs:
     
     - name: Memtier 2 Threads Benchmark Dragonfly with TLS
       run: |
-        taskset -c 0,1 memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6392 --protocol=redis --tls --cert=${PWD}/client_cert.pem --key=${PWD}/client_priv.pem --cacert=${PWD}/ca.crt -t 2 --distinct-client-seed --hide-histogram --requests=$REQUESTS --clients=$CLIENTS --pipeline=$PIPELINE --data-size=$DATA_SIZE --key-pattern=G:G --key-minimum=${KEY_MINIMUM} --key-maximum=$KEY_MAXIMUM --key-median=$KEY_MEDIAN --key-stddev=$KEY_STDDEV | tee ./benchmarklogs-${{ matrix.variant.threads }}t/dragonfly_benchmarks_2threads_tls.txt || true
+        taskset -c 0,1 memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6392 --protocol=redis --tls --cert=${PWD}/client_cert.pem --key=${PWD}/client_priv.pem --cacert=${PWD}/ca.crt -a ${DRAGONFLY_PASSWORD} -t 2 --distinct-client-seed --hide-histogram --requests=$REQUESTS --clients=$CLIENTS --pipeline=$PIPELINE --data-size=$DATA_SIZE --key-pattern=G:G --key-minimum=${KEY_MINIMUM} --key-maximum=$KEY_MAXIMUM --key-median=$KEY_MEDIAN --key-stddev=$KEY_STDDEV | tee ./benchmarklogs-${{ matrix.variant.threads }}t/dragonfly_benchmarks_2threads_tls.txt || true
     
     - name: Memtier 2 Threads Benchmark Valkey with TLS
       run: |
@@ -936,7 +937,7 @@ jobs:
    
     - name: Memtier 4 Threads Benchmark Dragonfly with TLS
       run: |
-        taskset -c 0,1,2,3 memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6392 --protocol=redis --tls --cert=${PWD}/client_cert.pem --key=${PWD}/client_priv.pem --cacert=${PWD}/ca.crt -t 4 --distinct-client-seed --hide-histogram --requests=$REQUESTS --clients=$CLIENTS --pipeline=$PIPELINE --data-size=$DATA_SIZE --key-pattern=G:G --key-minimum=${KEY_MINIMUM} --key-maximum=$KEY_MAXIMUM --key-median=$KEY_MEDIAN --key-stddev=$KEY_STDDEV | tee ./benchmarklogs-${{ matrix.variant.threads }}t/dragonfly_benchmarks_4threads_tls.txt || true
+        taskset -c 0,1,2,3 memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6392 --protocol=redis --tls --cert=${PWD}/client_cert.pem --key=${PWD}/client_priv.pem --cacert=${PWD}/ca.crt -a ${DRAGONFLY_PASSWORD} -t 4 --distinct-client-seed --hide-histogram --requests=$REQUESTS --clients=$CLIENTS --pipeline=$PIPELINE --data-size=$DATA_SIZE --key-pattern=G:G --key-minimum=${KEY_MINIMUM} --key-maximum=$KEY_MAXIMUM --key-median=$KEY_MEDIAN --key-stddev=$KEY_STDDEV | tee ./benchmarklogs-${{ matrix.variant.threads }}t/dragonfly_benchmarks_4threads_tls.txt || true
    
     - name: Memtier 4 Threads Benchmark Valkey with TLS
       run: |
@@ -952,7 +953,7 @@ jobs:
    
     - name: Memtier 8 Threads Benchmark Dragonfly with TLS
       run: |
-        memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6392 --protocol=redis --tls --cert=${PWD}/client_cert.pem --key=${PWD}/client_priv.pem --cacert=${PWD}/ca.crt -t 8 --distinct-client-seed --hide-histogram --requests=$REQUESTS --clients=$CLIENTS --pipeline=$PIPELINE --data-size=$DATA_SIZE --key-pattern=G:G --key-minimum=${KEY_MINIMUM} --key-maximum=$KEY_MAXIMUM --key-median=$KEY_MEDIAN --key-stddev=$KEY_STDDEV | tee ./benchmarklogs-${{ matrix.variant.threads }}t/dragonfly_benchmarks_8threads_tls.txt || true 
+        memtier_benchmark -s 127.0.0.1 --ratio=1:15 -p 6392 --protocol=redis --tls --cert=${PWD}/client_cert.pem --key=${PWD}/client_priv.pem --cacert=${PWD}/ca.crt -a ${DRAGONFLY_PASSWORD} -t 8 --distinct-client-seed --hide-histogram --requests=$REQUESTS --clients=$CLIENTS --pipeline=$PIPELINE --data-size=$DATA_SIZE --key-pattern=G:G --key-minimum=${KEY_MINIMUM} --key-maximum=$KEY_MAXIMUM --key-median=$KEY_MEDIAN --key-stddev=$KEY_STDDEV | tee ./benchmarklogs-${{ matrix.variant.threads }}t/dragonfly_benchmarks_8threads_tls.txt || true 
 
     - name: Memtier 8 Threads Benchmark Valkey with TLS
       run: |
