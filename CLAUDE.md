@@ -361,6 +361,104 @@ Implemented TLSv1.2 forcing across all PHP Redis implementations to improve TLS 
 
 For detailed troubleshooting information, see CLAUDE-troubleshooting.md.
 
+## PHP Chart Generation Enhancements (June 2025)
+
+### Enhanced Workflow Chart Generation
+
+**Problem Addressed**: The GitHub workflow `benchmarks-v6-host-phptests.yml` used either/or logic for PHP chart generation, running only one of two chart scripts based on implementation availability.
+
+**Solution Implemented**: Enhanced the workflow to run both chart generation scripts sequentially with comprehensive error handling and logging.
+
+#### Workflow Changes (`.github/workflows/benchmarks-v6-host-phptests.yml`)
+
+**Key Improvements**:
+
+1. **Sequential Execution**: Always runs `php_redis_charts.py` (standard charts), then additionally runs `php_redis_charts_comparison.py` when both implementations are available
+2. **Fixed Variable Naming**: Corrected `PHPREDIS_FILES`/`PREDIS_FILES` variable naming bug
+3. **Robust Error Handling**: Added `|| { echo "⚠️ Script failed, but continuing..."; }` to prevent one script failure from stopping the workflow
+4. **Enhanced Logging**: 
+   - Clear section headers with `===` formatting
+   - Implementation file count reporting
+   - Detailed output summary with file counts
+   - Visual indicators using emojis
+   - Log file tracking and confirmation
+
+**Before vs After**:
+- **Before**: Either `php_redis_charts_comparison.py` OR `php_redis_charts.py` (never both)
+- **After**: Always `php_redis_charts.py` + conditionally `php_redis_charts_comparison.py`
+
+### Enhanced Comparison Script Missing Data Handling
+
+**Problem Addressed**: The `php_redis_charts_comparison.py` script couldn't gracefully handle scenarios where one implementation failed TLS tests while the other succeeded.
+
+**Solution Implemented**: Added separated TLS mode comparison functionality with comprehensive missing data handling.
+
+#### Comparison Script Changes (`tests/php/php_redis_charts_comparison.py`)
+
+**New Features**:
+
+1. **Separated TLS Mode Charts**: 
+   - `php_redis_implementation_comparison_non_tls.png` - Pure non-TLS comparison
+   - `php_redis_implementation_comparison_tls.png` - Pure TLS comparison (when data exists)
+   - Maintains original combined chart for backward compatibility
+
+2. **Missing Data Visualization**:
+   - "No Data" annotations on charts where implementations are missing
+   - Data availability heatmap showing which implementation+database combinations have results
+   - Proper NaN handling with visual indicators
+
+3. **Enhanced Data Analysis**:
+   - Data availability summary logging
+   - Per-implementation statistics reporting
+   - Graceful degradation when partial data exists
+
+4. **Improved User Experience**:
+   - Clear reporting of what charts were generated
+   - Detailed data availability breakdown
+   - Visual indicators for missing data scenarios
+
+**Chart Output Examples**:
+```
+📊 Chart types generated:
+  - Combined comparison (original)
+  - Separated non-TLS comparison
+  - Separated TLS comparison (or ⚠️ TLS comparison skipped if no TLS data)
+  - TLS reliability analysis
+  - Statistical comparison
+  - Summary report
+```
+
+#### Use Case Scenarios
+
+**Scenario 1**: Both implementations succeed (non-TLS + TLS)
+- ✅ Generates all chart types including complete comparisons
+
+**Scenario 2**: PHPRedis TLS fails, Predis TLS succeeds
+- ✅ Non-TLS comparison: PHPRedis vs Predis 
+- ✅ TLS comparison: Predis only (with "No Data" annotation for PHPRedis)
+- ✅ All other charts with appropriate missing data handling
+
+**Scenario 3**: Only one implementation has any results
+- ✅ Standard charts still generated via `php_redis_charts.py`
+- ⚠️ Comparison charts skipped with clear explanation
+
+### Benefits
+
+1. **Comprehensive Coverage**: Always get both standard and comparison charts when meaningful
+2. **Fault Tolerance**: One script failure doesn't break entire chart generation
+3. **Better Debugging**: Enhanced logging helps diagnose issues quickly
+4. **Flexible Handling**: Works whether you have complete, partial, or single implementation results
+5. **Clear Visualization**: Missing data is clearly indicated rather than shown as confusing zeros
+
+### Testing Recommendations
+
+When running the `benchmarks-v6-host-phptests.yml` workflow:
+- Check the workflow logs for the enhanced chart generation section
+- Look for both standard and comparison chart outputs in results
+- Verify missing data scenarios are handled gracefully with proper annotations
+
+For detailed troubleshooting information, see CLAUDE-troubleshooting.md.
+
 # important-instruction-reminders
 Do what has been asked; nothing more, nothing less.
 NEVER create files unless they're absolutely necessary for achieving your goal.
