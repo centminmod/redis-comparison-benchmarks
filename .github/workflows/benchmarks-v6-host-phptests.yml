@@ -267,7 +267,6 @@ jobs:
         echo "--port=6392" >> dragonfly-tls.conf
         echo "--tls_cert_file=/tls/test.crt" >> dragonfly-tls.conf
         echo "--tls_key_file=/tls/test.key" >> dragonfly-tls.conf
-        echo "--tls_ca_cert_file=/tls/ca.crt" >> dragonfly-tls.conf
         echo "--dbfilename=''" >> dragonfly-tls.conf
 
     - name: Update Valkey Configuration for TLS
@@ -2088,7 +2087,7 @@ jobs:
           - Generated charts for latency and ops/sec metrics
           - Both TLS and non-TLS configurations tested
           - Cleaned up old timestamped WordPress PHP test results
-          - Custom parameters: requests=${{ inputs.requests || '2000' }}, clients=${{ inputs.clients || '100' }}, pipeline=${{ inputs.pipeline || '1' }}, intrinsic_latency=${{ inputs.intrinsic_latency || '5' }}, data_size=${{ inputs.data_size || '1024' }}
+          - Custom parameters: requests=${{ inputs.requests || '5000' }}, clients=${{ inputs.clients || '100' }}, pipeline=${{ inputs.pipeline || '1' }}, intrinsic_latency=${{ inputs.intrinsic_latency || '5' }}, data_size=${{ inputs.data_size || '1024' }}
           - Key range: ${KEY_MINIMUM}-${{ inputs.key_maximum || '1000000' }}
           - Workflow: ${{ github.workflow }}
           - Run: ${{ github.run_number }}
