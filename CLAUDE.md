@@ -56,7 +56,7 @@ CLEANUP=y ./redis-benchmarks.sh  # Auto-cleanup after tests
 **Purpose**: Automated, matrix-based benchmarks with comprehensive result archiving
 
 #### Workflow Files
-- **Latest**: `.github/workflows/benchmarks-v6-host-phptests.yml` (includes PHP WordPress tests). This workflow already uses a max 10 action workflow input variables allowed. Any other togglable variables would need to be setup as workflow environmental variables instead.
+- **Latest**: `.github/workflows/benchmarks-v6-host-phptests.yml` (includes PHP WordPress tests). This workflow already uses the max 10 Github action workflow input variables allowed. Any other togglable variables would need to be setup as workflow environmental variables instead.
 - **Host Network**: `.github/workflows/benchmarks-v5-host.yml` (host networking, matrix strategy)
 - **Legacy**: `.github/workflows/benchmarks-v[1-4].yml` (historical versions)
 
