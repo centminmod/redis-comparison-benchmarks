@@ -167,6 +167,7 @@ tls-port 6390
 tls-cert-file /tls/test.crt
 tls-key-file /tls/test.key
 tls-ca-cert-file /tls/ca.crt
+tls-auth-clients no
 save ""
 appendonly no
 EOF
@@ -178,6 +179,7 @@ tls-port 6391
 tls-cert-file /tls/test.crt
 tls-key-file /tls/test.key
 tls-ca-cert-file /tls/ca.crt
+tls-auth-clients no
 save ""
 appendonly no
 EOF

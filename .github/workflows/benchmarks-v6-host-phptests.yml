@@ -241,6 +241,7 @@ jobs:
         echo "tls-cert-file /tls/test.crt" >> redis-tls.conf
         echo "tls-key-file /tls/test.key" >> redis-tls.conf
         echo "tls-ca-cert-file /tls/ca.crt" >> redis-tls.conf
+        echo "tls-auth-clients no" >> redis-tls.conf
         echo "save \"\"" >> redis-tls.conf
         echo "appendonly no" >> redis-tls.conf
     
@@ -255,6 +256,7 @@ jobs:
         echo "tls-cert-file /tls/test.crt" >> keydb-tls.conf
         echo "tls-key-file /tls/test.key" >> keydb-tls.conf
         echo "tls-ca-cert-file /tls/ca.crt" >> keydb-tls.conf
+        echo "tls-auth-clients no" >> keydb-tls.conf
         echo "save \"\"" >> keydb-tls.conf
         echo "appendonly no" >> keydb-tls.conf
     
