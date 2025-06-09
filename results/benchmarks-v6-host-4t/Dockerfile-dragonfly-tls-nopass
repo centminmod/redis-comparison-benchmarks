@@ -6,14 +6,15 @@ RUN mkdir -p /tls
 # Copy TLS certificates
 COPY test.crt /tls/test.crt
 COPY test.key /tls/test.key
-COPY ca.crt /tls/ca.crt
-COPY client_cert.pem /tls/client_cert.pem
-COPY client_priv.pem /tls/client_priv.pem
+#COPY ca.crt /tls/ca.crt
+#COPY client_cert.pem /tls/client_cert.pem
+#COPY client_priv.pem /tls/client_priv.pem
 
 # Ensure correct permissions
 RUN chown -R dfly:dfly /tls && \
     chmod -R 0644 /tls && \
-    chmod 0600 /tls/test.key /tls/client_priv.pem && \
+    chmod 0600 /tls/test.key && \
+    #chmod 0600 /tls/client_priv.pem && \
     chmod 0755 /tls
 
 # Expose the TLS port

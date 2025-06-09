@@ -262,7 +262,7 @@ jobs:
     
     - name: Update Dragonfly Configuration for TLS
       run: |
-        sed -i "s|--proactor_threads=3|--proactor_threads=${{ matrix.variant.dragonfly_proactor_threads }}|" Dockerfile-dragonfly-tls
+        sed -i "s|--proactor_threads=3|--proactor_threads=${{ matrix.variant.dragonfly_proactor_threads }}|" Dockerfile-dragonfly-tls-nopass
         echo "--proactor_threads=${{ matrix.variant.dragonfly_proactor_threads }}" >> dragonfly-tls.conf
         echo "--port=6392" >> dragonfly-tls.conf
         echo "--tls_cert_file=/tls/test.crt" >> dragonfly-tls.conf
