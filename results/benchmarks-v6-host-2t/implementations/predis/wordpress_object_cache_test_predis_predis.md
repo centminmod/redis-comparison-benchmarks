@@ -1,10 +1,10 @@
 # WordPress Object Cache Test (Predis)
 
-**Test Date:** 2025-06-09 04:15:38 UTC
+**Test Date:** 2025-06-09 11:44:08 UTC
 **PHP Version:** 8.4.7
 **Predis Version:** unknown
 **Redis Implementation:** Predis (Pure PHP)
-**Results Count:** 8
+**Results Count:** 7
 **Thread Variant:** 2
 
 ## Predis Configuration
@@ -33,24 +33,23 @@
 
 | Database | Mode | Implementation | Ops/sec | ±StdDev | CV% | Quality | Latency(ms) | ±StdDev | P95 Lat | P99 Lat | 95% CI | Iterations |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | 
-| Redis | Non-TLS | Predis | 10,470 | ±295 | 2.8% | 🟡 good | 0.095 | ±0.003 | 0.137 | 0.162 | 10,306-10,634 | 13 |
-| Redis | TLS | Predis | 8,038 | ±217 | 2.7% | 🟡 good | 0.124 | ±0.004 | 0.173 | 0.210 | 7,918-8,159 | 13 |
-| KeyDB | Non-TLS | Predis | 12,758 | ±355 | 2.8% | 🟡 good | 0.078 | ±0.002 | 0.121 | 0.142 | 12,561-12,955 | 13 |
-| KeyDB | TLS | Predis | 9,693 | ±268 | 2.8% | 🟡 good | 0.103 | ±0.003 | 0.151 | 0.180 | 9,545-9,841 | 13 |
-| Dragonfly | Non-TLS | Predis | 11,169 | ±335 | 3.0% | 🟡 good | 0.089 | ±0.003 | 0.137 | 0.165 | 10,983-11,354 | 13 |
-| Dragonfly | TLS | Predis | 8,328 | ±251 | 3.0% | 🟡 good | 0.120 | ±0.004 | 0.172 | 0.207 | 8,189-8,467 | 13 |
-| Valkey | Non-TLS | Predis | 15,029 | ±386 | 2.6% | 🟡 good | 0.066 | ±0.002 | 0.106 | 0.123 | 14,815-15,243 | 13 |
-| Valkey | TLS | Predis | 10,853 | ±323 | 3.0% | 🟡 good | 0.092 | ±0.003 | 0.140 | 0.165 | 10,674-11,032 | 13 |
+| Redis | Non-TLS | Predis | 10,422 | ±277 | 2.7% | 🟡 good | 0.095 | ±0.003 | 0.137 | 0.164 | 10,268-10,575 | 13 |
+| Redis | TLS | Predis | 7,968 | ±253 | 3.2% | 🟡 good | 0.125 | ±0.004 | 0.176 | 0.215 | 7,828-8,109 | 13 |
+| KeyDB | Non-TLS | Predis | 12,730 | ±382 | 3.0% | 🟡 good | 0.078 | ±0.003 | 0.122 | 0.142 | 12,519-12,942 | 13 |
+| KeyDB | TLS | Predis | 9,629 | ±266 | 2.8% | 🟡 good | 0.103 | ±0.003 | 0.152 | 0.181 | 9,481-9,776 | 13 |
+| Dragonfly | Non-TLS | Predis | 10,736 | ±284 | 2.6% | 🟡 good | 0.093 | ±0.003 | 0.142 | 0.170 | 10,578-10,893 | 13 |
+| Valkey | Non-TLS | Predis | 15,021 | ±390 | 2.6% | 🟡 good | 0.066 | ±0.002 | 0.107 | 0.125 | 14,805-15,238 | 13 |
+| Valkey | TLS | Predis | 10,700 | ±328 | 3.1% | 🟡 good | 0.093 | ±0.003 | 0.142 | 0.168 | 10,518-10,882 | 13 |
 
 ## Implementation Summary (Predis)
 
-- **Total Tests:** 8
-- **Reliable Measurements:** 8/8
+- **Total Tests:** 7
+- **Reliable Measurements:** 7/7
 - **Implementation:** Predis (Pure PHP Redis Client)
-- **Best Performance:** 15,029 ops/sec
-- **Average Performance:** 10,792 ops/sec
+- **Best Performance:** 15,021 ops/sec
+- **Average Performance:** 11,029 ops/sec
 - **Average Measurement Precision:** 2.8% CV
-- **TLS Connection Success:** 4/4 databases
+- **TLS Connection Success:** 3/4 databases
 - **TLS Reliability:** ✅ Enhanced with Predis
 
 ## Predis Advantages
