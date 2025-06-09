@@ -200,165 +200,146 @@ class RedisTestBasePredis {
     }
     
     /**
-     * Enhanced Predis connection with better TLS support and retry logic
+     * Connect to Redis using Predis with enhanced TLS support (corrected Predis syntax)
      */
-    protected function connectRedis($host, $port, $tls = false) {
-        $connection_label = $tls ? "TLS (Predis)" : "non-TLS (Predis)";
-        $this->debugLog("Attempting {$connection_label} connection to {$host}:{$port}");
+    protected function connectRedis($host, $port, $is_tls = false, $database_name = 'Unknown') {
+        $this->debugLog("🔌 Connecting to $database_name at $host:$port" . ($is_tls ? ' (TLS)' : '') . ' (Predis)');
         
-        $connection_params = [
-            'scheme' => $tls ? 'tls' : 'tcp',
-            'host' => $host,
-            'port' => $port,
-            'timeout' => $this->connection_timeout,
-            'read_write_timeout' => $this->read_write_timeout,
-        ];
-        
-        // Add persistent connection support
-        if ($this->persistent_connections) {
-            $connection_params['persistent'] = true;
-            $connection_params['connection_id'] = "predis_{$host}_{$port}_" . ($tls ? 'tls' : 'tcp');
-        }
-        
-        // Add TCP keepalive if enabled
-        if ($this->tcp_keepalive) {
-            $connection_params['tcp_keepalive'] = true;
-        }
-        
-        // Enhanced TLS configuration for Predis
-        if ($tls) {
-            // Check certificate availability first
-            $cert_validation = $this->validateTlsCertificatesForPredis();
-            if (!$cert_validation['valid']) {
-                echo "  TLS certificates not found for Predis: " . implode(', ', $cert_validation['missing']) . "\n";
-                echo "  Skipping TLS test for {$host}:{$port}\n";
-                return false;
-            }
-            
-            // Test port connectivity
-            if (!$this->testTlsPortConnectivity($host, $port)) {
-                echo "  TLS port not accessible for Predis connection to {$host}:{$port}\n";
-                return false;
-            }
-            
-            $this->debugLog("Configuring TLS parameters for Predis (forcing TLSv1.2)");
-            
-            // Predis TLS configuration - more flexible than phpredis, force TLSv1.2
-            $ssl_options = [
-                'verify_peer' => false,
-                'verify_peer_name' => false,
-                'allow_self_signed' => true,
-                'cafile' => './ca.crt',
-                'local_cert' => './client_cert.pem',
-                'local_pk' => './client_priv.pem',
-                'disable_compression' => true,
-                'capture_peer_cert' => false,
-                'crypto_method' => STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT
-            ];
-            
-            if ($this->tls_skip_verify) {
-                $ssl_options['verify_peer'] = false;
-                $ssl_options['verify_peer_name'] = false;
-            }
-            
-            $connection_params['ssl'] = $ssl_options;
-            $this->debugLog("TLS SSL options configured for Predis: " . json_encode(array_keys($ssl_options)));
-        }
-        
-        // Connection with retry logic
-        for ($attempt = 1; $attempt <= $this->connection_retry_attempts; $attempt++) {
+        if (!$is_tls) {
+            // Standard non-TLS connection with Predis
             try {
-                $this->debugLog("Predis connection attempt {$attempt}/{$this->connection_retry_attempts} to {$host}:{$port}");
-                
-                // Create Predis client with enhanced configuration
-                $redis = new Client($connection_params, [
-                    'exceptions' => true,  // Enable exceptions for better error handling
-                    'cluster' => null,     // Disable cluster mode
-                    'replication' => null  // Disable replication
+                $redis = new Client([
+                    'scheme' => 'tcp',
+                    'host' => $host,
+                    'port' => $port,
+                    'timeout' => $this->connection_timeout,
+                    'read_write_timeout' => $this->read_write_timeout
                 ]);
                 
-                // Test connection with SET/GET instead of PING to avoid Predis object serialization issues
-                $this->debugLog("Testing Predis connection with SET/GET test");
-                try {
-                    $test_key = 'predis_connection_test_' . uniqid();
-                    $redis->set($test_key, 'test_value', 'EX', 1);
-                    $result = $redis->get($test_key);
-                    $redis->del($test_key);
-                    
-                    if ($result === 'test_value') {
-                        $this->debugLog("Predis connection successful to {$host}:{$port} ({$connection_label})");
-                        
-                        // Additional TLS verification for Predis
-                        if ($tls) {
-                            try {
-                                // Test additional operations over TLS
-                                $test_key_tls = 'predis_tls_test_' . uniqid();
-                                $redis->set($test_key_tls, 'tls_test_value', 'EX', 1);
-                                $tls_result = $redis->get($test_key_tls);
-                                $redis->del($test_key_tls);
-                                
-                                if ($tls_result === 'tls_test_value') {
-                                    $this->debugLog("Predis TLS connection verified with additional SET/GET test");
-                                    return $redis;
-                                } else {
-                                    throw new Exception("TLS verification failed: unexpected GET result");
-                                }
-                            } catch (Exception $tls_e) {
-                                throw new Exception("TLS command test failed: " . $tls_e->getMessage());
-                            }
-                        }
-                        
-                        return $redis;
-                    } else {
-                        throw new Exception("Connection test failed: SET/GET test returned unexpected result");
-                    }
-                } catch (Exception $conn_e) {
-                    throw new Exception("Connection test failed: " . $conn_e->getMessage());
-                }
+                // Test connection
+                $redis->ping();
+                $this->debugLog("✅ Connected to $database_name (non-TLS) via Predis");
+                return $redis;
                 
-            } catch (ConnectionException $e) {
-                $error_msg = $e->getMessage();
-                $this->debugLog("Predis connection attempt {$attempt} failed: {$error_msg}");
-                
-                if ($attempt < $this->connection_retry_attempts) {
-                    $delay_ms = $this->connection_retry_delay * $attempt; // Exponential backoff
-                    $this->debugLog("Retrying Predis connection in {$delay_ms}ms...");
-                    usleep($delay_ms * 1000);
-                } else {
-                    if ($tls) {
-                        echo "  Predis TLS connection failed to {$host}:{$port} after {$this->connection_retry_attempts} attempts: {$error_msg}\n";
-                        echo "  → Skipping TLS test for this database and continuing\n";
-                    } else {
-                        echo "  Predis connection failed to {$host}:{$port} ({$connection_label}): {$error_msg}\n";
-                    }
-                    return false;
-                }
-            } catch (ServerException $e) {
-                $error_msg = $e->getMessage();
-                $this->debugLog("Predis server exception: {$error_msg}");
-                echo "  Predis server error for {$host}:{$port} ({$connection_label}): {$error_msg}\n";
-                return false;
             } catch (Exception $e) {
-                $error_msg = $e->getMessage();
-                $this->debugLog("Predis connection exception: {$error_msg}");
-                
-                if ($attempt < $this->connection_retry_attempts) {
-                    $delay_ms = $this->connection_retry_delay * $attempt;
-                    $this->debugLog("Retrying Predis connection in {$delay_ms}ms...");
-                    usleep($delay_ms * 1000);
-                } else {
-                    if ($tls) {
-                        echo "  Predis TLS connection exception for {$host}:{$port}: {$error_msg}\n";
-                        echo "  → Skipping TLS test and continuing\n";
-                    } else {
-                        echo "  Predis connection exception for {$host}:{$port} ({$connection_label}): {$error_msg}\n";
-                    }
-                    return false;
-                }
+                throw new Exception("Failed to connect to $database_name at $host:$port via Predis: " . $e->getMessage());
             }
         }
         
-        return false;
+        // TLS connection using Predis - uses different syntax than phpredis
+        echo "🔐 Attempting TLS connection to $database_name at $host:$port (Predis)\n";
+        echo "  Using custom port scheme: Redis=6390, KeyDB=6391, Dragonfly=6392, Valkey=6393\n";
+        echo "  Note: Predis uses 'tls' scheme and 'ssl' context array\n";
+        
+        try {
+            // Method 1: Predis TLS with 'tls' scheme (recommended approach)
+            echo "  📡 Method 1: Predis 'tls' scheme with SSL context...\n";
+            
+            $tls_params = [
+                'scheme' => 'tls',
+                'host' => $host,
+                'port' => $port,
+                'timeout' => $this->connection_timeout,
+                'read_write_timeout' => $this->read_write_timeout,
+                'ssl' => [
+                    'verify_peer' => false,
+                    'verify_peer_name' => false,
+                    'allow_self_signed' => true,
+                    'crypto_method' => STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT
+                ]
+            ];
+            
+            $redis = new Client($tls_params);
+            
+            // Test connection with SET/GET (more reliable than PING for TLS)
+            echo "  🧪 Testing TLS connection with SET/GET commands...\n";
+            $test_key = "tls_test_" . uniqid();
+            $test_value = "predis_tls_works";
+            
+            $redis->set($test_key, $test_value);
+            $retrieved = $redis->get($test_key);
+            $redis->del($test_key);
+            
+            if ($retrieved === $test_value) {
+                echo "  ✅ TLS connection successful with Predis 'tls' scheme\n";
+                $this->debugLog("✅ TLS connection to $database_name established via Predis");
+                return $redis;
+            } else {
+                echo "  ❌ SET/GET test failed over TLS\n";
+            }
+            
+        } catch (Exception $e) {
+            echo "  ❌ Predis 'tls' scheme failed: " . $e->getMessage() . "\n";
+        }
+        
+        try {
+            // Method 2: Predis 'rediss' URI scheme
+            echo "  📡 Method 2: Predis 'rediss' URI scheme...\n";
+            
+            $rediss_uri = "rediss://{$host}:{$port}?ssl[verify_peer]=0&ssl[verify_peer_name]=0&ssl[allow_self_signed]=1";
+            $redis = new Client($rediss_uri);
+            
+            // Test with SET/GET
+            $test_key = "tls_test_" . uniqid();
+            $test_value = "predis_rediss_works";
+            
+            $redis->set($test_key, $test_value);
+            $retrieved = $redis->get($test_key);
+            $redis->del($test_key);
+            
+            if ($retrieved === $test_value) {
+                echo "  ✅ TLS connection successful with Predis 'rediss' URI\n";
+                $this->debugLog("✅ TLS connection to $database_name established via Predis (rediss)");
+                return $redis;
+            }
+            
+        } catch (Exception $e) {
+            echo "  ❌ Predis 'rediss' URI failed: " . $e->getMessage() . "\n";
+        }
+        
+        try {
+            // Method 3: Fallback with localhost hostname
+            echo "  📡 Method 3: Predis TLS with localhost hostname...\n";
+            
+            $localhost_params = [
+                'scheme' => 'tls',
+                'host' => 'localhost',
+                'port' => $port,
+                'timeout' => $this->connection_timeout,
+                'read_write_timeout' => $this->read_write_timeout,
+                'ssl' => [
+                    'verify_peer' => false,
+                    'verify_peer_name' => false,
+                    'allow_self_signed' => true
+                ]
+            ];
+            
+            $redis = new Client($localhost_params);
+            
+            // Test with SET/GET
+            $test_key = "tls_test_" . uniqid();
+            $test_value = "predis_localhost_tls";
+            
+            $redis->set($test_key, $test_value);
+            $retrieved = $redis->get($test_key);
+            $redis->del($test_key);
+            
+            if ($retrieved === $test_value) {
+                echo "  ✅ TLS connection successful with Predis localhost\n";
+                $this->debugLog("✅ TLS connection to $database_name established via Predis (localhost)");
+                return $redis;
+            }
+            
+        } catch (Exception $e) {
+            echo "  ❌ Predis localhost TLS failed: " . $e->getMessage() . "\n";
+        }
+        
+        // If all TLS methods fail
+        echo "  ❌ All Predis TLS connection methods failed for $database_name at port $port\n";
+        echo "  Note: Predis typically has better TLS reliability than phpredis extension\n";
+        $this->debugLog("❌ Failed to establish TLS connection to $database_name via Predis");
+        
+        throw new Exception("Failed to establish TLS connection to $database_name at $host:$port via Predis");
     }
     
     /**
