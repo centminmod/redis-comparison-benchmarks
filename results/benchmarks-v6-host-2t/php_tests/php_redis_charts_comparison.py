@@ -499,16 +499,172 @@ class PHPRedisComparisonCharts:
         
         print(f"Saved implementation comparison report: {report_file}")
     
+    def create_separated_tls_comparison(self):
+        """Create separate charts for non-TLS and TLS comparisons to handle missing data gracefully"""
+        if self.comparison_data is None:
+            self.prepare_comparison_data()
+        
+        # Check what TLS data we have
+        non_tls_data = self.comparison_data[self.comparison_data['tls'] == False]
+        tls_data = self.comparison_data[self.comparison_data['tls'] == True]
+        
+        implementations = self.comparison_data['implementation'].unique()
+        databases = self.comparison_data['database'].unique()
+        
+        print(f"Data availability:")
+        for impl in implementations:
+            non_tls_count = len(non_tls_data[non_tls_data['implementation'] == impl])
+            tls_count = len(tls_data[tls_data['implementation'] == impl])
+            print(f"  {impl}: {non_tls_count} non-TLS, {tls_count} TLS results")
+        
+        # Generate Non-TLS comparison chart
+        if len(non_tls_data) > 0:
+            self._create_single_mode_comparison(non_tls_data, "Non-TLS", "non_tls")
+        
+        # Generate TLS comparison chart (with missing data handling)
+        if len(tls_data) > 0:
+            self._create_single_mode_comparison(tls_data, "TLS", "tls")
+        else:
+            print("⚠️ No TLS data available for comparison charts")
+    
+    def _create_single_mode_comparison(self, mode_data, mode_name, mode_suffix):
+        """Create comparison chart for a specific TLS mode (non-TLS or TLS)"""
+        fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(16, 12))
+        fig.suptitle(f'PHP Redis Implementation Comparison - {mode_name} Mode', fontsize=16, fontweight='bold')
+        
+        implementations = mode_data['implementation'].unique()
+        databases = mode_data['database'].unique()
+        
+        # 1. Operations per second comparison
+        ops_data = mode_data.pivot_table(
+            index='database', 
+            columns='implementation', 
+            values='ops_per_sec', 
+            aggfunc='mean'
+        )
+        
+        # Handle missing implementations
+        for impl in ['phpredis', 'predis']:
+            if impl not in ops_data.columns:
+                ops_data[impl] = np.nan
+        
+        # Plot with proper missing data handling
+        ax1_data = ops_data.fillna(0)  # Fill NaN with 0 for plotting
+        bars = ax1_data.plot(kind='bar', ax=ax1, color=[self.colors.get('phpredis', '#999'), self.colors.get('predis', '#999')])
+        ax1.set_title(f'Operations per Second - {mode_name}', fontweight='bold')
+        ax1.set_ylabel('Ops/sec')
+        ax1.tick_params(axis='x', rotation=45)
+        ax1.legend(title='Implementation')
+        
+        # Add missing data annotations
+        for i, db in enumerate(ax1_data.index):
+            for j, impl in enumerate(ax1_data.columns):
+                if pd.isna(ops_data.loc[db, impl]):
+                    ax1.text(i, ax1_data.loc[db, impl] + max(ax1_data.max()) * 0.02, 
+                           'No Data', ha='center', va='bottom', fontsize=8, color='red')
+        
+        # 2. Average latency comparison
+        latency_data = mode_data.pivot_table(
+            index='database', 
+            columns='implementation', 
+            values='avg_latency', 
+            aggfunc='mean'
+        )
+        
+        for impl in ['phpredis', 'predis']:
+            if impl not in latency_data.columns:
+                latency_data[impl] = np.nan
+        
+        ax2_data = latency_data.fillna(0)
+        latency_data.fillna(0).plot(kind='bar', ax=ax2, color=[self.colors.get('phpredis', '#999'), self.colors.get('predis', '#999')])
+        ax2.set_title(f'Average Latency - {mode_name}', fontweight='bold')
+        ax2.set_ylabel('Latency (ms)')
+        ax2.tick_params(axis='x', rotation=45)
+        ax2.legend(title='Implementation')
+        
+        # Add missing data annotations for latency
+        for i, db in enumerate(ax2_data.index):
+            for j, impl in enumerate(ax2_data.columns):
+                if pd.isna(latency_data.loc[db, impl]):
+                    ax2.text(i, ax2_data.loc[db, impl] + max(ax2_data.max()) * 0.02, 
+                           'No Data', ha='center', va='bottom', fontsize=8, color='red')
+        
+        # 3. Quality comparison
+        if 'measurement_quality' in mode_data.columns:
+            quality_mapping = {'excellent': 4, 'good': 3, 'fair': 2, 'poor': 1, 'unknown': 0}
+            mode_data_copy = mode_data.copy()
+            mode_data_copy['quality_score'] = mode_data_copy['measurement_quality'].map(quality_mapping)
+            
+            quality_data = mode_data_copy.pivot_table(
+                index='database', 
+                columns='implementation', 
+                values='quality_score', 
+                aggfunc='mean'
+            )
+            
+            for impl in ['phpredis', 'predis']:
+                if impl not in quality_data.columns:
+                    quality_data[impl] = np.nan
+            
+            quality_data.fillna(0).plot(kind='bar', ax=ax3, color=[self.colors.get('phpredis', '#999'), self.colors.get('predis', '#999')])
+            ax3.set_title(f'Measurement Quality - {mode_name}', fontweight='bold')
+            ax3.set_ylabel('Quality Score (4=Excellent, 1=Poor)')
+            ax3.tick_params(axis='x', rotation=45)
+            ax3.legend(title='Implementation')
+            ax3.set_ylim(0, 4.5)
+        
+        # 4. Implementation availability matrix
+        availability_matrix = []
+        for impl in ['phpredis', 'predis']:
+            row = []
+            for db in databases:
+                has_data = len(mode_data[(mode_data['implementation'] == impl) & (mode_data['database'] == db)]) > 0
+                row.append(1 if has_data else 0)
+            availability_matrix.append(row)
+        
+        sns.heatmap(availability_matrix, annot=True, cmap='RdYlGn', 
+                   xticklabels=databases, yticklabels=['phpredis', 'predis'],
+                   ax=ax4, cbar_kws={'label': 'Data Available (1=Yes, 0=No)'})
+        ax4.set_title(f'{mode_name} Data Availability Matrix', fontweight='bold')
+        
+        plt.tight_layout()
+        output_file = self.output_dir / f'php_redis_implementation_comparison_{mode_suffix}.png'
+        plt.savefig(output_file, dpi=300, bbox_inches='tight')
+        print(f"Saved {mode_name} comparison chart: {output_file}")
+        plt.close()
+
     def generate_all_charts(self):
-        """Generate all comparison charts"""
+        """Generate all comparison charts with enhanced missing data handling"""
         print("Loading data...")
         self.load_data()
         
         print("Preparing comparison data...")
         self.prepare_comparison_data()
         
-        print("Generating implementation performance comparison...")
+        # Check data availability for better reporting
+        non_tls_data = self.comparison_data[self.comparison_data['tls'] == False]
+        tls_data = self.comparison_data[self.comparison_data['tls'] == True]
+        implementations = self.comparison_data['implementation'].unique()
+        
+        print(f"\n=== Data Availability Summary ===")
+        print(f"Implementations found: {list(implementations)}")
+        print(f"Non-TLS results: {len(non_tls_data)} entries")
+        print(f"TLS results: {len(tls_data)} entries")
+        
+        for impl in implementations:
+            impl_non_tls = len(non_tls_data[non_tls_data['implementation'] == impl])
+            impl_tls = len(tls_data[tls_data['implementation'] == impl])
+            print(f"  {impl}: {impl_non_tls} non-TLS, {impl_tls} TLS")
+        
+        print("\n=== Generating Charts ===")
+        
+        # Generate original combined comparison (for backward compatibility)
+        print("Generating combined implementation performance comparison...")
         self.create_implementation_performance_comparison()
+        
+        # Generate separated TLS mode comparisons (enhanced)
+        print("Generating separated TLS mode comparisons...")
+        self.create_separated_tls_comparison()
         
         print("Generating TLS reliability analysis...")
         self.create_tls_reliability_analysis()
@@ -520,6 +676,16 @@ class PHPRedisComparisonCharts:
         self.create_implementation_summary_report()
         
         print(f"\nAll charts and reports saved to: {self.output_dir}")
+        print(f"📊 Chart types generated:")
+        print(f"  - Combined comparison (original)")
+        print(f"  - Separated non-TLS comparison")
+        if len(tls_data) > 0:
+            print(f"  - Separated TLS comparison")
+        else:
+            print(f"  - ⚠️ TLS comparison skipped (no TLS data)")
+        print(f"  - TLS reliability analysis")
+        print(f"  - Statistical comparison")
+        print(f"  - Summary report")
 
 def main():
     parser = argparse.ArgumentParser(description='Generate PHP Redis implementation comparison charts')

@@ -45,7 +45,7 @@ Configuration: {
 }
 
 Starting WordPress Object Cache Test...
-Timestamp: 2025-06-08 23:05:17 UTC
+Timestamp: 2025-06-09 03:13:52 UTC
 Redis Extension Version: 6.2.0
 Enhanced Testing Configuration:
 - Iterations per test: 13
@@ -73,35 +73,35 @@ Testing Redis...
   Running 13 iterations for Redis (non-TLS)...
   Initial keys in database: 0
   Flushing database before test...
-  Database flushed in 0.23ms. Keys remaining: 0
-    Iteration 1/13... 15244 ops/sec, 0.065ms latency
-    Iteration 2/13... 15510 ops/sec, 0.064ms latency
-    Iteration 3/13... 15961 ops/sec, 0.062ms latency
-    Iteration 4/13... 15880 ops/sec, 0.062ms latency
-    Iteration 5/13... 16157 ops/sec, 0.061ms latency
-    Iteration 6/13... 16086 ops/sec, 0.062ms latency
-    Iteration 7/13... 16541 ops/sec, 0.060ms latency
-    Iteration 8/13... 16083 ops/sec, 0.062ms latency
-    Iteration 9/13... 16178 ops/sec, 0.061ms latency
-    Iteration 10/13... 16474 ops/sec, 0.060ms latency
-    Iteration 11/13... 16373 ops/sec, 0.060ms latency
-    Iteration 12/13... 16777 ops/sec, 0.059ms latency
-    Iteration 13/13... 16478 ops/sec, 0.060ms latency
-  Redis (non-TLS): 16133.98±423.66 ops/sec (CV: 2.6%), 0.061±0.002ms latency, Quality: good
-  Final keys in database: 394674
+  Database flushed in 0.26ms. Keys remaining: 0
+    Iteration 1/13... 15639 ops/sec, 0.063ms latency
+    Iteration 2/13... 15798 ops/sec, 0.063ms latency
+    Iteration 3/13... 15855 ops/sec, 0.062ms latency
+    Iteration 4/13... 15709 ops/sec, 0.063ms latency
+    Iteration 5/13... 16439 ops/sec, 0.060ms latency
+    Iteration 6/13... 16109 ops/sec, 0.061ms latency
+    Iteration 7/13... 16480 ops/sec, 0.060ms latency
+    Iteration 8/13... 16399 ops/sec, 0.060ms latency
+    Iteration 9/13... 16729 ops/sec, 0.059ms latency
+    Iteration 10/13... 16728 ops/sec, 0.059ms latency
+    Iteration 11/13... 16663 ops/sec, 0.059ms latency
+    Iteration 12/13... 17019 ops/sec, 0.058ms latency
+    Iteration 13/13... 17050 ops/sec, 0.058ms latency
+  Redis (non-TLS): 16355.25±489.38 ops/sec (CV: 3.0%), 0.061±0.002ms latency, Quality: good
+  Final keys in database: 394892
   🔐 Starting detailed TLS connection debugging for 127.0.0.1:6390
     🔍 Debugging certificate files:
     📄 local_cert: ./client_cert.pem (1233 bytes, perms: 0644)
       Subject CN: test.server.com
       Issuer CN: CA
-      Valid from: 2025-06-08 22:44:21
-      Valid to: 2026-06-08 22:44:21
+      Valid from: 2025-06-09 02:49:11
+      Valid to: 2026-06-09 02:49:11
     📄 local_pk: ./client_priv.pem (1704 bytes, perms: 0600)
     📄 cafile: ./ca.crt (1338 bytes, perms: 0644)
       Subject CN: CA
       Issuer CN: CA
-      Valid from: 2025-06-08 22:44:21
-      Valid to: 2026-06-08 22:44:21
+      Valid from: 2025-06-09 02:49:10
+      Valid to: 2026-06-09 02:49:10
   📡 Test 1: Raw SSL socket connection...
     🔍 Testing raw SSL socket to 127.0.0.1:6390
     ✅ Raw SSL socket connection successful
@@ -154,35 +154,35 @@ Testing KeyDB...
   Running 13 iterations for KeyDB (non-TLS)...
   Initial keys in database: 0
   Flushing database before test...
-  Database flushed in 0.24ms. Keys remaining: 0
-    Iteration 1/13... 13549 ops/sec, 0.073ms latency
-    Iteration 2/13... 13539 ops/sec, 0.073ms latency
-    Iteration 3/13... 13718 ops/sec, 0.072ms latency
-    Iteration 4/13... 13729 ops/sec, 0.072ms latency
-    Iteration 5/13... 13841 ops/sec, 0.071ms latency
-    Iteration 6/13... 13837 ops/sec, 0.072ms latency
-    Iteration 7/13... 13981 ops/sec, 0.071ms latency
-    Iteration 8/13... 13878 ops/sec, 0.071ms latency
-    Iteration 9/13... 14164 ops/sec, 0.070ms latency
-    Iteration 10/13... 14200 ops/sec, 0.070ms latency
-    Iteration 11/13... 14417 ops/sec, 0.069ms latency
-    Iteration 12/13... 14317 ops/sec, 0.069ms latency
-    Iteration 13/13... 14349 ops/sec, 0.069ms latency
-  KeyDB (non-TLS): 13962.95±300.05 ops/sec (CV: 2.1%), 0.071±0.002ms latency, Quality: good
-  Final keys in database: 395176
+  Database flushed in 0.11ms. Keys remaining: 0
+    Iteration 1/13... 13445 ops/sec, 0.074ms latency
+    Iteration 2/13... 13552 ops/sec, 0.073ms latency
+    Iteration 3/13... 13697 ops/sec, 0.072ms latency
+    Iteration 4/13... 13682 ops/sec, 0.072ms latency
+    Iteration 5/13... 13821 ops/sec, 0.072ms latency
+    Iteration 6/13... 13677 ops/sec, 0.072ms latency
+    Iteration 7/13... 13903 ops/sec, 0.071ms latency
+    Iteration 8/13... 13827 ops/sec, 0.072ms latency
+    Iteration 9/13... 14099 ops/sec, 0.070ms latency
+    Iteration 10/13... 14217 ops/sec, 0.070ms latency
+    Iteration 11/13... 14101 ops/sec, 0.070ms latency
+    Iteration 12/13... 14234 ops/sec, 0.070ms latency
+    Iteration 13/13... 14390 ops/sec, 0.069ms latency
+  KeyDB (non-TLS): 13895.66±290.04 ops/sec (CV: 2.1%), 0.071±0.002ms latency, Quality: good
+  Final keys in database: 395348
   🔐 Starting detailed TLS connection debugging for 127.0.0.1:6391
     🔍 Debugging certificate files:
     📄 local_cert: ./client_cert.pem (1233 bytes, perms: 0644)
       Subject CN: test.server.com
       Issuer CN: CA
-      Valid from: 2025-06-08 22:44:21
-      Valid to: 2026-06-08 22:44:21
+      Valid from: 2025-06-09 02:49:11
+      Valid to: 2026-06-09 02:49:11
     📄 local_pk: ./client_priv.pem (1704 bytes, perms: 0600)
     📄 cafile: ./ca.crt (1338 bytes, perms: 0644)
       Subject CN: CA
       Issuer CN: CA
-      Valid from: 2025-06-08 22:44:21
-      Valid to: 2026-06-08 22:44:21
+      Valid from: 2025-06-09 02:49:10
+      Valid to: 2026-06-09 02:49:10
   📡 Test 1: Raw SSL socket connection...
     🔍 Testing raw SSL socket to 127.0.0.1:6391
     ✅ Raw SSL socket connection successful
@@ -235,35 +235,35 @@ Testing Dragonfly...
   Running 13 iterations for Dragonfly (non-TLS)...
   Initial keys in database: 0
   Flushing database before test...
-  Database flushed in 0.72ms. Keys remaining: 0
-    Iteration 1/13... 11477 ops/sec, 0.086ms latency
-    Iteration 2/13... 11498 ops/sec, 0.086ms latency
-    Iteration 3/13... 11473 ops/sec, 0.086ms latency
-    Iteration 4/13... 11700 ops/sec, 0.085ms latency
-    Iteration 5/13... 11523 ops/sec, 0.086ms latency
-    Iteration 6/13... 11675 ops/sec, 0.085ms latency
-    Iteration 7/13... 11769 ops/sec, 0.084ms latency
-    Iteration 8/13... 11949 ops/sec, 0.083ms latency
-    Iteration 9/13... 11985 ops/sec, 0.083ms latency
-    Iteration 10/13... 11914 ops/sec, 0.083ms latency
-    Iteration 11/13... 12048 ops/sec, 0.082ms latency
-    Iteration 12/13... 12087 ops/sec, 0.082ms latency
-    Iteration 13/13... 12046 ops/sec, 0.082ms latency
-  Dragonfly (non-TLS): 11780.41±237.23 ops/sec (CV: 2.0%), 0.084±0.002ms latency, Quality: good
-  Final keys in database: 395112
+  Database flushed in 0.50ms. Keys remaining: 0
+    Iteration 1/13... 10919 ops/sec, 0.091ms latency
+    Iteration 2/13... 10978 ops/sec, 0.090ms latency
+    Iteration 3/13... 11280 ops/sec, 0.088ms latency
+    Iteration 4/13... 11363 ops/sec, 0.087ms latency
+    Iteration 5/13... 11314 ops/sec, 0.088ms latency
+    Iteration 6/13... 11441 ops/sec, 0.087ms latency
+    Iteration 7/13... 11390 ops/sec, 0.087ms latency
+    Iteration 8/13... 11407 ops/sec, 0.087ms latency
+    Iteration 9/13... 11511 ops/sec, 0.086ms latency
+    Iteration 10/13... 11292 ops/sec, 0.088ms latency
+    Iteration 11/13... 11648 ops/sec, 0.085ms latency
+    Iteration 12/13... 11948 ops/sec, 0.083ms latency
+    Iteration 13/13... 11800 ops/sec, 0.084ms latency
+  Dragonfly (non-TLS): 11406.89±285.73 ops/sec (CV: 2.5%), 0.087±0.002ms latency, Quality: good
+  Final keys in database: 395738
   🔐 Starting detailed TLS connection debugging for 127.0.0.1:6392
     🔍 Debugging certificate files:
     📄 local_cert: ./client_cert.pem (1233 bytes, perms: 0644)
       Subject CN: test.server.com
       Issuer CN: CA
-      Valid from: 2025-06-08 22:44:21
-      Valid to: 2026-06-08 22:44:21
+      Valid from: 2025-06-09 02:49:11
+      Valid to: 2026-06-09 02:49:11
     📄 local_pk: ./client_priv.pem (1704 bytes, perms: 0600)
     📄 cafile: ./ca.crt (1338 bytes, perms: 0644)
       Subject CN: CA
       Issuer CN: CA
-      Valid from: 2025-06-08 22:44:21
-      Valid to: 2026-06-08 22:44:21
+      Valid from: 2025-06-09 02:49:10
+      Valid to: 2026-06-09 02:49:10
   📡 Test 1: Raw SSL socket connection...
     🔍 Testing raw SSL socket to 127.0.0.1:6392
     ✅ Raw SSL socket connection successful
@@ -276,11 +276,11 @@ Testing Dragonfly...
     🧪 Testing Redis commands over TLS...
       📞 Testing PING...
       ✅ PING successful: false
-      💾 Testing SET with key: tls_test_6846185d72887...
-      ❌ Command failed: Connection lost
+      💾 Testing SET with key: tls_test_684652a3369e9...
+      ❌ Command failed: read error on connection to 127.0.0.1:6392
       🔍 Error details: RedisException
-      💔 Connection appears dead: Redis server 127.0.0.1:6392 went away
-    ⚠️ Command test failed for minimal SSL: Connection lost
+      📊 Server still responsive, got info: non-array
+    ⚠️ Command test failed for minimal SSL: read error on connection to 127.0.0.1:6392
   📡 Test 3: SSL context with certificates and TLSv1.2...
     🔧 Testing: with certificates
     📋 SSL Context: ["verify_peer","verify_peer_name","allow_self_signed","local_cert","local_pk","cafile","crypto_method"]
@@ -288,7 +288,9 @@ Testing Dragonfly...
     🧪 Testing Redis commands over TLS...
       📞 Testing PING...
       ✅ PING successful: false
-      💾 Testing SET with key: tls_test_6846185d7299e...
+      💾 Testing SET with key: tls_test_684652a336e13...
+      ✅ SET successful: false
+      📖 Testing GET...
       ❌ Command failed: read error on connection to 127.0.0.1:6392
       🔍 Error details: RedisException
       📊 Server still responsive, got info: non-array
@@ -300,9 +302,7 @@ Testing Dragonfly...
     🧪 Testing Redis commands over TLS...
       📞 Testing PING...
       ✅ PING successful: false
-      💾 Testing SET with key: tls_test_6846185d72b99...
-      ✅ SET successful: false
-      📖 Testing GET...
+      💾 Testing SET with key: tls_test_684652a337197...
       ❌ Command failed: read error on connection to 127.0.0.1:6392
       🔍 Error details: RedisException
       📊 Server still responsive, got info: non-array
@@ -314,7 +314,7 @@ Testing Dragonfly...
     🧪 Testing Redis commands over TLS...
       📞 Testing PING...
       ✅ PING successful: false
-      💾 Testing SET with key: tls_test_6846185d72e53...
+      💾 Testing SET with key: tls_test_684652a337365...
       ❌ Command failed: read error on connection to 127.0.0.1:6392
       🔍 Error details: RedisException
       📊 Server still responsive, got info: non-array
@@ -337,34 +337,34 @@ Testing Valkey...
   Initial keys in database: 0
   Flushing database before test...
   Database flushed in 0.08ms. Keys remaining: 0
-    Iteration 1/13... 15511 ops/sec, 0.064ms latency
-    Iteration 2/13... 15877 ops/sec, 0.062ms latency
-    Iteration 3/13... 16181 ops/sec, 0.061ms latency
-    Iteration 4/13... 15839 ops/sec, 0.062ms latency
-    Iteration 5/13... 16072 ops/sec, 0.062ms latency
-    Iteration 6/13... 16436 ops/sec, 0.060ms latency
-    Iteration 7/13... 16504 ops/sec, 0.060ms latency
-    Iteration 8/13... 16652 ops/sec, 0.059ms latency
-    Iteration 9/13... 16388 ops/sec, 0.060ms latency
-    Iteration 10/13... 16756 ops/sec, 0.059ms latency
-    Iteration 11/13... 16490 ops/sec, 0.060ms latency
-    Iteration 12/13... 16774 ops/sec, 0.059ms latency
-    Iteration 13/13... 16833 ops/sec, 0.059ms latency
-  Valkey (non-TLS): 16331.76±409.38 ops/sec (CV: 2.5%), 0.061±0.002ms latency, Quality: good
-  Final keys in database: 395580
+    Iteration 1/13... 15761 ops/sec, 0.063ms latency
+    Iteration 2/13... 15904 ops/sec, 0.062ms latency
+    Iteration 3/13... 15897 ops/sec, 0.062ms latency
+    Iteration 4/13... 16298 ops/sec, 0.061ms latency
+    Iteration 5/13... 15929 ops/sec, 0.062ms latency
+    Iteration 6/13... 16157 ops/sec, 0.061ms latency
+    Iteration 7/13... 16142 ops/sec, 0.061ms latency
+    Iteration 8/13... 16479 ops/sec, 0.060ms latency
+    Iteration 9/13... 16940 ops/sec, 0.058ms latency
+    Iteration 10/13... 16763 ops/sec, 0.059ms latency
+    Iteration 11/13... 16556 ops/sec, 0.060ms latency
+    Iteration 12/13... 16515 ops/sec, 0.060ms latency
+    Iteration 13/13... 16674 ops/sec, 0.059ms latency
+  Valkey (non-TLS): 16308.79±376.28 ops/sec (CV: 2.3%), 0.061±0.001ms latency, Quality: good
+  Final keys in database: 395809
   🔐 Starting detailed TLS connection debugging for 127.0.0.1:6393
     🔍 Debugging certificate files:
     📄 local_cert: ./client_cert.pem (1233 bytes, perms: 0644)
       Subject CN: test.server.com
       Issuer CN: CA
-      Valid from: 2025-06-08 22:44:21
-      Valid to: 2026-06-08 22:44:21
+      Valid from: 2025-06-09 02:49:11
+      Valid to: 2026-06-09 02:49:11
     📄 local_pk: ./client_priv.pem (1704 bytes, perms: 0600)
     📄 cafile: ./ca.crt (1338 bytes, perms: 0644)
       Subject CN: CA
       Issuer CN: CA
-      Valid from: 2025-06-08 22:44:21
-      Valid to: 2026-06-08 22:44:21
+      Valid from: 2025-06-09 02:49:10
+      Valid to: 2026-06-09 02:49:10
   📡 Test 1: Raw SSL socket connection...
     🔍 Testing raw SSL socket to 127.0.0.1:6393
     ✅ Raw SSL socket connection successful
@@ -419,7 +419,7 @@ Enhanced results saved:
   Raw Data: ./benchmarklogs-1t/wordpress_object_cache_test_raw.json
 ============================================================
 Enhanced test suite completed!
-Total execution time: 389.86 seconds
+Total execution time: 393.00 seconds
 Total tests run: 4
 Statistical iterations per test: 13
 Results saved to ./benchmarklogs-1t/
@@ -430,27 +430,27 @@ Thread Variant: 1 | Iterations per test: 13
 ====================================================================================================
 Rank Database                  Ops/sec   ±StdDev      CV%  Latency  Quality     95% CI     Reliable
 ----------------------------------------------------------------------------------------------------
-#1  Valkey                  16332      409    2.5%  0.061ms 🟡good    16,105-16,559      ✅
-#2  Redis                   16134      424    2.6%  0.061ms 🟡good    15,899-16,369      ✅
-#3  KeyDB                   13963      300    2.1%  0.071ms 🟡good    13,797-14,129      ✅
-#4  Dragonfly               11780      237    2.0%  0.084ms 🟡good    11,649-11,912      ✅
+#1  Redis                   16355      489    3.0%  0.061ms 🟡good    16,084-16,627      ✅
+#2  Valkey                  16309      376    2.3%  0.061ms 🟡good    16,100-16,518      ✅
+#3  KeyDB                   13896      290    2.1%  0.071ms 🟡good    13,735-14,057      ✅
+#4  Dragonfly               11407      286    2.5%  0.087ms 🟡good    11,248-11,565      ✅
 ====================================================================================================
 Quick Insights:
 - Reliable measurements: 4/4
-- 🏆 Best: Valkey - 16,332 ops/sec
-- 📊 Average precision: 2.3% CV
+- 🏆 Best: Redis - 16,355 ops/sec
+- 📊 Average precision: 2.5% CV
 
 ================================================================================
 WORDPRESS PERFORMANCE ANALYSIS
 ================================================================================
-Redis                | Light pages:   1613/sec | Heavy pages:    323/sec
-KeyDB                | Light pages:   1396/sec | Heavy pages:    279/sec
-Dragonfly            | Light pages:   1178/sec | Heavy pages:    236/sec
-Valkey               | Light pages:   1633/sec | Heavy pages:    327/sec
+Redis                | Light pages:   1636/sec | Heavy pages:    327/sec
+KeyDB                | Light pages:   1390/sec | Heavy pages:    278/sec
+Dragonfly            | Light pages:   1141/sec | Heavy pages:    228/sec
+Valkey               | Light pages:   1631/sec | Heavy pages:    326/sec
 
 WordPress Cache Recommendations:
-- 🏆 Best performer: Valkey
-- 📊 Estimated capacity: 544 concurrent users (30 cache ops/user/sec)
+- 🏆 Best performer: Redis
+- 📊 Estimated capacity: 545 concurrent users (30 cache ops/user/sec)
 - 💡 For production WordPress, consider read/write ratios: 90/10 for cached sites, 70/30 for dynamic sites
 ================================================================================
 
@@ -470,12 +470,12 @@ Measurement Quality Distribution:
   🟡 Good      :  4 tests (100.0%)
 
 Coefficient of Variation Analysis:
-  Average CV: 2.3% (lower is better)
-  Range: 2.0% - 2.6%
+  Average CV: 2.5% (lower is better)
+  Range: 2.1% - 3.0%
   📊 Good measurement consistency
 
 Performance Analysis:
-  Performance range: 11780 - 16332 ops/sec (38.6% spread)
+  Performance range: 11407 - 16355 ops/sec (43.4% spread)
   📈 Relatively similar performance across databases
 
 Statistical Recommendations:
@@ -534,7 +534,7 @@ Test Environment:
 Initializing WordPress Object Cache Test...
 
 Starting WordPress Object Cache Test...
-Timestamp: 2025-06-08 23:11:47 UTC
+Timestamp: 2025-06-09 03:20:25 UTC
 Redis Extension Version: 6.2.0
 Enhanced Testing Configuration:
 - Iterations per test: 13
@@ -560,37 +560,37 @@ TLS testing will be attempted for: Redis, KeyDB, Dragonfly, Valkey
 Testing Redis...
   Configuration: IO Threads: 1
   Running 13 iterations for Redis (non-TLS)...
-  Initial keys in database: 394673
+  Initial keys in database: 394891
   Flushing database before test...
-  Database flushed in 215.06ms. Keys remaining: 0
-    Iteration 1/13... 15541 ops/sec, 0.064ms latency
-    Iteration 2/13... 15835 ops/sec, 0.062ms latency
-    Iteration 3/13... 16000 ops/sec, 0.062ms latency
-    Iteration 4/13... 15765 ops/sec, 0.063ms latency
-    Iteration 5/13... 16186 ops/sec, 0.061ms latency
-    Iteration 6/13... 16128 ops/sec, 0.061ms latency
-    Iteration 7/13... 16223 ops/sec, 0.061ms latency
-    Iteration 8/13... 16276 ops/sec, 0.061ms latency
-    Iteration 9/13... 16275 ops/sec, 0.061ms latency
-    Iteration 10/13... 16811 ops/sec, 0.059ms latency
-    Iteration 11/13... 16448 ops/sec, 0.060ms latency
-    Iteration 12/13... 16687 ops/sec, 0.059ms latency
-    Iteration 13/13... 16656 ops/sec, 0.059ms latency
-  Redis (non-TLS): 16217.71±375.15 ops/sec (CV: 2.3%), 0.061±0.001ms latency, Quality: good
-  Final keys in database: 395053
+  Database flushed in 211.61ms. Keys remaining: 0
+    Iteration 1/13... 15893 ops/sec, 0.062ms latency
+    Iteration 2/13... 16252 ops/sec, 0.061ms latency
+    Iteration 3/13... 15886 ops/sec, 0.062ms latency
+    Iteration 4/13... 15910 ops/sec, 0.062ms latency
+    Iteration 5/13... 16393 ops/sec, 0.060ms latency
+    Iteration 6/13... 16640 ops/sec, 0.060ms latency
+    Iteration 7/13... 17001 ops/sec, 0.058ms latency
+    Iteration 8/13... 16393 ops/sec, 0.060ms latency
+    Iteration 9/13... 16564 ops/sec, 0.060ms latency
+    Iteration 10/13... 16731 ops/sec, 0.059ms latency
+    Iteration 11/13... 17134 ops/sec, 0.058ms latency
+    Iteration 12/13... 17096 ops/sec, 0.058ms latency
+    Iteration 13/13... 17420 ops/sec, 0.057ms latency
+  Redis (non-TLS): 16562.55±504.94 ops/sec (CV: 3.0%), 0.060±0.002ms latency, Quality: good
+  Final keys in database: 394488
   🔐 Starting detailed TLS connection debugging for 127.0.0.1:6390
     🔍 Debugging certificate files:
     📄 local_cert: ./client_cert.pem (1233 bytes, perms: 0644)
       Subject CN: test.server.com
       Issuer CN: CA
-      Valid from: 2025-06-08 22:44:21
-      Valid to: 2026-06-08 22:44:21
+      Valid from: 2025-06-09 02:49:11
+      Valid to: 2026-06-09 02:49:11
     📄 local_pk: ./client_priv.pem (1704 bytes, perms: 0600)
     📄 cafile: ./ca.crt (1338 bytes, perms: 0644)
       Subject CN: CA
       Issuer CN: CA
-      Valid from: 2025-06-08 22:44:21
-      Valid to: 2026-06-08 22:44:21
+      Valid from: 2025-06-09 02:49:10
+      Valid to: 2026-06-09 02:49:10
   📡 Test 1: Raw SSL socket connection...
     🔍 Testing raw SSL socket to 127.0.0.1:6390
     ✅ Raw SSL socket connection successful
@@ -641,37 +641,37 @@ Testing Redis...
 Testing KeyDB...
   Configuration: Server Threads: 1
   Running 13 iterations for KeyDB (non-TLS)...
-  Initial keys in database: 395173
+  Initial keys in database: 395346
   Flushing database before test...
-  Database flushed in 197.11ms. Keys remaining: 0
-    Iteration 1/13... 13499 ops/sec, 0.073ms latency
-    Iteration 2/13... 13471 ops/sec, 0.073ms latency
-    Iteration 3/13... 13568 ops/sec, 0.073ms latency
-    Iteration 4/13... 13689 ops/sec, 0.072ms latency
-    Iteration 5/13... 13789 ops/sec, 0.072ms latency
-    Iteration 6/13... 13787 ops/sec, 0.072ms latency
-    Iteration 7/13... 13820 ops/sec, 0.072ms latency
-    Iteration 8/13... 13688 ops/sec, 0.072ms latency
-    Iteration 9/13... 13991 ops/sec, 0.071ms latency
-    Iteration 10/13... 14138 ops/sec, 0.070ms latency
-    Iteration 11/13... 14221 ops/sec, 0.070ms latency
-    Iteration 12/13... 14107 ops/sec, 0.070ms latency
-    Iteration 13/13... 14357 ops/sec, 0.069ms latency
-  KeyDB (non-TLS): 13855.79±284.36 ops/sec (CV: 2.1%), 0.071±0.001ms latency, Quality: good
-  Final keys in database: 395367
+  Database flushed in 226.19ms. Keys remaining: 0
+    Iteration 1/13... 13526 ops/sec, 0.073ms latency
+    Iteration 2/13... 13603 ops/sec, 0.073ms latency
+    Iteration 3/13... 13450 ops/sec, 0.074ms latency
+    Iteration 4/13... 13547 ops/sec, 0.073ms latency
+    Iteration 5/13... 13868 ops/sec, 0.071ms latency
+    Iteration 6/13... 13831 ops/sec, 0.072ms latency
+    Iteration 7/13... 13921 ops/sec, 0.071ms latency
+    Iteration 8/13... 13827 ops/sec, 0.072ms latency
+    Iteration 9/13... 13981 ops/sec, 0.071ms latency
+    Iteration 10/13... 14222 ops/sec, 0.070ms latency
+    Iteration 11/13... 14361 ops/sec, 0.069ms latency
+    Iteration 12/13... 14188 ops/sec, 0.070ms latency
+    Iteration 13/13... 14325 ops/sec, 0.069ms latency
+  KeyDB (non-TLS): 13896.19±309.88 ops/sec (CV: 2.2%), 0.071±0.002ms latency, Quality: good
+  Final keys in database: 395293
   🔐 Starting detailed TLS connection debugging for 127.0.0.1:6391
     🔍 Debugging certificate files:
     📄 local_cert: ./client_cert.pem (1233 bytes, perms: 0644)
       Subject CN: test.server.com
       Issuer CN: CA
-      Valid from: 2025-06-08 22:44:21
-      Valid to: 2026-06-08 22:44:21
+      Valid from: 2025-06-09 02:49:11
+      Valid to: 2026-06-09 02:49:11
     📄 local_pk: ./client_priv.pem (1704 bytes, perms: 0600)
     📄 cafile: ./ca.crt (1338 bytes, perms: 0644)
       Subject CN: CA
       Issuer CN: CA
-      Valid from: 2025-06-08 22:44:21
-      Valid to: 2026-06-08 22:44:21
+      Valid from: 2025-06-09 02:49:10
+      Valid to: 2026-06-09 02:49:10
   📡 Test 1: Raw SSL socket connection...
     🔍 Testing raw SSL socket to 127.0.0.1:6391
     ✅ Raw SSL socket connection successful
@@ -699,16 +699,16 @@ Testing KeyDB...
     ✅ Redis TLS connection successful with full SSL context
     🧪 Testing Redis commands over TLS...
       📞 Testing PING...
-      ❌ PING failed: Connection lost
-    ⚠️ Command test failed for full SSL context: Connection lost
+      ❌ PING failed: socket error on read socket
+    ⚠️ Command test failed for full SSL context: socket error on read socket
   📡 Test 5: TLSv1.2 fallback test...
     🔧 Testing: TLSv1.2
     📋 SSL Context: ["verify_peer","verify_peer_name","allow_self_signed","crypto_method"]
     ✅ Redis TLS connection successful with TLSv1.2
     🧪 Testing Redis commands over TLS...
       📞 Testing PING...
-      ❌ PING failed: Connection lost
-    ⚠️ Command test failed for TLSv1.2: Connection lost
+      ❌ PING failed: socket error on read socket
+    ⚠️ Command test failed for TLSv1.2: socket error on read socket
   📡 Test 6: Minimal SSL without command validation...
     🔧 Testing: minimal SSL (no command test)
     📋 SSL Context: ["verify_peer","verify_peer_name","allow_self_signed","crypto_method"]
@@ -722,37 +722,37 @@ Testing KeyDB...
 Testing Dragonfly...
   Configuration: Proactor Threads: 1
   Running 13 iterations for Dragonfly (non-TLS)...
-  Initial keys in database: 395092
+  Initial keys in database: 395717
   Flushing database before test...
-  Database flushed in 25.07ms. Keys remaining: 0
-    Iteration 1/13... 10992 ops/sec, 0.090ms latency
-    Iteration 2/13... 11164 ops/sec, 0.089ms latency
-    Iteration 3/13... 11257 ops/sec, 0.088ms latency
-    Iteration 4/13... 11128 ops/sec, 0.089ms latency
-    Iteration 5/13... 11262 ops/sec, 0.088ms latency
-    Iteration 6/13... 11349 ops/sec, 0.087ms latency
-    Iteration 7/13... 11422 ops/sec, 0.087ms latency
-    Iteration 8/13... 11431 ops/sec, 0.087ms latency
-    Iteration 9/13... 11363 ops/sec, 0.087ms latency
-    Iteration 10/13... 11686 ops/sec, 0.085ms latency
-    Iteration 11/13... 11420 ops/sec, 0.087ms latency
-    Iteration 12/13... 11826 ops/sec, 0.084ms latency
-    Iteration 13/13... 11940 ops/sec, 0.083ms latency
-  Dragonfly (non-TLS): 11403.09±273.24 ops/sec (CV: 2.4%), 0.087±0.002ms latency, Quality: good
-  Final keys in database: 395621
+  Database flushed in 20.97ms. Keys remaining: 0
+    Iteration 1/13... 11495 ops/sec, 0.086ms latency
+    Iteration 2/13... 11551 ops/sec, 0.086ms latency
+    Iteration 3/13... 11634 ops/sec, 0.085ms latency
+    Iteration 4/13... 11488 ops/sec, 0.086ms latency
+    Iteration 5/13... 11629 ops/sec, 0.085ms latency
+    Iteration 6/13... 11740 ops/sec, 0.085ms latency
+    Iteration 7/13... 11743 ops/sec, 0.084ms latency
+    Iteration 8/13... 11747 ops/sec, 0.084ms latency
+    Iteration 9/13... 11844 ops/sec, 0.084ms latency
+    Iteration 10/13... 11716 ops/sec, 0.085ms latency
+    Iteration 11/13... 11974 ops/sec, 0.083ms latency
+    Iteration 12/13... 12119 ops/sec, 0.082ms latency
+    Iteration 13/13... 11919 ops/sec, 0.083ms latency
+  Dragonfly (non-TLS): 11738.44±188.15 ops/sec (CV: 1.6%), 0.085±0.001ms latency, Quality: excellent
+  Final keys in database: 394866
   🔐 Starting detailed TLS connection debugging for 127.0.0.1:6392
     🔍 Debugging certificate files:
     📄 local_cert: ./client_cert.pem (1233 bytes, perms: 0644)
       Subject CN: test.server.com
       Issuer CN: CA
-      Valid from: 2025-06-08 22:44:21
-      Valid to: 2026-06-08 22:44:21
+      Valid from: 2025-06-09 02:49:11
+      Valid to: 2026-06-09 02:49:11
     📄 local_pk: ./client_priv.pem (1704 bytes, perms: 0600)
     📄 cafile: ./ca.crt (1338 bytes, perms: 0644)
       Subject CN: CA
       Issuer CN: CA
-      Valid from: 2025-06-08 22:44:21
-      Valid to: 2026-06-08 22:44:21
+      Valid from: 2025-06-09 02:49:10
+      Valid to: 2026-06-09 02:49:10
   📡 Test 1: Raw SSL socket connection...
     🔍 Testing raw SSL socket to 127.0.0.1:6392
     ✅ Raw SSL socket connection successful
@@ -765,7 +765,7 @@ Testing Dragonfly...
     🧪 Testing Redis commands over TLS...
       📞 Testing PING...
       ✅ PING successful: false
-      💾 Testing SET with key: tls_test_684619e7b2b8a...
+      💾 Testing SET with key: tls_test_684654286c8c5...
       ❌ Command failed: read error on connection to 127.0.0.1:6392
       🔍 Error details: RedisException
       📊 Server still responsive, got info: non-array
@@ -777,9 +777,7 @@ Testing Dragonfly...
     🧪 Testing Redis commands over TLS...
       📞 Testing PING...
       ✅ PING successful: false
-      💾 Testing SET with key: tls_test_684619e7b2db0...
-      ✅ SET successful: false
-      📖 Testing GET...
+      💾 Testing SET with key: tls_test_684654286cbba...
       ❌ Command failed: read error on connection to 127.0.0.1:6392
       🔍 Error details: RedisException
       📊 Server still responsive, got info: non-array
@@ -791,7 +789,7 @@ Testing Dragonfly...
     🧪 Testing Redis commands over TLS...
       📞 Testing PING...
       ✅ PING successful: false
-      💾 Testing SET with key: tls_test_684619e7b2ffd...
+      💾 Testing SET with key: tls_test_684654286cda3...
       ❌ Command failed: read error on connection to 127.0.0.1:6392
       🔍 Error details: RedisException
       📊 Server still responsive, got info: non-array
@@ -803,7 +801,7 @@ Testing Dragonfly...
     🧪 Testing Redis commands over TLS...
       📞 Testing PING...
       ✅ PING successful: false
-      💾 Testing SET with key: tls_test_684619e7b31d7...
+      💾 Testing SET with key: tls_test_684654286cf5e...
       ❌ Command failed: read error on connection to 127.0.0.1:6392
       🔍 Error details: RedisException
       📊 Server still responsive, got info: non-array
@@ -823,37 +821,37 @@ Testing Dragonfly...
 Testing Valkey...
   Configuration: IO Threads: 1
   Running 13 iterations for Valkey (non-TLS)...
-  Initial keys in database: 395579
+  Initial keys in database: 395805
   Flushing database before test...
-  Database flushed in 0.11ms. Keys remaining: 0
-    Iteration 1/13... 16009 ops/sec, 0.062ms latency
-    Iteration 2/13... 15770 ops/sec, 0.063ms latency
-    Iteration 3/13... 15550 ops/sec, 0.064ms latency
-    Iteration 4/13... 15957 ops/sec, 0.062ms latency
-    Iteration 5/13... 16027 ops/sec, 0.062ms latency
-    Iteration 6/13... 16550 ops/sec, 0.060ms latency
-    Iteration 7/13... 15998 ops/sec, 0.062ms latency
-    Iteration 8/13... 16502 ops/sec, 0.060ms latency
-    Iteration 9/13... 16248 ops/sec, 0.061ms latency
-    Iteration 10/13... 16307 ops/sec, 0.061ms latency
-    Iteration 11/13... 16416 ops/sec, 0.060ms latency
-    Iteration 12/13... 16756 ops/sec, 0.059ms latency
-    Iteration 13/13... 16833 ops/sec, 0.059ms latency
-  Valkey (non-TLS): 16224.79±381.76 ops/sec (CV: 2.4%), 0.061±0.001ms latency, Quality: good
-  Final keys in database: 395366
+  Database flushed in 0.10ms. Keys remaining: 0
+    Iteration 1/13... 15819 ops/sec, 0.063ms latency
+    Iteration 2/13... 16304 ops/sec, 0.061ms latency
+    Iteration 3/13... 15820 ops/sec, 0.063ms latency
+    Iteration 4/13... 16079 ops/sec, 0.062ms latency
+    Iteration 5/13... 15952 ops/sec, 0.062ms latency
+    Iteration 6/13... 16455 ops/sec, 0.060ms latency
+    Iteration 7/13... 16162 ops/sec, 0.061ms latency
+    Iteration 8/13... 16550 ops/sec, 0.060ms latency
+    Iteration 9/13... 16580 ops/sec, 0.060ms latency
+    Iteration 10/13... 16506 ops/sec, 0.060ms latency
+    Iteration 11/13... 16481 ops/sec, 0.060ms latency
+    Iteration 12/13... 16472 ops/sec, 0.060ms latency
+    Iteration 13/13... 16443 ops/sec, 0.060ms latency
+  Valkey (non-TLS): 16278.71±279.02 ops/sec (CV: 1.7%), 0.061±0.001ms latency, Quality: excellent
+  Final keys in database: 395441
   🔐 Starting detailed TLS connection debugging for 127.0.0.1:6393
     🔍 Debugging certificate files:
     📄 local_cert: ./client_cert.pem (1233 bytes, perms: 0644)
       Subject CN: test.server.com
       Issuer CN: CA
-      Valid from: 2025-06-08 22:44:21
-      Valid to: 2026-06-08 22:44:21
+      Valid from: 2025-06-09 02:49:11
+      Valid to: 2026-06-09 02:49:11
     📄 local_pk: ./client_priv.pem (1704 bytes, perms: 0600)
     📄 cafile: ./ca.crt (1338 bytes, perms: 0644)
       Subject CN: CA
       Issuer CN: CA
-      Valid from: 2025-06-08 22:44:21
-      Valid to: 2026-06-08 22:44:21
+      Valid from: 2025-06-09 02:49:10
+      Valid to: 2026-06-09 02:49:10
   📡 Test 1: Raw SSL socket connection...
     🔍 Testing raw SSL socket to 127.0.0.1:6393
     ✅ Raw SSL socket connection successful
@@ -881,8 +879,8 @@ Testing Valkey...
     ✅ Redis TLS connection successful with full SSL context
     🧪 Testing Redis commands over TLS...
       📞 Testing PING...
-      ❌ PING failed: Connection lost
-    ⚠️ Command test failed for full SSL context: Connection lost
+      ❌ PING failed: socket error on read socket
+    ⚠️ Command test failed for full SSL context: socket error on read socket
   📡 Test 5: TLSv1.2 fallback test...
     🔧 Testing: TLSv1.2
     📋 SSL Context: ["verify_peer","verify_peer_name","allow_self_signed","crypto_method"]
@@ -908,7 +906,7 @@ Enhanced results saved:
   Raw Data: ./benchmarklogs-1t/wordpress_object_cache_test_raw.json
 ============================================================
 Enhanced test suite completed!
-Total execution time: 394.77 seconds
+Total execution time: 389.34 seconds
 Total tests run: 4
 Statistical iterations per test: 13
 Results saved to ./benchmarklogs-1t/
@@ -919,27 +917,27 @@ Thread Variant: 1 | Iterations per test: 13
 ====================================================================================================
 Rank Database                  Ops/sec   ±StdDev      CV%  Latency  Quality     95% CI     Reliable
 ----------------------------------------------------------------------------------------------------
-#1  Valkey                  16225      382    2.4%  0.061ms 🟡good    16,013-16,437      ✅
-#2  Redis                   16218      375    2.3%  0.061ms 🟡good    16,010-16,426      ✅
-#3  KeyDB                   13856      284    2.1%  0.071ms 🟡good    13,698-14,014      ✅
-#4  Dragonfly               11403      273    2.4%  0.087ms 🟡good    11,252-11,555      ✅
+#1  Redis                   16563      505    3.0%  0.060ms 🟡good    16,282-16,843      ✅
+#2  Valkey                  16279      279    1.7%  0.061ms 🟢excellent 16,124-16,433      ✅
+#3  KeyDB                   13896      310    2.2%  0.071ms 🟡good    13,724-14,068      ✅
+#4  Dragonfly               11738      188    1.6%  0.085ms 🟢excellent 11,634-11,843      ✅
 ====================================================================================================
 Quick Insights:
 - Reliable measurements: 4/4
-- 🏆 Best: Valkey - 16,225 ops/sec
-- 📊 Average precision: 2.3% CV
+- 🏆 Best: Redis - 16,563 ops/sec
+- 📊 Average precision: 2.1% CV
 
 ================================================================================
 WORDPRESS PERFORMANCE ANALYSIS
 ================================================================================
-Redis                | Light pages:   1622/sec | Heavy pages:    324/sec
-KeyDB                | Light pages:   1386/sec | Heavy pages:    277/sec
-Dragonfly            | Light pages:   1140/sec | Heavy pages:    228/sec
-Valkey               | Light pages:   1622/sec | Heavy pages:    324/sec
+Redis                | Light pages:   1656/sec | Heavy pages:    331/sec
+KeyDB                | Light pages:   1390/sec | Heavy pages:    278/sec
+Dragonfly            | Light pages:   1174/sec | Heavy pages:    235/sec
+Valkey               | Light pages:   1628/sec | Heavy pages:    326/sec
 
 WordPress Cache Recommendations:
-- 🏆 Best performer: Valkey
-- 📊 Estimated capacity: 541 concurrent users (30 cache ops/user/sec)
+- 🏆 Best performer: Redis
+- 📊 Estimated capacity: 552 concurrent users (30 cache ops/user/sec)
 - 💡 For production WordPress, consider read/write ratios: 90/10 for cached sites, 70/30 for dynamic sites
 ================================================================================
 
@@ -956,15 +954,16 @@ STATISTICAL INSIGHTS
 Thread Variant: 1 | Iterations: 13
 ================================================================================
 Measurement Quality Distribution:
-  🟡 Good      :  4 tests (100.0%)
+  🟢 Excellent :  2 tests (50.0%)
+  🟡 Good      :  2 tests (50.0%)
 
 Coefficient of Variation Analysis:
-  Average CV: 2.3% (lower is better)
-  Range: 2.1% - 2.4%
+  Average CV: 2.1% (lower is better)
+  Range: 1.6% - 3.0%
   📊 Good measurement consistency
 
 Performance Analysis:
-  Performance range: 11403 - 16225 ops/sec (42.3% spread)
+  Performance range: 11738 - 16563 ops/sec (41.1% spread)
   📈 Relatively similar performance across databases
 
 Statistical Recommendations:
@@ -974,7 +973,7 @@ Statistical Recommendations:
 ============================================================
 TEST SUITE COMPLETED SUCCESSFULLY!
 ============================================================
-Total execution time: 394.78 seconds
+Total execution time: 389.35 seconds
 Statistical iterations per database: 13
 Results saved to: ./benchmarklogs-1t
 
