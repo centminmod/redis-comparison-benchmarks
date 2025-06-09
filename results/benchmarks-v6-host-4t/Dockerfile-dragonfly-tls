@@ -19,4 +19,4 @@ RUN chown -R dfly:dfly /tls && \
 # Expose the TLS port
 EXPOSE 6392
 
-CMD [ "dragonfly", "--tls", "--port=6392", "--tls_cert_file=/tls/test.crt", "--tls_key_file=/tls/test.key", "--proactor_threads=4", "--dbfilename=" ]
+CMD [ "dragonfly", "--tls", "--port=6392", "--tls_cert_file=/tls/test.crt", "--tls_key_file=/tls/test.key", "--proactor_threads=3", "--dbfilename=" ]
