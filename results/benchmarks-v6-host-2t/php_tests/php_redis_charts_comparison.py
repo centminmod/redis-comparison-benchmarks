@@ -39,6 +39,74 @@ class PHPRedisComparisonCharts:
         
         self.data = None
         self.comparison_data = None
+    
+    def add_bar_labels(self, ax, data, format_type='integer', offset_factor=0.01):
+        """
+        Add value labels on top of bars in a bar chart
+        
+        Args:
+            ax: matplotlib axis object
+            data: pandas DataFrame with the data used for the bars
+            format_type: 'integer', 'decimal', 'percentage', or 'quality'
+            offset_factor: vertical offset as fraction of max value
+        """
+        if data.empty:
+            return
+            
+        max_val = data.max().max() if hasattr(data.max(), 'max') else data.max()
+        if max_val == 0:
+            return
+            
+        offset = max_val * offset_factor
+        
+        # Get bar containers from the axis
+        bar_containers = [container for container in ax.containers if hasattr(container, '__iter__')]
+        
+        if not bar_containers:
+            return
+            
+        # Handle different data structures
+        if hasattr(data, 'columns'):  # DataFrame
+            for i, (_, row) in enumerate(data.iterrows()):
+                for j, (_, value) in enumerate(row.items()):
+                    if j < len(bar_containers) and i < len(bar_containers[j]):
+                        bar = bar_containers[j][i]
+                        if pd.notna(value) and value > 0:
+                            # Format the value based on type
+                            if format_type == 'integer':
+                                label = f'{int(value):,}'
+                            elif format_type == 'decimal':
+                                label = f'{value:.3f}'
+                            elif format_type == 'percentage':
+                                label = f'{value:.1f}%'
+                            elif format_type == 'quality':
+                                label = f'{value:.1f}'
+                            else:
+                                label = f'{value:.2f}'
+                            
+                            ax.text(bar.get_x() + bar.get_width()/2, 
+                                   bar.get_height() + offset, 
+                                   label, ha='center', va='bottom', 
+                                   fontsize=8, fontweight='bold')
+        else:  # Series or other format
+            if hasattr(data, 'values'):
+                for i, (bar, value) in enumerate(zip(bar_containers[0] if bar_containers else [], data.values)):
+                    if pd.notna(value) and value > 0:
+                        if format_type == 'integer':
+                            label = f'{int(value):,}'
+                        elif format_type == 'decimal':
+                            label = f'{value:.3f}'
+                        elif format_type == 'percentage':
+                            label = f'{value:.1f}%'
+                        elif format_type == 'quality':
+                            label = f'{value:.1f}'
+                        else:
+                            label = f'{value:.2f}'
+                        
+                        ax.text(bar.get_x() + bar.get_width()/2, 
+                               bar.get_height() + offset, 
+                               label, ha='center', va='bottom', 
+                               fontsize=8, fontweight='bold')
         
     def load_data(self):
         """Load data from both phpredis and Predis result files"""
@@ -139,6 +207,7 @@ class PHPRedisComparisonCharts:
         ax1.set_ylabel('Ops/sec')
         ax1.tick_params(axis='x', rotation=45)
         ax1.legend(title='Implementation')
+        self.add_bar_labels(ax1, ops_data, 'integer')
         
         # 2. Average latency comparison
         latency_data = self.comparison_data.pivot_table(
@@ -153,6 +222,7 @@ class PHPRedisComparisonCharts:
         ax2.set_ylabel('Latency (ms)')
         ax2.tick_params(axis='x', rotation=45)
         ax2.legend(title='Implementation')
+        self.add_bar_labels(ax2, latency_data, 'decimal')
         
         # 3. TLS vs Non-TLS performance impact
         tls_comparison = []
@@ -186,6 +256,7 @@ class PHPRedisComparisonCharts:
             ax3.tick_params(axis='x', rotation=45)
             ax3.legend(title='Implementation')
             ax3.axhline(y=0, color='black', linestyle='-', alpha=0.3)
+            self.add_bar_labels(ax3, tls_pivot, 'percentage')
         
         # 4. Measurement quality comparison
         quality_mapping = {'excellent': 4, 'good': 3, 'fair': 2, 'poor': 1, 'unknown': 0}
@@ -204,6 +275,7 @@ class PHPRedisComparisonCharts:
         ax4.tick_params(axis='x', rotation=45)
         ax4.legend(title='Implementation')
         ax4.set_ylim(0, 4.5)
+        self.add_bar_labels(ax4, quality_data, 'quality')
         
         plt.tight_layout()
         output_file = self.output_dir / 'php_redis_implementation_comparison.png'
@@ -342,6 +414,7 @@ class PHPRedisComparisonCharts:
             ax1.axhline(y=5, color='orange', linestyle='--', alpha=0.7, label='Good (<5%)')
             ax1.axhline(y=10, color='red', linestyle='--', alpha=0.7, label='Fair (<10%)')
             ax1.legend()
+            self.add_bar_labels(ax1, cv_data, 'percentage')
         
         # 2. Error rate comparison
         if 'error_rate' in self.comparison_data.columns:
@@ -357,6 +430,7 @@ class PHPRedisComparisonCharts:
             ax2.set_ylabel('Error Rate (%)')
             ax2.tick_params(axis='x', rotation=45)
             ax2.legend(title='Implementation')
+            self.add_bar_labels(ax2, error_data, 'percentage')
         
         # 3. Confidence interval comparison
         if 'ops_per_sec_confidence_interval_95' in self.comparison_data.columns:
@@ -386,6 +460,7 @@ class PHPRedisComparisonCharts:
                 ax3.set_ylabel('CI Width (ops/sec)')
                 ax3.tick_params(axis='x', rotation=45)
                 ax3.legend(title='Implementation')
+                self.add_bar_labels(ax3, ci_pivot, 'integer')
         
         # 4. Quality distribution
         quality_dist = self.comparison_data.groupby(['implementation', 'measurement_quality']).size().unstack(fill_value=0)
@@ -532,7 +607,6 @@ class PHPRedisComparisonCharts:
         fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(16, 12))
         fig.suptitle(f'PHP Redis Implementation Comparison - {mode_name} Mode', fontsize=16, fontweight='bold')
         
-        implementations = mode_data['implementation'].unique()
         databases = mode_data['database'].unique()
         
         # 1. Operations per second comparison
@@ -550,15 +624,16 @@ class PHPRedisComparisonCharts:
         
         # Plot with proper missing data handling
         ax1_data = ops_data.fillna(0)  # Fill NaN with 0 for plotting
-        bars = ax1_data.plot(kind='bar', ax=ax1, color=[self.colors.get('phpredis', '#999'), self.colors.get('predis', '#999')])
+        ax1_data.plot(kind='bar', ax=ax1, color=[self.colors.get('phpredis', '#999'), self.colors.get('predis', '#999')])
         ax1.set_title(f'Operations per Second - {mode_name}', fontweight='bold')
         ax1.set_ylabel('Ops/sec')
         ax1.tick_params(axis='x', rotation=45)
         ax1.legend(title='Implementation')
+        self.add_bar_labels(ax1, ax1_data, 'integer')
         
         # Add missing data annotations
         for i, db in enumerate(ax1_data.index):
-            for j, impl in enumerate(ax1_data.columns):
+            for _, impl in enumerate(ax1_data.columns):
                 if pd.isna(ops_data.loc[db, impl]):
                     ax1.text(i, ax1_data.loc[db, impl] + max(ax1_data.max()) * 0.02, 
                            'No Data', ha='center', va='bottom', fontsize=8, color='red')
@@ -576,15 +651,16 @@ class PHPRedisComparisonCharts:
                 latency_data[impl] = np.nan
         
         ax2_data = latency_data.fillna(0)
-        latency_data.fillna(0).plot(kind='bar', ax=ax2, color=[self.colors.get('phpredis', '#999'), self.colors.get('predis', '#999')])
+        ax2_data.plot(kind='bar', ax=ax2, color=[self.colors.get('phpredis', '#999'), self.colors.get('predis', '#999')])
         ax2.set_title(f'Average Latency - {mode_name}', fontweight='bold')
         ax2.set_ylabel('Latency (ms)')
         ax2.tick_params(axis='x', rotation=45)
         ax2.legend(title='Implementation')
+        self.add_bar_labels(ax2, ax2_data, 'decimal')
         
         # Add missing data annotations for latency
         for i, db in enumerate(ax2_data.index):
-            for j, impl in enumerate(ax2_data.columns):
+            for _, impl in enumerate(ax2_data.columns):
                 if pd.isna(latency_data.loc[db, impl]):
                     ax2.text(i, ax2_data.loc[db, impl] + max(ax2_data.max()) * 0.02, 
                            'No Data', ha='center', va='bottom', fontsize=8, color='red')
@@ -606,12 +682,14 @@ class PHPRedisComparisonCharts:
                 if impl not in quality_data.columns:
                     quality_data[impl] = np.nan
             
-            quality_data.fillna(0).plot(kind='bar', ax=ax3, color=[self.colors.get('phpredis', '#999'), self.colors.get('predis', '#999')])
+            ax3_data = quality_data.fillna(0)
+            ax3_data.plot(kind='bar', ax=ax3, color=[self.colors.get('phpredis', '#999'), self.colors.get('predis', '#999')])
             ax3.set_title(f'Measurement Quality - {mode_name}', fontweight='bold')
             ax3.set_ylabel('Quality Score (4=Excellent, 1=Poor)')
             ax3.tick_params(axis='x', rotation=45)
             ax3.legend(title='Implementation')
             ax3.set_ylim(0, 4.5)
+            self.add_bar_labels(ax3, ax3_data, 'quality')
         
         # 4. Implementation availability matrix
         availability_matrix = []

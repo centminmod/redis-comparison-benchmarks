@@ -785,213 +785,149 @@ class RedisTestBase {
         }
     }
     
-    protected function connectRedis($host, $port, $tls = false) {
-        $connection_label = $tls ? "TLS" : "non-TLS";
-        $this->debugLog("Attempting {$connection_label} connection to {$host}:{$port}");
+    /**
+     * Connect to Redis with enhanced TLS support using official approach (adapted for custom ports)
+     */
+    protected function connectRedis($host, $port, $is_tls = false, $database_name = 'Unknown') {
+        $this->debugLog("🔌 Connecting to $database_name at $host:$port" . ($is_tls ? ' (TLS)' : ''));
+        
+        $redis = new Redis();
+        
+        if (!$is_tls) {
+            // Standard non-TLS connection
+            if (!$redis->connect($host, $port, 2)) {
+                throw new Exception("Failed to connect to $database_name at $host:$port");
+            }
+            $this->debugLog("✅ Connected to $database_name (non-TLS)");
+            return $redis;
+        }
+        
+        // TLS connection using official working approach adapted for your port scheme
+        echo "🔐 Attempting TLS connection to $database_name at $host:$port\n";
+        echo "  Using custom port scheme: Redis=6390, KeyDB=6391, Dragonfly=6392, Valkey=6393\n";
         
         try {
-            $redis = new Redis();
+            // Method 1: Official tls:// scheme approach (adapted for your ports)
+            echo "  📡 Method 1: Using tls:// scheme with custom port $port...\n";
             
-            if ($tls) {
-                // TLS connection with improved error handling
-                $cert_files = [
-                    'local_cert' => './client_cert.pem',
-                    'local_pk'   => './client_priv.pem', 
-                    'cafile'     => './ca.crt'
-                ];
+            // Test with localhost first (allows peer name verification)
+            $tls_host = ($host === '127.0.0.1') ? 'localhost' : $host;
+            $verify_peer_name = ($tls_host === 'localhost');
+            
+            $tls_redis = new Redis();
+            $success = $tls_redis->connect(
+                'tls://' . $tls_host, 
+                $port,  // Your custom TLS port (6390, 6391, etc.)
+                2,      // timeout
+                null, 
+                0, 
+                0, 
+                [
+                    'stream' => [
+                        'verify_peer_name' => $verify_peer_name,
+                        'verify_peer' => false,  // Allow self-signed certs
+                        'allow_self_signed' => true
+                    ]
+                ]
+            );
+            
+            if ($success) {
+                echo "  ✅ TLS connection successful with tls://$tls_host:$port\n";
                 
-                // Check if certificates exist
-                $missing_certs = [];
-                foreach ($cert_files as $key => $file) {
-                    if (!file_exists($file)) {
-                        $missing_certs[] = $file;
-                    }
-                }
-                
-                if (!empty($missing_certs)) {
-                    echo "  TLS certificates not found: " . implode(', ', $missing_certs) . "\n";
-                    echo "  Skipping TLS test for {$host}:{$port}\n";
-                    return false;
-                }
-                
-                $this->debugLog("TLS certificates found, attempting connection");
-                
+                // Test basic command
+                echo "  🧪 Testing basic command over TLS...\n";
                 try {
-                    // Enhanced SSL debugging and progressive connection testing
-                    echo "  🔐 Starting detailed TLS connection debugging for {$host}:{$port}\n";
-                    
-                    // Debug certificate files first
-                    $this->debugCertificates($cert_files);
-                    
-                    // Test 1: Basic SSL socket connection
-                    echo "  📡 Test 1: Raw SSL socket connection...\n";
-                    if (!$this->debugSSLSocket($host, $port)) {
-                        throw new Exception("Raw SSL socket connection failed - server may not support TLS");
-                    }
-                    
-                    // Test 2: Redis connection with minimal SSL context (TLSv1.2)
-                    echo "  📡 Test 2: Minimal SSL context with TLSv1.2...\n";
-                    $redis_test = new Redis(); // Fresh instance for testing
-                    $minimal_context = [
-                        'verify_peer' => false,
-                        'verify_peer_name' => false,
-                        'allow_self_signed' => true,
-                        'crypto_method' => STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT
-                    ];
-                    
-                    // Track overall success across all tests
-                    $connection_established = false;
-                    
-                    if ($this->tryRedisConnection($redis_test, $host, $port, $minimal_context, "minimal SSL")) {
-                        // Use the working connection
-                        $redis = $redis_test;
-                        $this->debugLog("SUCCESS: Minimal SSL context with TLSv1.2 worked");
-                        $connection_established = true;
+                    $pong = $tls_redis->ping();
+                    if ($pong === true || $pong === 'PONG') {
+                        echo "  ✅ PING successful over TLS\n";
+                        $this->debugLog("✅ TLS connection to $database_name established and verified");
+                        return $tls_redis;
                     } else {
-                        // Test 3: SSL context with certificates (TLSv1.2)
-                        echo "  📡 Test 3: SSL context with certificates and TLSv1.2...\n";
-                        $redis_test = new Redis();
-                        $cert_context = [
-                            'verify_peer' => false,
+                        echo "  ⚠️ PING returned unexpected result: " . var_export($pong, true) . "\n";
+                    }
+                } catch (Exception $e) {
+                    echo "  ❌ PING failed: " . $e->getMessage() . "\n";
+                }
+            }
+            
+            // Method 2: Fallback to IP address if localhost failed
+            if ($tls_host === 'localhost') {
+                echo "  📡 Method 2: Fallback to IP address with port $port...\n";
+                $tls_redis2 = new Redis();
+                $success = $tls_redis2->connect(
+                    'tls://127.0.0.1', 
+                    $port,  // Keep your custom port
+                    2, 
+                    null, 
+                    0, 
+                    0, 
+                    [
+                        'stream' => [
                             'verify_peer_name' => false,
-                            'allow_self_signed' => true,
-                            'local_cert' => $cert_files['local_cert'],
-                            'local_pk' => $cert_files['local_pk'],
-                            'cafile' => $cert_files['cafile'],
-                            'crypto_method' => STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT
-                        ];
-                        
-                        if ($this->tryRedisConnection($redis_test, $host, $port, $cert_context, "with certificates")) {
-                            $redis = $redis_test;
-                            $this->debugLog("SUCCESS: Certificate SSL context with TLSv1.2 worked");
-                            $connection_established = true;
-                        } else {
-                            // Test 4: Full SSL context (TLSv1.2)
-                            echo "  📡 Test 4: Full SSL context with all options and TLSv1.2...\n";
-                            $redis_test = new Redis();
-                            $full_context = [
-                                'verify_peer' => false,
-                                'verify_peer_name' => false,
-                                'allow_self_signed' => true,
-                                'local_cert' => $cert_files['local_cert'],
-                                'local_pk' => $cert_files['local_pk'],
-                                'cafile' => $cert_files['cafile'],
-                                'capture_peer_cert' => false,
-                                'disable_compression' => true,
-                                'SNI_enabled' => false,
-                                'crypto_method' => STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT
-                            ];
-                            
-                            if ($this->tryRedisConnection($redis_test, $host, $port, $full_context, "full SSL context")) {
-                                $redis = $redis_test;
-                                $this->debugLog("SUCCESS: Full SSL context with TLSv1.2 worked");
-                                $connection_established = true;
-                            } else {
-                                // Test 5: TLSv1.2 fallback test
-                                echo "  📡 Test 5: TLSv1.2 fallback test...\n";
-                                
-                                $crypto_methods = [
-                                    'TLSv1.2' => STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT
-                                ];
-                                
-                                foreach ($crypto_methods as $method_name => $method_const) {
-                                    $redis_test = new Redis();
-                                    $method_context = array_merge($minimal_context, ['crypto_method' => $method_const]);
-                                    
-                                    if ($this->tryRedisConnection($redis_test, $host, $port, $method_context, $method_name)) {
-                                        $redis = $redis_test;
-                                        $this->debugLog("SUCCESS: TLSv1.2 fallback worked");
-                                        $connection_established = true;
-                                        break;
-                                    }
-                                }
-                                
-                                if (!$connection_established) {
-                                    // Test 6: Last resort - minimal SSL without command validation
-                                    echo "  📡 Test 6: Minimal SSL without command validation...\n";
-                                    $redis_test = new Redis();
-                                    
-                                    if ($this->tryRedisConnection($redis_test, $host, $port, $minimal_context, "minimal SSL (no command test)", true)) {
-                                        $redis = $redis_test;
-                                        $this->debugLog("SUCCESS: Minimal SSL without command validation worked");
-                                        echo "  ⚠️ WARNING: Using TLS connection without command validation\n";
-                                        echo "  ⚠️ Commands may fail during actual test - this is a known issue\n";
-                                        $connection_established = true;
-                                    }
-                                }
-                                
-                                if (!$connection_established) {
-                                    throw new Exception("All TLS connection methods failed - see detailed output above");
-                                }
-                            }
+                            'verify_peer' => false,
+                            'allow_self_signed' => true
+                        ]
+                    ]
+                );
+                
+                if ($success) {
+                    echo "  ✅ TLS connection successful with tls://127.0.0.1:$port\n";
+                    try {
+                        $pong = $tls_redis2->ping();
+                        if ($pong === true || $pong === 'PONG') {
+                            echo "  ✅ PING successful over TLS (IP)\n";
+                            $this->debugLog("✅ TLS connection to $database_name established (IP fallback)");
+                            return $tls_redis2;
                         }
+                    } catch (Exception $e) {
+                        echo "  ❌ PING failed on IP: " . $e->getMessage() . "\n";
                     }
-                    
-                    // If we reach here, connection was established
-                    if ($connection_established) {
-                        $this->debugLog("TLS connection successful with progressive testing");
-                        return $redis; // Return the working Redis connection
-                    } else {
-                        throw new Exception("Unexpected: connection_established is false but no exception thrown");
-                    }
-                    
-                } catch (Exception $e) {
-                    // Log the specific TLS error but don't fail the entire test
-                    $this->debugLog("TLS connection failed: " . $e->getMessage());
-                    echo "  TLS connection failed for {$host}:{$port}: " . $e->getMessage() . "\n";
-                    echo "  Skipping TLS test and continuing with non-TLS tests\n";
-                    return false;
                 }
-            } else {
-                // Non-TLS connection with improved timeout handling
-                $redis->connect($host, $port, 2.0);
             }
             
-            // Set read timeout to prevent socket errors
-            $redis->setOption(Redis::OPT_READ_TIMEOUT, 5.0);
+            // Method 3: Minimal SSL context (legacy fallback)
+            echo "  📡 Method 3: Legacy SSL context approach with port $port...\n";
+            $context_redis = new Redis();
+            $minimal_context = [
+                'verify_peer' => false,
+                'verify_peer_name' => false,
+                'allow_self_signed' => true
+            ];
             
-            // Test connection - use simpler test for TLS
-            $this->debugLog("Testing connection");
-            if ($tls) {
-                // For TLS, try a simple command instead of PING
+            $success = $context_redis->connect(
+                $host, 
+                $port,  // Your custom TLS port
+                2, 
+                null, 
+                0, 
+                0, 
+                ['stream' => $minimal_context]
+            );
+            
+            if ($success) {
+                echo "  ✅ SSL context connection successful\n";
                 try {
-                    $test_key = 'connection_test_' . uniqid();
-                    $redis->set($test_key, 'test', 1);
-                    $result = $redis->get($test_key);
-                    $redis->del($test_key);
-                    if ($result !== 'test') {
-                        throw new Exception("TLS connection test failed");
+                    $pong = $context_redis->ping();
+                    if ($pong === true || $pong === 'PONG') {
+                        echo "  ✅ PING successful with SSL context\n";
+                        $this->debugLog("✅ TLS connection to $database_name established (SSL context)");
+                        return $context_redis;
                     }
-                    $this->debugLog("TLS connection verified with SET/GET test");
                 } catch (Exception $e) {
-                    throw new Exception("TLS connection verification failed: " . $e->getMessage());
+                    echo "  ❌ PING failed with SSL context: " . $e->getMessage() . "\n";
                 }
-            } else {
-                $ping_result = $redis->ping();
-                $valid_responses = ['+PONG', 'PONG', true, 1];
-                if (!in_array($ping_result, $valid_responses, true)) {
-                    throw new Exception("PING failed: " . var_export($ping_result, true));
-                }
-                $this->debugLog("Non-TLS connection verified with PING");
             }
-            
-            $this->debugLog("Successfully connected to {$host}:{$port} ({$connection_label})");
-            return $redis;
             
         } catch (Exception $e) {
-            $error_msg = $e->getMessage();
-            
-            if ($tls) {
-                // For TLS failures, log but don't treat as fatal
-                echo "  TLS connection failed to {$host}:{$port}: {$error_msg}\n";
-                echo "  → Skipping TLS test for this database and continuing\n";
-            } else {
-                // For non-TLS failures, this is more serious
-                echo "  Connection failed to {$host}:{$port} ({$connection_label}): {$error_msg}\n";
-            }
-            
-            return false;
+            echo "  ❌ TLS connection failed: " . $e->getMessage() . "\n";
         }
+        
+        // If all TLS methods fail, log and return false
+        echo "  ❌ All TLS connection methods failed for $database_name at port $port\n";
+        echo "  Note: Keeping your custom port scheme (6390-6393) instead of standard port 6378\n";
+        $this->debugLog("❌ Failed to establish TLS connection to $database_name");
+        
+        throw new Exception("Failed to establish TLS connection to $database_name at $host:$port");
     }
     
     /**
