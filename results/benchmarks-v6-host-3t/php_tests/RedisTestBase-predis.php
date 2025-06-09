@@ -241,9 +241,9 @@ class RedisTestBasePredis {
                 return false;
             }
             
-            $this->debugLog("Configuring TLS parameters for Predis");
+            $this->debugLog("Configuring TLS parameters for Predis (forcing TLSv1.2)");
             
-            // Predis TLS configuration - more flexible than phpredis
+            // Predis TLS configuration - more flexible than phpredis, force TLSv1.2
             $ssl_options = [
                 'verify_peer' => false,
                 'verify_peer_name' => false,
@@ -252,7 +252,8 @@ class RedisTestBasePredis {
                 'local_cert' => './client_cert.pem',
                 'local_pk' => './client_priv.pem',
                 'disable_compression' => true,
-                'capture_peer_cert' => false
+                'capture_peer_cert' => false,
+                'crypto_method' => STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT
             ];
             
             if ($this->tls_skip_verify) {
@@ -276,37 +277,43 @@ class RedisTestBasePredis {
                     'replication' => null  // Disable replication
                 ]);
                 
-                // Test connection with PING
-                $this->debugLog("Testing Predis connection with PING");
-                $ping_result = $redis->ping();
-                
-                // Validate PING response
-                if ($ping_result === 'PONG' || $ping_result === '+PONG' || $ping_result === true) {
-                    $this->debugLog("Predis connection successful to {$host}:{$port} ({$connection_label})");
+                // Test connection with SET/GET instead of PING to avoid Predis object serialization issues
+                $this->debugLog("Testing Predis connection with SET/GET test");
+                try {
+                    $test_key = 'predis_connection_test_' . uniqid();
+                    $redis->set($test_key, 'test_value', 'EX', 1);
+                    $result = $redis->get($test_key);
+                    $redis->del($test_key);
                     
-                    // Additional TLS verification for Predis
-                    if ($tls) {
-                        try {
-                            // Test basic operations over TLS
-                            $test_key = 'predis_tls_test_' . uniqid();
-                            $redis->set($test_key, 'test_value', 'EX', 1);
-                            $result = $redis->get($test_key);
-                            $redis->del($test_key);
-                            
-                            if ($result === 'test_value') {
-                                $this->debugLog("Predis TLS connection verified with SET/GET test");
-                                return $redis;
-                            } else {
-                                throw new Exception("TLS verification failed: unexpected GET result");
+                    if ($result === 'test_value') {
+                        $this->debugLog("Predis connection successful to {$host}:{$port} ({$connection_label})");
+                        
+                        // Additional TLS verification for Predis
+                        if ($tls) {
+                            try {
+                                // Test additional operations over TLS
+                                $test_key_tls = 'predis_tls_test_' . uniqid();
+                                $redis->set($test_key_tls, 'tls_test_value', 'EX', 1);
+                                $tls_result = $redis->get($test_key_tls);
+                                $redis->del($test_key_tls);
+                                
+                                if ($tls_result === 'tls_test_value') {
+                                    $this->debugLog("Predis TLS connection verified with additional SET/GET test");
+                                    return $redis;
+                                } else {
+                                    throw new Exception("TLS verification failed: unexpected GET result");
+                                }
+                            } catch (Exception $tls_e) {
+                                throw new Exception("TLS command test failed: " . $tls_e->getMessage());
                             }
-                        } catch (Exception $tls_e) {
-                            throw new Exception("TLS command test failed: " . $tls_e->getMessage());
                         }
+                        
+                        return $redis;
+                    } else {
+                        throw new Exception("Connection test failed: SET/GET test returned unexpected result");
                     }
-                    
-                    return $redis;
-                } else {
-                    throw new Exception("PING failed: " . var_export($ping_result, true));
+                } catch (Exception $conn_e) {
+                    throw new Exception("Connection test failed: " . $conn_e->getMessage());
                 }
                 
             } catch (ConnectionException $e) {

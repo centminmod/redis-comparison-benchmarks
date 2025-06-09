@@ -829,13 +829,14 @@ class RedisTestBase {
                         throw new Exception("Raw SSL socket connection failed - server may not support TLS");
                     }
                     
-                    // Test 2: Redis connection with minimal SSL context
-                    echo "  📡 Test 2: Minimal SSL context...\n";
+                    // Test 2: Redis connection with minimal SSL context (TLSv1.2)
+                    echo "  📡 Test 2: Minimal SSL context with TLSv1.2...\n";
                     $redis_test = new Redis(); // Fresh instance for testing
                     $minimal_context = [
                         'verify_peer' => false,
                         'verify_peer_name' => false,
-                        'allow_self_signed' => true
+                        'allow_self_signed' => true,
+                        'crypto_method' => STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT
                     ];
                     
                     // Track overall success across all tests
@@ -844,11 +845,11 @@ class RedisTestBase {
                     if ($this->tryRedisConnection($redis_test, $host, $port, $minimal_context, "minimal SSL")) {
                         // Use the working connection
                         $redis = $redis_test;
-                        $this->debugLog("SUCCESS: Minimal SSL context worked");
+                        $this->debugLog("SUCCESS: Minimal SSL context with TLSv1.2 worked");
                         $connection_established = true;
                     } else {
-                        // Test 3: SSL context with certificates (current approach)
-                        echo "  📡 Test 3: SSL context with certificates...\n";
+                        // Test 3: SSL context with certificates (TLSv1.2)
+                        echo "  📡 Test 3: SSL context with certificates and TLSv1.2...\n";
                         $redis_test = new Redis();
                         $cert_context = [
                             'verify_peer' => false,
@@ -856,16 +857,17 @@ class RedisTestBase {
                             'allow_self_signed' => true,
                             'local_cert' => $cert_files['local_cert'],
                             'local_pk' => $cert_files['local_pk'],
-                            'cafile' => $cert_files['cafile']
+                            'cafile' => $cert_files['cafile'],
+                            'crypto_method' => STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT
                         ];
                         
                         if ($this->tryRedisConnection($redis_test, $host, $port, $cert_context, "with certificates")) {
                             $redis = $redis_test;
-                            $this->debugLog("SUCCESS: Certificate SSL context worked");
+                            $this->debugLog("SUCCESS: Certificate SSL context with TLSv1.2 worked");
                             $connection_established = true;
                         } else {
-                            // Test 4: Full SSL context (original approach)
-                            echo "  📡 Test 4: Full SSL context with all options...\n";
+                            // Test 4: Full SSL context (TLSv1.2)
+                            echo "  📡 Test 4: Full SSL context with all options and TLSv1.2...\n";
                             $redis_test = new Redis();
                             $full_context = [
                                 'verify_peer' => false,
@@ -876,21 +878,20 @@ class RedisTestBase {
                                 'cafile' => $cert_files['cafile'],
                                 'capture_peer_cert' => false,
                                 'disable_compression' => true,
-                                'SNI_enabled' => false
+                                'SNI_enabled' => false,
+                                'crypto_method' => STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT
                             ];
                             
                             if ($this->tryRedisConnection($redis_test, $host, $port, $full_context, "full SSL context")) {
                                 $redis = $redis_test;
-                                $this->debugLog("SUCCESS: Full SSL context worked");
+                                $this->debugLog("SUCCESS: Full SSL context with TLSv1.2 worked");
                                 $connection_established = true;
                             } else {
-                                // Test 5: Different TLS versions
-                                echo "  📡 Test 5: Alternative TLS versions...\n";
+                                // Test 5: TLSv1.2 fallback test
+                                echo "  📡 Test 5: TLSv1.2 fallback test...\n";
                                 
                                 $crypto_methods = [
-                                    'TLSv1.2' => STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT,
-                                    'TLSv1.3' => defined('STREAM_CRYPTO_METHOD_TLSv1_3_CLIENT') ? STREAM_CRYPTO_METHOD_TLSv1_3_CLIENT : STREAM_CRYPTO_METHOD_TLS_CLIENT,
-                                    'ANY_TLS' => STREAM_CRYPTO_METHOD_TLS_CLIENT
+                                    'TLSv1.2' => STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT
                                 ];
                                 
                                 foreach ($crypto_methods as $method_name => $method_const) {
@@ -899,7 +900,7 @@ class RedisTestBase {
                                     
                                     if ($this->tryRedisConnection($redis_test, $host, $port, $method_context, $method_name)) {
                                         $redis = $redis_test;
-                                        $this->debugLog("SUCCESS: {$method_name} worked");
+                                        $this->debugLog("SUCCESS: TLSv1.2 fallback worked");
                                         $connection_established = true;
                                         break;
                                     }
