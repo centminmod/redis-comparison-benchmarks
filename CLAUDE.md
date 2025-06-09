@@ -12,6 +12,7 @@ This project uses a structured memory bank system with specialized context files
 - **CLAUDE-shortcuts.md** - Frequently used commands and workflows
 - **CLAUDE-troubleshooting.md** - Common issues and proven solutions
 - **CLAUDE-codebase.md** - File structure and key component documentation
+- **CLAUDE-temp.md** - temp scratch pad only read it when I reference it
 
 **Important**: Always reference the active context file first to understand what's currently being worked on and maintain session continuity.
 
@@ -260,6 +261,7 @@ When working with Claude Code, always:
 4. **Use CLAUDE-shortcuts.md** for project-specific commands and workflows
 5. **Check CLAUDE-troubleshooting.md** for known issues and proven solutions
 6. **Refer to CLAUDE-codebase.md** for file structure and component organization
+7. **CLAUDE-temp.md** for temp scratch pad only read it when I reference it
 
 ### Memory Bank Integration Workflow
 
@@ -290,6 +292,7 @@ echo "Rationale: [Why this was the best choice]" >> CLAUDE-decisions.md
 - **Add troubleshooting solutions** to CLAUDE-troubleshooting.md when resolving issues
 - **Maintain CLAUDE-shortcuts.md** with frequently used commands and workflows
 - **Keep CLAUDE-codebase.md** current with file structure changes
+- **Read CLAUDE-temp.md** - temp scratch pad only read it when I reference it
 
 This memory bank system ensures continuity between sessions and provides comprehensive context for effective development work.
 
