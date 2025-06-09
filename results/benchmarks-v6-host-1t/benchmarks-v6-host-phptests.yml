@@ -187,7 +187,7 @@ jobs:
         
         # Generate server's private key and certificate signing request (CSR)
         openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out test.key
-        openssl req -new -key test.key -out test.csr -subj "/C=US/ST=Some-State/O=OrganizationName/OU=OrganizationalUnit/CN=test.com"
+        openssl req -new -key test.key -out test.csr -subj "/C=US/ST=Some-State/O=OrganizationName/OU=OrganizationalUnit/CN=localhost"
         
         # Sign the server's CSR with the CA's private key to get the server's certificate
         openssl x509 -req -in test.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out test.crt -days 365
@@ -267,7 +267,6 @@ jobs:
         echo "--port=6392" >> dragonfly-tls.conf
         echo "--tls_cert_file=/tls/test.crt" >> dragonfly-tls.conf
         echo "--tls_key_file=/tls/test.key" >> dragonfly-tls.conf
-        echo "--tls_ca_cert_file=/tls/ca.crt" >> dragonfly-tls.conf
         echo "--dbfilename=''" >> dragonfly-tls.conf
 
     - name: Update Valkey Configuration for TLS
@@ -2088,7 +2087,7 @@ jobs:
           - Generated charts for latency and ops/sec metrics
           - Both TLS and non-TLS configurations tested
           - Cleaned up old timestamped WordPress PHP test results
-          - Custom parameters: requests=${{ inputs.requests || '2000' }}, clients=${{ inputs.clients || '100' }}, pipeline=${{ inputs.pipeline || '1' }}, intrinsic_latency=${{ inputs.intrinsic_latency || '5' }}, data_size=${{ inputs.data_size || '1024' }}
+          - Custom parameters: requests=${{ inputs.requests || '5000' }}, clients=${{ inputs.clients || '100' }}, pipeline=${{ inputs.pipeline || '1' }}, intrinsic_latency=${{ inputs.intrinsic_latency || '5' }}, data_size=${{ inputs.data_size || '1024' }}
           - Key range: ${KEY_MINIMUM}-${{ inputs.key_maximum || '1000000' }}
           - Workflow: ${{ github.workflow }}
           - Run: ${{ github.run_number }}
