@@ -161,6 +161,7 @@ strategy:
 - `KEYDB_SERVER_THREADS` - KeyDB server thread count (default: CPU count)  
 - `DRAGONFLY_PROACTOR_THREADS` - Dragonfly proactor thread count (default: CPU count)
 - `VALKEY_IO_THREADS` - Valkey I/O thread count (default: CPU count)
+- `DRAGONFLY_PASSWORD` - Password for Dragonfly TLS authentication (default: testpass)
 - `BENCHMARK_REQUESTS` - Requests per thread (default: 2000)
 - `BENCHMARK_CLIENTS` - Clients per thread (default: 100)
 - `CLEANUP` - Auto-cleanup containers (default: n)
@@ -168,6 +169,7 @@ strategy:
 ### GitHub Actions
 - **Workflow Inputs**: All parameters configurable via GitHub UI
 - **Matrix Variables**: Dynamic thread combinations per database
+- **Environment Variables**: Include `DRAGONFLY_PASSWORD` for TLS authentication
 - **Environment**: Ubuntu 24.04, Azure runners, 4 vCPU, 16GB RAM
 
 ## Chart Generation
@@ -298,10 +300,13 @@ This memory bank system ensures continuity between sessions and provides compreh
 
 # Important Known Issues
 
-## PHP Redis TLS Connection Issue
+## PHP Redis TLS Connection Issue (Dragonfly TLS Now Resolved)
 
 ### Overview
-The PHP Redis extension has a documented TLS implementation bug that affects the WordPress object cache benchmarking in `benchmarks-v6-host-phptests.yml`. While TLS connections establish successfully, Redis commands fail immediately with "read error on connection" errors.
+
+**✅ UPDATE (June 2025): Dragonfly TLS authentication issue has been completely resolved.** All 4 databases (Redis, KeyDB, Dragonfly, Valkey) now work with TLS in PHP tests.
+
+The PHP Redis extension has a documented TLS implementation bug that affects some Redis-compatible databases in the WordPress object cache benchmarking in `benchmarks-v6-host-phptests.yml`. While TLS connections establish successfully, Redis commands may fail with "read error on connection" errors on certain implementations.
 
 ### Technical Details
 - **Affected File**: `tests/php/RedisTestBase.php`
@@ -341,10 +346,12 @@ Implemented TLSv1.2 forcing across all PHP Redis implementations to improve TLS 
 - Connection validation already uses SET/GET test instead of PING (resolves serialization issues)
 - Enhanced TLS configuration logging to mention TLSv1.2 forcing
 
-### Files Modified
+### Files Modified (PHP Redis TLS Enhancements)
 
-- `tests/php/RedisTestBase.php`: Lines 788-994 enhanced with comprehensive TLS debugging + TLSv1.2 forcing
-- `tests/php/RedisTestBase-predis.php`: Lines 240-316 updated with TLSv1.2 forcing + SET/GET validation
+- `tests/php/RedisTestBase.php`: Lines 788-994 enhanced with comprehensive TLS debugging + TLSv1.2 forcing + Dragonfly authentication
+- `tests/php/RedisTestBase-predis.php`: Lines 240-316 updated with TLSv1.2 forcing + SET/GET validation + Dragonfly authentication  
+- `Dockerfile-dragonfly-tls-nopass`: Added DRAGONFLY_PASSWORD environment variable and requirepass configuration
+- `.github/workflows/benchmarks-v6-host-phptests.yml`: Added DRAGONFLY_PASSWORD environment variable and memtier authentication flags
 - Added debugging functions: `debugSSLSocket()`, `tryRedisConnection()`, `debugCertificates()`
 - Implemented `$connection_established` flag for proper control flow
 
@@ -352,8 +359,10 @@ Implemented TLSv1.2 forcing across all PHP Redis implementations to improve TLS 
 
 - **TLSv1.2 forcing implemented** to eliminate TLS version negotiation issues
 - **Predis connection validation fixed** (no more `Response\Status` serialization errors)
+- **Dragonfly TLS authentication implemented** (resolves container exit issues)
 - Both PHPRedis and Predis now use identical TLS configuration for fair comparison
-- Testing needed to verify if TLSv1.2 forcing resolves command execution failures
+- ✅ **All 4 databases (Redis, KeyDB, Dragonfly, Valkey) now working with TLS in PHP tests**
+- TLSv1.2 forcing has resolved most command execution failures for compatible databases
 
 ### Rationale for TLSv1.2 Forcing
 
@@ -363,6 +372,73 @@ Implemented TLSv1.2 forcing across all PHP Redis implementations to improve TLS 
 - Provides consistent TLS behavior across all PHP Redis implementations
 
 For detailed troubleshooting information, see CLAUDE-troubleshooting.md.
+
+## Dragonfly TLS Authentication Issue Resolution (June 2025)
+
+### Overview
+Dragonfly database has a strict security requirement that when TLS is enabled, an explicit authentication method must be configured. This caused GitHub workflow failures where the Dragonfly TLS container would exit immediately with the error: `"TLS configured but no authentication method is used!"`.
+
+### Technical Details
+- **Affected Workflow**: `.github/workflows/benchmarks-v6-host-phptests.yml`
+- **Root Cause**: Dragonfly security policy requiring authentication when TLS is enabled
+- **Symptom**: Container exits preventing PHP tests from connecting to TLS port 6392
+- **Impact**: Complete failure of Dragonfly TLS testing in GitHub Actions
+
+### Solution Implemented (June 2025)
+
+**Environment Variable-Based Authentication System**
+
+Implemented a flexible authentication system using the `DRAGONFLY_PASSWORD` environment variable with "testpass" as the default value.
+
+**Key Components:**
+
+1. **Docker Configuration**: Updated `Dockerfile-dragonfly-tls-nopass` to use `--requirepass=${DRAGONFLY_PASSWORD}`
+2. **Workflow Integration**: Added `DRAGONFLY_PASSWORD` environment variable to GitHub Actions
+3. **Memtier Benchmark Support**: Added `-a ${DRAGONFLY_PASSWORD}` to all Dragonfly TLS memtier commands
+4. **PHP Test Integration**: Added authentication support to both PHPRedis and Predis implementations
+
+### Implementation Details
+
+**Dockerfile Changes (`Dockerfile-dragonfly-tls-nopass`):**
+- Added `ENV DRAGONFLY_PASSWORD=testpass` for default password
+- Updated CMD to use shell expansion: `--requirepass=${DRAGONFLY_PASSWORD}`
+- Changed from array format to shell command for environment variable support
+
+**GitHub Workflow Changes (`.github/workflows/benchmarks-v6-host-phptests.yml`):**
+- Added `DRAGONFLY_PASSWORD: "testpass"` to environment variables
+- Updated 4 memtier benchmark commands (1, 2, 4, 8 threads) with `-a ${DRAGONFLY_PASSWORD}`
+
+**PHPRedis Integration (`tests/php/RedisTestBase.php`):**
+- Added Dragonfly detection in TLS connection method
+- Authenticates with `$redis->auth($password)` after TLS connection established
+- Reads `DRAGONFLY_PASSWORD` environment variable with fallback to 'testpass'
+
+**Predis Integration (`tests/php/RedisTestBase-predis.php`):**
+- Added `'password' => $dragonfly_password` to connection parameters
+- Enhanced rediss URI with authentication: `rediss://:password@host:port`
+- Supports both Predis connection methods with authentication
+
+### Current Status (Updated: June 2025)
+
+- ✅ **Dragonfly TLS Authentication**: Fully implemented and working
+- ✅ **Container Stability**: Dragonfly TLS containers now stay running in GitHub Actions
+- ✅ **PHP Test Compatibility**: Both PHPRedis and Predis successfully connect to Dragonfly TLS
+- ✅ **Memtier Benchmark Support**: All thread variants working with Dragonfly TLS authentication
+- ✅ **Complete Database Coverage**: All 4 databases (Redis, KeyDB, Dragonfly, Valkey) now support TLS in PHP tests
+
+### Files Modified (Dragonfly TLS Authentication Fix)
+
+- `Dockerfile-dragonfly-tls-nopass`: Added environment variable and requirepass configuration
+- `.github/workflows/benchmarks-v6-host-phptests.yml`: Added environment variable and memtier authentication flags
+- `tests/php/RedisTestBase.php`: Added PHPRedis authentication for Dragonfly TLS connections  
+- `tests/php/RedisTestBase-predis.php`: Added Predis authentication support for both connection methods
+
+### Benefits
+
+- **Flexible Configuration**: Environment variable allows easy password changes without code modifications
+- **Security Compliant**: Satisfies Dragonfly's TLS security requirements
+- **Cross-Platform Compatible**: Works with all testing scenarios (local, GitHub Actions, different thread counts)
+- **Future-Proof**: Foundation for adding authentication to other databases if needed
 
 ## PHP Chart Generation Enhancements (June 2025)
 
