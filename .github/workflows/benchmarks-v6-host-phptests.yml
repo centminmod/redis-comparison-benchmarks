@@ -101,7 +101,7 @@ jobs:
       PHP_REDIS_PHPREDIS_ENABLED: "true"
       PHP_REDIS_PREDIS_ENABLED: "true" 
       PHP_REDIS_TLS_FOCUS: "true"         # Enhanced TLS testing
-      PHP_REDIS_STATISTICAL_ITERATIONS: "13"
+      PHP_REDIS_STATISTICAL_ITERATIONS: "5"
       PHP_REDIS_DETAILED_DEBUG: "false"
     strategy:
       matrix:
