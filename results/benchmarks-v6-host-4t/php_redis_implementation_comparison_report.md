@@ -1,6 +1,6 @@
 # PHP Redis Implementation Comparison Report
 
-**Generated:** 2025-06-10 04:52:30 UTC
+**Generated:** 2025-06-10 07:42:48 UTC
 
 ## Implementation Overview
 
@@ -12,14 +12,14 @@
 ## Performance Summary
 
 ### predis
-- **Average Operations/sec:** 10401
-- **Average Latency:** 0.100ms
-- **TLS Performance Impact:** 26.4%
+- **Average Operations/sec:** 10551
+- **Average Latency:** 0.098ms
+- **TLS Performance Impact:** 26.8%
 
 ### phpredis
-- **Average Operations/sec:** 11694
+- **Average Operations/sec:** 11655
 - **Average Latency:** 0.088ms
-- **TLS Performance Impact:** 22.4%
+- **TLS Performance Impact:** 21.9%
 
 ## TLS Reliability
 

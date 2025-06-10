@@ -1837,6 +1837,234 @@ jobs:
         
         echo "PHP WordPress test summary created"
 
+    - name: Generate PHP Redis Charts Summary with Technical Explanations
+      continue-on-error: true
+      run: |
+        echo "=== Creating PHP Redis Charts Summary with Technical Explanations ==="
+        
+        SUMMARY_FILE="./benchmarklogs-${{ matrix.variant.threads }}t/php_redis_charts_summary.md"
+        
+        # Create header using echo commands for better workflow compatibility
+        echo "# PHP Redis Performance Charts Summary with Technical Analysis" > "$SUMMARY_FILE"
+        echo "" >> "$SUMMARY_FILE"
+        echo "## Overview" >> "$SUMMARY_FILE"
+        echo "This document provides a comprehensive visual analysis of Redis-compatible database performance using both traditional memtier benchmarks and real-world WordPress object cache simulations. Each chart includes technical explanations to help interpret the performance metrics and make informed database selection decisions." >> "$SUMMARY_FILE"
+        echo "" >> "$SUMMARY_FILE"
+        echo "## Chart Color Coding" >> "$SUMMARY_FILE"
+        echo "- **Redis**: Red" >> "$SUMMARY_FILE"
+        echo "- **KeyDB**: Green" >> "$SUMMARY_FILE"
+        echo "- **Dragonfly**: Orange" >> "$SUMMARY_FILE"
+        echo "- **Valkey**: Purple" >> "$SUMMARY_FILE"
+        echo "" >> "$SUMMARY_FILE"
+        echo "## Quality Indicators (for PHP charts)" >> "$SUMMARY_FILE"
+        echo "- 🟢 **Excellent** (CV < 2%): Highly reliable measurements" >> "$SUMMARY_FILE"
+        echo "- 🟡 **Good** (CV < 5%): Reliable measurements" >> "$SUMMARY_FILE"
+        echo "- 🟠 **Fair** (CV < 10%): Acceptable measurements" >> "$SUMMARY_FILE"
+        echo "- 🔴 **Poor** (CV ≥ 10%): Less reliable measurements" >> "$SUMMARY_FILE"
+        echo "" >> "$SUMMARY_FILE"
+        echo "*CV = Coefficient of Variation (standard deviation / mean × 100%)*" >> "$SUMMARY_FILE"
+        echo "" >> "$SUMMARY_FILE"
+
+        # Add test configuration info using echo commands
+        echo "## Test Configuration" >> "$SUMMARY_FILE"
+        echo "- **Thread Variant**: ${{ matrix.variant.threads }}" >> "$SUMMARY_FILE"
+        echo "- **Workflow Run**: ${{ github.run_number }}" >> "$SUMMARY_FILE"
+        echo "- **Commit SHA**: ${{ github.sha }}" >> "$SUMMARY_FILE"
+        echo "- **Run Date**: $(date -u)" >> "$SUMMARY_FILE"
+        echo "- **Redis IO Threads**: ${{ matrix.variant.redis_io_threads }}" >> "$SUMMARY_FILE"
+        echo "- **KeyDB Server Threads**: ${{ matrix.variant.keydb_server_threads }}" >> "$SUMMARY_FILE"
+        echo "- **Dragonfly Proactor Threads**: ${{ matrix.variant.dragonfly_proactor_threads }}" >> "$SUMMARY_FILE"
+        echo "- **Valkey IO Threads**: ${{ matrix.variant.valkey_io_threads }}" >> "$SUMMARY_FILE"
+        echo "" >> "$SUMMARY_FILE"
+
+        # Section A: Basic Performance Charts using echo commands
+        echo "## Section A: Basic Performance Charts" >> "$SUMMARY_FILE"
+        echo "" >> "$SUMMARY_FILE"
+        echo "<details>" >> "$SUMMARY_FILE"
+        echo "<summary><strong>📊 Latency Performance Charts</strong></summary>" >> "$SUMMARY_FILE"
+        echo "" >> "$SUMMARY_FILE"
+        echo "### Average Latency Charts" >> "$SUMMARY_FILE"
+        echo "" >> "$SUMMARY_FILE"
+
+        # Add latency charts with explanations
+        for tls_variant in "nonTLS" "TLS"; do
+          for metric in "avg" "p50" "p99"; do
+            chart_file="latency-${tls_variant}-${metric}-single.png"
+            if [ -f "./benchmarklogs-${{ matrix.variant.threads }}t/$chart_file" ]; then
+              case "$metric" in
+                "avg")
+                  explanation="**Average latency** for Sets, Gets, and Totals operations across thread counts. Shows typical response time performance under different workloads. Lower values indicate better user experience and more responsive database operations."
+                  ;;
+                "p50") 
+                  explanation="**Median (P50) latency** representing typical user experience - 50% of operations complete faster than this value. Critical for understanding real-world performance expectations and user experience consistency."
+                  ;;
+                "p99")
+                  explanation="**P99 latency** showing worst-case performance for 99% of operations. Higher P99 values indicate inconsistent performance or tail latency issues that can severely impact user experience during peak loads."
+                  ;;
+              esac
+              
+              {
+                echo ""
+                echo "#### ${tls_variant} ${metric^^} Latency"
+                echo "$explanation"
+                echo ""
+                echo "![${tls_variant} ${metric^^} Latency]($chart_file)"
+                echo ""
+              } >> "$SUMMARY_FILE"
+            fi
+          done
+        done
+
+        # Add throughput charts
+        {
+          echo ""
+          echo "### Throughput Performance Charts"
+          echo ""
+        } >> "$SUMMARY_FILE"
+
+        for tls_variant in "nonTLS" "TLS"; do
+          chart_file="ops-${tls_variant}-single.png"
+          if [ -f "./benchmarklogs-${{ matrix.variant.threads }}t/$chart_file" ]; then
+            {
+              echo ""
+              echo "#### ${tls_variant} Operations per Second"
+              echo "**Operations per second** for Sets, Gets, and Totals across thread configurations. Measures raw throughput capacity and scalability characteristics of each database. Higher values indicate better performance and ability to handle concurrent workloads."
+              echo ""
+              echo "![${tls_variant} Throughput]($chart_file)"
+              echo ""
+            } >> "$SUMMARY_FILE"
+          fi
+        done
+
+        {
+          echo ""
+          echo "</details>"
+          echo ""
+          echo "## Section B: Advanced Analysis Charts"
+          echo ""
+          echo "<details>"
+          echo "<summary><strong>🔬 Advanced Performance Analysis</strong></summary>"
+          echo ""
+          echo "### Database Comparison Charts"
+          echo ""
+        } >> "$SUMMARY_FILE"
+
+        # Add all advanced charts with streamlined approach
+        {
+          echo ""
+          echo "### Advanced Charts"
+          echo ""
+          echo "*Advanced performance analysis charts are generated automatically.*"
+          echo "*The following charts may be available depending on test configuration:*"
+          echo ""
+        } >> "$SUMMARY_FILE"
+        
+        # List all possible advanced charts and their explanations
+        advanced_charts=(
+          "advcharts-comparison.png|Non-TLS Performance Comparison|Side-by-side comparison of database performance"
+          "advcharts-comparison-tls.png|TLS Performance Comparison|Side-by-side comparison with TLS encryption"
+          "advcharts-comparison-stack.png|TLS vs Non-TLS Impact|Stacked view showing TLS overhead"
+          "advcharts-scaling.png|Non-TLS Scaling Analysis|Performance scaling across thread counts"
+          "advcharts-scaling-tls.png|TLS Scaling Analysis|TLS performance scaling patterns"
+          "advcharts-tradeoff.png|Non-TLS Trade-off Analysis|Latency vs throughput relationships"
+          "advcharts-tradeoff-tls.png|TLS Trade-off Analysis|TLS latency vs throughput trade-offs"
+          "advcharts-cache.png|Non-TLS Cache Efficiency|Cache hit rates and performance"
+          "advcharts-cache-tls.png|TLS Cache Efficiency|TLS cache performance analysis"
+          "advcharts-latency-dist.png|Non-TLS Latency Distribution|Average vs P99 latency trends"
+          "advcharts-latency-dist-tls.png|TLS Latency Distribution|TLS latency consistency analysis"
+          "advcharts-radar.png|Non-TLS Performance Radar|Multi-dimensional performance profiles"
+          "advcharts-radar-tls.png|TLS Performance Radar|TLS performance across dimensions"
+          "advcharts-heatmap.png|Non-TLS Performance Heatmap|Performance matrix visualization"
+          "advcharts-heatmap-tls.png|TLS Performance Heatmap|TLS performance patterns"
+        )
+        
+        for chart_info in "${advanced_charts[@]}"; do
+          IFS='|' read -r chart_file chart_title chart_desc <<< "$chart_info"
+          if [ -f "./benchmarklogs-${{ matrix.variant.threads }}t/$chart_file" ]; then
+            {
+              echo "#### $chart_title"
+              echo "$chart_desc"
+              echo ""
+              echo "![$chart_title]($chart_file)"
+              echo ""
+            } >> "$SUMMARY_FILE"
+          fi
+        done
+
+        # Add PHP Redis charts section
+        {
+          echo ""
+          echo "</details>"
+          echo ""
+          echo "## Section C: PHP Redis Application Performance"
+          echo ""
+          echo "<details>"
+          echo "<summary><strong>🐘 WordPress-Specific Performance Analysis</strong></summary>"
+          echo ""
+        } >> "$SUMMARY_FILE"
+        
+        # PHP Redis specific charts
+        php_charts=(
+          "php_redis_statistical_performance.png|Statistical Performance|WordPress-specific performance with quality indicators"
+          "php_redis_measurement_reliability.png|Measurement Reliability|Coefficient of variation and quality analysis"
+          "php_redis_iteration_variance.png|Iteration Variance|Performance consistency across test runs"
+          "php_redis_confidence_intervals.png|Confidence Intervals|Statistical significance analysis"
+          "php_redis_implementation_comparison.png|Implementation Comparison|PHPRedis vs Predis comparison"
+          "php_redis_implementation_comparison_non_tls.png|Non-TLS Implementation Comparison|Pure performance comparison"
+          "php_redis_implementation_comparison_tls.png|TLS Implementation Comparison|TLS reliability comparison"
+          "php_redis_tls_reliability_analysis.png|TLS Reliability Analysis|TLS success rates and stability"
+          "php_redis_statistical_comparison.png|Statistical Comparison|Implementation reliability metrics"
+        )
+        
+        for chart_info in "${php_charts[@]}"; do
+          IFS='|' read -r chart_file chart_title chart_desc <<< "$chart_info"
+          if [ -f "./benchmarklogs-${{ matrix.variant.threads }}t/$chart_file" ]; then
+            {
+              echo "#### $chart_title"
+              echo "$chart_desc"
+              echo ""
+              echo "![$chart_title]($chart_file)"
+              echo ""
+            } >> "$SUMMARY_FILE"
+          fi
+        done
+
+        # Add interpretation guide
+        {
+          echo ""
+          echo "</details>"
+          echo ""
+          echo "## Performance Interpretation Guide"
+          echo ""
+          echo "### Key Metrics"
+          echo "- **Operations/Second**: Higher values indicate better throughput"
+          echo "- **Latency**: Lower values mean faster response times"
+          echo "- **P99 Latency**: 99th percentile - worst-case performance"
+          echo "- **CV**: Coefficient of Variation - consistency measure"
+          echo ""
+          echo "### Chart Types"
+          echo "- **Bar Charts**: Direct performance comparisons"
+          echo "- **Line Charts**: Scaling trends and patterns"
+          echo "- **Scatter Plots**: Trade-off relationships"
+          echo "- **Radar Charts**: Multi-dimensional profiles"
+          echo "- **Heatmaps**: Performance pattern visualization"
+          echo ""
+          echo "---"
+          echo "*Generated automatically by benchmarks-v6-host-phptests.yml workflow*"
+        } >> "$SUMMARY_FILE"
+
+        echo "✅ PHP Redis charts summary with technical explanations created: $SUMMARY_FILE"
+        
+        # Display summary of what was included
+        CHART_COUNT=$(grep -c "!\[.*\](" "$SUMMARY_FILE" 2>/dev/null || echo "0")
+        echo "📊 Total charts included in summary: $CHART_COUNT"
+        
+        # Show file size
+        if [ -f "$SUMMARY_FILE" ]; then
+          FILE_SIZE=$(wc -c < "$SUMMARY_FILE" 2>/dev/null || echo "unknown")
+          echo "📄 Summary file size: $FILE_SIZE bytes"
+        fi
+
     - name: Prepare Thread-Specific Results Directory
       continue-on-error: true
       run: |
@@ -1865,6 +2093,7 @@ jobs:
 
         # Copy general PHP results and summaries
         cp ./benchmarklogs-${{ matrix.variant.threads }}t/php_wordpress_summary.md results/benchmarks-v6-host-${{ matrix.variant.threads }}t/ 2>/dev/null || echo "No PHP summary found"
+        cp ./benchmarklogs-${{ matrix.variant.threads }}t/php_redis_charts_summary.md results/benchmarks-v6-host-${{ matrix.variant.threads }}t/ 2>/dev/null || echo "No PHP charts summary found"
         cp ./benchmarklogs-${{ matrix.variant.threads }}t/php_*comparison*.png results/benchmarks-v6-host-${{ matrix.variant.threads }}t/ 2>/dev/null || echo "No comparison charts to copy"
         cp ./benchmarklogs-${{ matrix.variant.threads }}t/php_redis_implementation_comparison_report.md results/benchmarks-v6-host-${{ matrix.variant.threads }}t/ 2>/dev/null || echo "No comparison report to copy"
         cp benchmarklogs-${{ matrix.variant.threads }}t/php_results/*.json results/benchmarks-v6-host-${{ matrix.variant.threads }}t/ 2>/dev/null || echo "No PHP JSON results to copy"
