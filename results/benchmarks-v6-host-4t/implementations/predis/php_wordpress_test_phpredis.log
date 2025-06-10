@@ -45,7 +45,7 @@ Configuration: {
 }
 
 Starting WordPress Object Cache Test...
-Timestamp: 2025-06-10 06:16:59 UTC
+Timestamp: 2025-06-10 08:47:11 UTC
 Redis Extension Version: 6.2.0
 Enhanced Testing Configuration:
 - Iterations per test: 13
@@ -73,22 +73,22 @@ Testing Redis...
   Running 13 iterations for Redis (non-TLS)...
   Initial keys in database: 0
   Flushing database before test...
-  Database flushed in 0.30ms. Keys remaining: 0
-    Iteration 1/13... 10640 ops/sec, 0.093ms latency
-    Iteration 2/13... 10749 ops/sec, 0.092ms latency
-    Iteration 3/13... 10796 ops/sec, 0.092ms latency
-    Iteration 4/13... 10758 ops/sec, 0.092ms latency
-    Iteration 5/13... 10895 ops/sec, 0.091ms latency
-    Iteration 6/13... 11013 ops/sec, 0.090ms latency
-    Iteration 7/13... 11078 ops/sec, 0.090ms latency
-    Iteration 8/13... 10972 ops/sec, 0.090ms latency
-    Iteration 9/13... 11151 ops/sec, 0.089ms latency
-    Iteration 10/13... 11240 ops/sec, 0.088ms latency
-    Iteration 11/13... 11198 ops/sec, 0.089ms latency
-    Iteration 12/13... 11291 ops/sec, 0.088ms latency
-    Iteration 13/13... 11261 ops/sec, 0.088ms latency
-  Redis (non-TLS): 11003.22±220.46 ops/sec (CV: 2.0%), 0.090±0.002ms latency, Quality: good
-  Final keys in database: 395430
+  Database flushed in 0.34ms. Keys remaining: 0
+    Iteration 1/13... 10454 ops/sec, 0.095ms latency
+    Iteration 2/13... 10573 ops/sec, 0.094ms latency
+    Iteration 3/13... 10637 ops/sec, 0.093ms latency
+    Iteration 4/13... 10646 ops/sec, 0.093ms latency
+    Iteration 5/13... 10756 ops/sec, 0.092ms latency
+    Iteration 6/13... 10918 ops/sec, 0.091ms latency
+    Iteration 7/13... 10860 ops/sec, 0.091ms latency
+    Iteration 8/13... 10773 ops/sec, 0.092ms latency
+    Iteration 9/13... 10994 ops/sec, 0.090ms latency
+    Iteration 10/13... 11089 ops/sec, 0.089ms latency
+    Iteration 11/13... 11102 ops/sec, 0.089ms latency
+    Iteration 12/13... 11148 ops/sec, 0.089ms latency
+    Iteration 13/13... 11210 ops/sec, 0.088ms latency
+  Redis (non-TLS): 10858.33±241.43 ops/sec (CV: 2.2%), 0.091±0.002ms latency, Quality: good
+  Final keys in database: 394940
 🔐 Attempting TLS connection to Redis at 127.0.0.1:6390
   Using custom port scheme: Redis=6390, KeyDB=6391, Dragonfly=6392, Valkey=6393
   📡 Method 1: Using tls:// scheme with custom port 6390...
@@ -98,44 +98,44 @@ Testing Redis...
   Running 13 iterations for Redis (TLS)...
   Initial keys in database: 0
   Flushing database before test...
-  Database flushed in 0.31ms. Keys remaining: 0
-    Iteration 1/13... 8554 ops/sec, 0.116ms latency
-    Iteration 2/13... 8615 ops/sec, 0.115ms latency
-    Iteration 3/13... 8714 ops/sec, 0.114ms latency
-    Iteration 4/13... 8684 ops/sec, 0.114ms latency
-    Iteration 5/13... 8796 ops/sec, 0.113ms latency
-    Iteration 6/13... 8812 ops/sec, 0.113ms latency
-    Iteration 7/13... 8929 ops/sec, 0.111ms latency
-    Iteration 8/13... 8831 ops/sec, 0.112ms latency
-    Iteration 9/13... 8973 ops/sec, 0.111ms latency
-    Iteration 10/13... 9016 ops/sec, 0.110ms latency
-    Iteration 11/13... 9120 ops/sec, 0.109ms latency
-    Iteration 12/13... 9035 ops/sec, 0.110ms latency
-    Iteration 13/13... 9136 ops/sec, 0.109ms latency
-  Redis (TLS): 8862.72±189.26 ops/sec (CV: 2.1%), 0.112±0.002ms latency, Quality: good
-  Final keys in database: 394741
+  Database flushed in 0.34ms. Keys remaining: 0
+    Iteration 1/13... 8496 ops/sec, 0.117ms latency
+    Iteration 2/13... 8569 ops/sec, 0.116ms latency
+    Iteration 3/13... 8683 ops/sec, 0.114ms latency
+    Iteration 4/13... 8607 ops/sec, 0.115ms latency
+    Iteration 5/13... 8761 ops/sec, 0.113ms latency
+    Iteration 6/13... 8813 ops/sec, 0.113ms latency
+    Iteration 7/13... 8794 ops/sec, 0.113ms latency
+    Iteration 8/13... 8750 ops/sec, 0.113ms latency
+    Iteration 9/13... 8888 ops/sec, 0.112ms latency
+    Iteration 10/13... 8809 ops/sec, 0.113ms latency
+    Iteration 11/13... 8886 ops/sec, 0.112ms latency
+    Iteration 12/13... 8900 ops/sec, 0.112ms latency
+    Iteration 13/13... 9050 ops/sec, 0.110ms latency
+  Redis (TLS): 8769.73±151.90 ops/sec (CV: 1.7%), 0.113±0.002ms latency, Quality: excellent
+  Final keys in database: 395587
 
 Testing KeyDB...
   Configuration: Server Threads: 4
   Running 13 iterations for KeyDB (non-TLS)...
   Initial keys in database: 0
   Flushing database before test...
-  Database flushed in 0.08ms. Keys remaining: 0
-    Iteration 1/13... 13760 ops/sec, 0.072ms latency
-    Iteration 2/13... 13790 ops/sec, 0.072ms latency
-    Iteration 3/13... 13841 ops/sec, 0.072ms latency
-    Iteration 4/13... 13888 ops/sec, 0.071ms latency
-    Iteration 5/13... 13939 ops/sec, 0.071ms latency
-    Iteration 6/13... 14125 ops/sec, 0.070ms latency
-    Iteration 7/13... 14252 ops/sec, 0.069ms latency
-    Iteration 8/13... 14122 ops/sec, 0.070ms latency
-    Iteration 9/13... 14347 ops/sec, 0.069ms latency
-    Iteration 10/13... 14386 ops/sec, 0.069ms latency
-    Iteration 11/13... 14442 ops/sec, 0.068ms latency
-    Iteration 12/13... 14535 ops/sec, 0.068ms latency
-    Iteration 13/13... 14577 ops/sec, 0.068ms latency
-  KeyDB (non-TLS): 14154.11±290.33 ops/sec (CV: 2.1%), 0.070±0.001ms latency, Quality: good
-  Final keys in database: 395599
+  Database flushed in 0.11ms. Keys remaining: 0
+    Iteration 1/13... 13629 ops/sec, 0.073ms latency
+    Iteration 2/13... 13667 ops/sec, 0.072ms latency
+    Iteration 3/13... 13773 ops/sec, 0.072ms latency
+    Iteration 4/13... 13836 ops/sec, 0.072ms latency
+    Iteration 5/13... 13975 ops/sec, 0.071ms latency
+    Iteration 6/13... 14021 ops/sec, 0.071ms latency
+    Iteration 7/13... 14153 ops/sec, 0.070ms latency
+    Iteration 8/13... 14051 ops/sec, 0.070ms latency
+    Iteration 9/13... 14260 ops/sec, 0.069ms latency
+    Iteration 10/13... 14201 ops/sec, 0.070ms latency
+    Iteration 11/13... 14551 ops/sec, 0.068ms latency
+    Iteration 12/13... 14554 ops/sec, 0.068ms latency
+    Iteration 13/13... 14706 ops/sec, 0.067ms latency
+  KeyDB (non-TLS): 14105.90±344.59 ops/sec (CV: 2.4%), 0.070±0.002ms latency, Quality: good
+  Final keys in database: 395199
 🔐 Attempting TLS connection to KeyDB at 127.0.0.1:6391
   Using custom port scheme: Redis=6390, KeyDB=6391, Dragonfly=6392, Valkey=6393
   📡 Method 1: Using tls:// scheme with custom port 6391...
@@ -145,44 +145,44 @@ Testing KeyDB...
   Running 13 iterations for KeyDB (TLS)...
   Initial keys in database: 0
   Flushing database before test...
-  Database flushed in 0.47ms. Keys remaining: 0
-    Iteration 1/13... 10807 ops/sec, 0.092ms latency
-    Iteration 2/13... 10862 ops/sec, 0.091ms latency
-    Iteration 3/13... 10923 ops/sec, 0.091ms latency
-    Iteration 4/13... 10980 ops/sec, 0.090ms latency
-    Iteration 5/13... 11028 ops/sec, 0.090ms latency
-    Iteration 6/13... 11103 ops/sec, 0.089ms latency
-    Iteration 7/13... 11128 ops/sec, 0.089ms latency
-    Iteration 8/13... 11153 ops/sec, 0.089ms latency
-    Iteration 9/13... 11192 ops/sec, 0.089ms latency
-    Iteration 10/13... 11355 ops/sec, 0.087ms latency
-    Iteration 11/13... 11280 ops/sec, 0.088ms latency
-    Iteration 12/13... 11334 ops/sec, 0.087ms latency
-    Iteration 13/13... 11444 ops/sec, 0.087ms latency
-  KeyDB (TLS): 11122.18±197.80 ops/sec (CV: 1.8%), 0.089±0.002ms latency, Quality: excellent
-  Final keys in database: 395340
+  Database flushed in 0.41ms. Keys remaining: 0
+    Iteration 1/13... 10627 ops/sec, 0.093ms latency
+    Iteration 2/13... 10664 ops/sec, 0.093ms latency
+    Iteration 3/13... 10813 ops/sec, 0.092ms latency
+    Iteration 4/13... 10790 ops/sec, 0.092ms latency
+    Iteration 5/13... 10878 ops/sec, 0.091ms latency
+    Iteration 6/13... 10975 ops/sec, 0.090ms latency
+    Iteration 7/13... 10944 ops/sec, 0.091ms latency
+    Iteration 8/13... 10925 ops/sec, 0.091ms latency
+    Iteration 9/13... 11024 ops/sec, 0.090ms latency
+    Iteration 10/13... 11153 ops/sec, 0.089ms latency
+    Iteration 11/13... 11134 ops/sec, 0.089ms latency
+    Iteration 12/13... 11148 ops/sec, 0.089ms latency
+    Iteration 13/13... 11178 ops/sec, 0.089ms latency
+  KeyDB (TLS): 10942.53±184.36 ops/sec (CV: 1.7%), 0.091±0.002ms latency, Quality: excellent
+  Final keys in database: 394979
 
 Testing Dragonfly...
   Configuration: Proactor Threads: 4
   Running 13 iterations for Dragonfly (non-TLS)...
   Initial keys in database: 0
   Flushing database before test...
-  Database flushed in 0.66ms. Keys remaining: 0
-    Iteration 1/13... 11371 ops/sec, 0.087ms latency
-    Iteration 2/13... 11263 ops/sec, 0.088ms latency
-    Iteration 3/13... 11431 ops/sec, 0.087ms latency
-    Iteration 4/13... 11449 ops/sec, 0.087ms latency
-    Iteration 5/13... 11475 ops/sec, 0.086ms latency
-    Iteration 6/13... 11578 ops/sec, 0.086ms latency
-    Iteration 7/13... 11585 ops/sec, 0.086ms latency
-    Iteration 8/13... 11641 ops/sec, 0.085ms latency
-    Iteration 9/13... 11459 ops/sec, 0.086ms latency
-    Iteration 10/13... 11705 ops/sec, 0.085ms latency
-    Iteration 11/13... 11832 ops/sec, 0.084ms latency
-    Iteration 12/13... 11800 ops/sec, 0.084ms latency
-    Iteration 13/13... 11806 ops/sec, 0.084ms latency
-  Dragonfly (non-TLS): 11568.82±180.44 ops/sec (CV: 1.6%), 0.086±0.001ms latency, Quality: excellent
-  Final keys in database: 395132
+  Database flushed in 0.54ms. Keys remaining: 0
+    Iteration 1/13... 11277 ops/sec, 0.088ms latency
+    Iteration 2/13... 11450 ops/sec, 0.087ms latency
+    Iteration 3/13... 11395 ops/sec, 0.087ms latency
+    Iteration 4/13... 11451 ops/sec, 0.087ms latency
+    Iteration 5/13... 11418 ops/sec, 0.087ms latency
+    Iteration 6/13... 11531 ops/sec, 0.086ms latency
+    Iteration 7/13... 11653 ops/sec, 0.085ms latency
+    Iteration 8/13... 11513 ops/sec, 0.086ms latency
+    Iteration 9/13... 11643 ops/sec, 0.085ms latency
+    Iteration 10/13... 11765 ops/sec, 0.084ms latency
+    Iteration 11/13... 11894 ops/sec, 0.083ms latency
+    Iteration 12/13... 11713 ops/sec, 0.085ms latency
+    Iteration 13/13... 11992 ops/sec, 0.083ms latency
+  Dragonfly (non-TLS): 11591.92±208.27 ops/sec (CV: 1.8%), 0.086±0.002ms latency, Quality: excellent
+  Final keys in database: 395082
 🔐 Attempting TLS connection to Dragonfly at 127.0.0.1:6392
   Using custom port scheme: Redis=6390, KeyDB=6391, Dragonfly=6392, Valkey=6393
   📡 Method 1: Using tls:// scheme with custom port 6392...
@@ -194,22 +194,22 @@ Testing Dragonfly...
   Running 13 iterations for Dragonfly (TLS)...
   Initial keys in database: 233327
   Flushing database before test...
-  Database flushed in 9.73ms. Keys remaining: 0
-    Iteration 1/13... 8159 ops/sec, 0.122ms latency
-    Iteration 2/13... 8124 ops/sec, 0.122ms latency
-    Iteration 3/13... 8476 ops/sec, 0.117ms latency
-    Iteration 4/13... 8114 ops/sec, 0.122ms latency
-    Iteration 5/13... 8428 ops/sec, 0.118ms latency
-    Iteration 6/13... 8285 ops/sec, 0.120ms latency
-    Iteration 7/13... 8421 ops/sec, 0.118ms latency
-    Iteration 8/13... 8378 ops/sec, 0.118ms latency
-    Iteration 9/13... 8554 ops/sec, 0.116ms latency
-    Iteration 10/13... 8499 ops/sec, 0.117ms latency
-    Iteration 11/13... 8612 ops/sec, 0.115ms latency
-    Iteration 12/13... 8488 ops/sec, 0.117ms latency
-    Iteration 13/13... 8538 ops/sec, 0.116ms latency
-  Dragonfly (TLS): 8390.53±168.45 ops/sec (CV: 2.0%), 0.118±0.002ms latency, Quality: good
-  Final keys in database: 394720
+  Database flushed in 8.67ms. Keys remaining: 0
+    Iteration 1/13... 8161 ops/sec, 0.122ms latency
+    Iteration 2/13... 8169 ops/sec, 0.122ms latency
+    Iteration 3/13... 8061 ops/sec, 0.123ms latency
+    Iteration 4/13... 8194 ops/sec, 0.121ms latency
+    Iteration 5/13... 8269 ops/sec, 0.120ms latency
+    Iteration 6/13... 8208 ops/sec, 0.121ms latency
+    Iteration 7/13... 8246 ops/sec, 0.120ms latency
+    Iteration 8/13... 8329 ops/sec, 0.119ms latency
+    Iteration 9/13... 8264 ops/sec, 0.120ms latency
+    Iteration 10/13... 8468 ops/sec, 0.117ms latency
+    Iteration 11/13... 8385 ops/sec, 0.118ms latency
+    Iteration 12/13... 8539 ops/sec, 0.116ms latency
+    Iteration 13/13... 8398 ops/sec, 0.118ms latency
+  Dragonfly (TLS): 8283.98±134.86 ops/sec (CV: 1.6%), 0.120±0.002ms latency, Quality: excellent
+  Final keys in database: 395280
 
 Testing Valkey...
   Configuration: IO Threads: 4
@@ -217,21 +217,21 @@ Testing Valkey...
   Initial keys in database: 0
   Flushing database before test...
   Database flushed in 0.09ms. Keys remaining: 0
-    Iteration 1/13... 15345 ops/sec, 0.065ms latency
-    Iteration 2/13... 15523 ops/sec, 0.064ms latency
-    Iteration 3/13... 15373 ops/sec, 0.064ms latency
-    Iteration 4/13... 15871 ops/sec, 0.062ms latency
-    Iteration 5/13... 16122 ops/sec, 0.061ms latency
-    Iteration 6/13... 16096 ops/sec, 0.061ms latency
-    Iteration 7/13... 15907 ops/sec, 0.062ms latency
-    Iteration 8/13... 16166 ops/sec, 0.061ms latency
-    Iteration 9/13... 16550 ops/sec, 0.060ms latency
-    Iteration 10/13... 16074 ops/sec, 0.062ms latency
-    Iteration 11/13... 16422 ops/sec, 0.060ms latency
-    Iteration 12/13... 16449 ops/sec, 0.060ms latency
-    Iteration 13/13... 16307 ops/sec, 0.061ms latency
-  Valkey (non-TLS): 16015.79±398.35 ops/sec (CV: 2.5%), 0.062±0.002ms latency, Quality: good
-  Final keys in database: 395618
+    Iteration 1/13... 15492 ops/sec, 0.064ms latency
+    Iteration 2/13... 15748 ops/sec, 0.063ms latency
+    Iteration 3/13... 15664 ops/sec, 0.063ms latency
+    Iteration 4/13... 15881 ops/sec, 0.062ms latency
+    Iteration 5/13... 16027 ops/sec, 0.062ms latency
+    Iteration 6/13... 16275 ops/sec, 0.061ms latency
+    Iteration 7/13... 16151 ops/sec, 0.061ms latency
+    Iteration 8/13... 16278 ops/sec, 0.061ms latency
+    Iteration 9/13... 16504 ops/sec, 0.060ms latency
+    Iteration 10/13... 16573 ops/sec, 0.060ms latency
+    Iteration 11/13... 16599 ops/sec, 0.060ms latency
+    Iteration 12/13... 16805 ops/sec, 0.059ms latency
+    Iteration 13/13... 16566 ops/sec, 0.060ms latency
+  Valkey (non-TLS): 16197.16±411.16 ops/sec (CV: 2.5%), 0.061±0.002ms latency, Quality: good
+  Final keys in database: 395882
 🔐 Attempting TLS connection to Valkey at 127.0.0.1:6393
   Using custom port scheme: Redis=6390, KeyDB=6391, Dragonfly=6392, Valkey=6393
   📡 Method 1: Using tls:// scheme with custom port 6393...
@@ -241,22 +241,22 @@ Testing Valkey...
   Running 13 iterations for Valkey (TLS)...
   Initial keys in database: 0
   Flushing database before test...
-  Database flushed in 0.17ms. Keys remaining: 0
-    Iteration 1/13... 11694 ops/sec, 0.085ms latency
-    Iteration 2/13... 11712 ops/sec, 0.085ms latency
-    Iteration 3/13... 11856 ops/sec, 0.084ms latency
-    Iteration 4/13... 12052 ops/sec, 0.082ms latency
-    Iteration 5/13... 12205 ops/sec, 0.081ms latency
-    Iteration 6/13... 12123 ops/sec, 0.082ms latency
-    Iteration 7/13... 12214 ops/sec, 0.081ms latency
-    Iteration 8/13... 12398 ops/sec, 0.080ms latency
-    Iteration 9/13... 12430 ops/sec, 0.080ms latency
-    Iteration 10/13... 12313 ops/sec, 0.080ms latency
-    Iteration 11/13... 12298 ops/sec, 0.081ms latency
-    Iteration 12/13... 12605 ops/sec, 0.079ms latency
-    Iteration 13/13... 12657 ops/sec, 0.078ms latency
-  Valkey (TLS): 12196.70±306.70 ops/sec (CV: 2.5%), 0.081±0.002ms latency, Quality: good
-  Final keys in database: 394907
+  Database flushed in 0.11ms. Keys remaining: 0
+    Iteration 1/13... 11757 ops/sec, 0.084ms latency
+    Iteration 2/13... 11786 ops/sec, 0.084ms latency
+    Iteration 3/13... 12087 ops/sec, 0.082ms latency
+    Iteration 4/13... 11948 ops/sec, 0.083ms latency
+    Iteration 5/13... 12093 ops/sec, 0.082ms latency
+    Iteration 6/13... 12237 ops/sec, 0.081ms latency
+    Iteration 7/13... 11839 ops/sec, 0.084ms latency
+    Iteration 8/13... 12202 ops/sec, 0.081ms latency
+    Iteration 9/13... 12333 ops/sec, 0.080ms latency
+    Iteration 10/13... 12265 ops/sec, 0.081ms latency
+    Iteration 11/13... 12194 ops/sec, 0.081ms latency
+    Iteration 12/13... 12256 ops/sec, 0.081ms latency
+    Iteration 13/13... 12488 ops/sec, 0.079ms latency
+  Valkey (TLS): 12114.19±223.52 ops/sec (CV: 1.8%), 0.082±0.002ms latency, Quality: excellent
+  Final keys in database: 394920
 
 Enhanced results saved:
   CSV: ./benchmarklogs-4t/wordpress_object_cache_test.csv
@@ -265,7 +265,7 @@ Enhanced results saved:
   Raw Data: ./benchmarklogs-4t/wordpress_object_cache_test_raw.json
 ============================================================
 Enhanced test suite completed!
-Total execution time: 980.92 seconds
+Total execution time: 987.87 seconds
 Total tests run: 8
 Statistical iterations per test: 13
 Results saved to ./benchmarklogs-4t/
@@ -276,35 +276,35 @@ Thread Variant: 4 | Iterations per test: 13
 ====================================================================================================
 Rank Database                  Ops/sec   ±StdDev      CV%  Latency  Quality     95% CI     Reliable
 ----------------------------------------------------------------------------------------------------
-#1  Valkey                  16016      398    2.5%  0.062ms 🟡good    15,795-16,237      ✅
-#2  KeyDB                   14154      290    2.1%  0.070ms 🟡good    13,993-14,315      ✅
-#3  Valkey (TLS)            12197      307    2.5%  0.081ms 🟡good    12,027-12,367      ✅
-#4  Dragonfly               11569      180    1.6%  0.086ms 🟢excellent 11,469-11,669      ✅
-#5  KeyDB (TLS)             11122      198    1.8%  0.089ms 🟢excellent 11,012-11,232      ✅
-#6  Redis                   11003      220    2.0%  0.090ms 🟡good    10,881-11,126      ✅
-#7  Redis (TLS)              8863      189    2.1%  0.112ms 🟡good     8,758-8,968      ✅
-#8  Dragonfly (TLS)          8391      168    2.0%  0.118ms 🟡good     8,297-8,484      ✅
+#1  Valkey                  16197      411    2.5%  0.061ms 🟡good    15,969-16,425      ✅
+#2  KeyDB                   14106      345    2.4%  0.070ms 🟡good    13,915-14,297      ✅
+#3  Valkey (TLS)            12114      224    1.8%  0.082ms 🟢excellent 11,990-12,238      ✅
+#4  Dragonfly               11592      208    1.8%  0.086ms 🟢excellent 11,476-11,707      ✅
+#5  KeyDB (TLS)             10943      184    1.7%  0.091ms 🟢excellent 10,840-11,045      ✅
+#6  Redis                   10858      241    2.2%  0.091ms 🟡good    10,724-10,992      ✅
+#7  Redis (TLS)              8770      152    1.7%  0.113ms 🟢excellent  8,685-8,854      ✅
+#8  Dragonfly (TLS)          8284      135    1.6%  0.120ms 🟢excellent  8,209-8,359      ✅
 ====================================================================================================
 Quick Insights:
 - Reliable measurements: 8/8
-- 🏆 Best: Valkey - 16,016 ops/sec
-- 📊 Average precision: 2.1% CV
+- 🏆 Best: Valkey - 16,197 ops/sec
+- 📊 Average precision: 2.0% CV
 
 ================================================================================
 WORDPRESS PERFORMANCE ANALYSIS
 ================================================================================
-Redis                | Light pages:   1100/sec | Heavy pages:    220/sec
-Redis (TLS)          | Light pages:    886/sec | Heavy pages:    177/sec
-KeyDB                | Light pages:   1415/sec | Heavy pages:    283/sec
-KeyDB (TLS)          | Light pages:   1112/sec | Heavy pages:    222/sec
-Dragonfly            | Light pages:   1157/sec | Heavy pages:    231/sec
-Dragonfly (TLS)      | Light pages:    839/sec | Heavy pages:    168/sec
-Valkey               | Light pages:   1602/sec | Heavy pages:    320/sec
-Valkey (TLS)         | Light pages:   1220/sec | Heavy pages:    244/sec
+Redis                | Light pages:   1086/sec | Heavy pages:    217/sec
+Redis (TLS)          | Light pages:    877/sec | Heavy pages:    175/sec
+KeyDB                | Light pages:   1411/sec | Heavy pages:    282/sec
+KeyDB (TLS)          | Light pages:   1094/sec | Heavy pages:    219/sec
+Dragonfly            | Light pages:   1159/sec | Heavy pages:    232/sec
+Dragonfly (TLS)      | Light pages:    828/sec | Heavy pages:    166/sec
+Valkey               | Light pages:   1620/sec | Heavy pages:    324/sec
+Valkey (TLS)         | Light pages:   1211/sec | Heavy pages:    242/sec
 
 WordPress Cache Recommendations:
 - 🏆 Best performer: Valkey
-- 📊 Estimated capacity: 534 concurrent users (30 cache ops/user/sec)
+- 📊 Estimated capacity: 540 concurrent users (30 cache ops/user/sec)
 - 💡 For production WordPress, consider read/write ratios: 90/10 for cached sites, 70/30 for dynamic sites
 ================================================================================
 
@@ -312,10 +312,10 @@ WordPress Cache Recommendations:
 TLS vs NON-TLS PERFORMANCE COMPARISON
 Thread Variant: 4
 ============================================================
-Redis      | Non-TLS:    11003±220  | TLS:     8863±189  | Impact: +19.5% *
-KeyDB      | Non-TLS:    14154±290  | TLS:    11122±198  | Impact: +21.4% *
-Dragonfly  | Non-TLS:    11569±180  | TLS:     8391±168  | Impact: +27.5% *
-Valkey     | Non-TLS:    16016±398  | TLS:    12197±307  | Impact: +23.8% *
+Redis      | Non-TLS:    10858±241  | TLS:     8770±152  | Impact: +19.2% *
+KeyDB      | Non-TLS:    14106±345  | TLS:    10943±184  | Impact: +22.4% *
+Dragonfly  | Non-TLS:    11592±208  | TLS:     8284±135  | Impact: +28.5% *
+Valkey     | Non-TLS:    16197±411  | TLS:    12114±224  | Impact: +25.2% *
 ------------------------------------------------------------
 * = Statistically significant difference (95% confidence)
 ============================================================
@@ -325,16 +325,16 @@ STATISTICAL INSIGHTS
 Thread Variant: 4 | Iterations: 13
 ================================================================================
 Measurement Quality Distribution:
-  🟢 Excellent :  2 tests (25.0%)
-  🟡 Good      :  6 tests (75.0%)
+  🟢 Excellent :  5 tests (62.5%)
+  🟡 Good      :  3 tests (37.5%)
 
 Coefficient of Variation Analysis:
-  Average CV: 2.1% (lower is better)
+  Average CV: 2.0% (lower is better)
   Range: 1.6% - 2.5%
-  📊 Good measurement consistency
+  📊 Excellent measurement consistency across all tests
 
 Performance Analysis:
-  Performance range: 8391 - 16016 ops/sec (90.9% spread)
+  Performance range: 8284 - 16197 ops/sec (95.5% spread)
   📈 Moderate performance differences between databases
 
 Statistical Recommendations:
@@ -393,7 +393,7 @@ Test Environment:
 Initializing WordPress Object Cache Test...
 
 Starting WordPress Object Cache Test...
-Timestamp: 2025-06-10 06:33:20 UTC
+Timestamp: 2025-06-10 09:03:39 UTC
 Redis Extension Version: 6.2.0
 Enhanced Testing Configuration:
 - Iterations per test: 13
@@ -419,24 +419,24 @@ TLS testing will be attempted for: Redis, KeyDB, Dragonfly, Valkey
 Testing Redis...
   Configuration: IO Threads: 4
   Running 13 iterations for Redis (non-TLS)...
-  Initial keys in database: 395092
+  Initial keys in database: 394617
   Flushing database before test...
-  Database flushed in 225.77ms. Keys remaining: 0
-    Iteration 1/13... 10603 ops/sec, 0.094ms latency
-    Iteration 2/13... 10673 ops/sec, 0.093ms latency
-    Iteration 3/13... 10612 ops/sec, 0.093ms latency
-    Iteration 4/13... 10677 ops/sec, 0.093ms latency
-    Iteration 5/13... 10865 ops/sec, 0.091ms latency
-    Iteration 6/13... 10969 ops/sec, 0.090ms latency
-    Iteration 7/13... 11048 ops/sec, 0.090ms latency
-    Iteration 8/13... 10906 ops/sec, 0.091ms latency
-    Iteration 9/13... 10979 ops/sec, 0.090ms latency
-    Iteration 10/13... 11118 ops/sec, 0.089ms latency
-    Iteration 11/13... 11062 ops/sec, 0.090ms latency
-    Iteration 12/13... 11170 ops/sec, 0.089ms latency
-    Iteration 13/13... 11138 ops/sec, 0.089ms latency
-  Redis (non-TLS): 10909.38±205.85 ops/sec (CV: 1.9%), 0.091±0.002ms latency, Quality: excellent
-  Final keys in database: 394988
+  Database flushed in 235.83ms. Keys remaining: 0
+    Iteration 1/13... 10448 ops/sec, 0.095ms latency
+    Iteration 2/13... 10359 ops/sec, 0.096ms latency
+    Iteration 3/13... 10479 ops/sec, 0.095ms latency
+    Iteration 4/13... 10414 ops/sec, 0.095ms latency
+    Iteration 5/13... 10530 ops/sec, 0.094ms latency
+    Iteration 6/13... 10646 ops/sec, 0.093ms latency
+    Iteration 7/13... 10687 ops/sec, 0.093ms latency
+    Iteration 8/13... 10485 ops/sec, 0.095ms latency
+    Iteration 9/13... 10756 ops/sec, 0.092ms latency
+    Iteration 10/13... 10852 ops/sec, 0.091ms latency
+    Iteration 11/13... 10961 ops/sec, 0.090ms latency
+    Iteration 12/13... 11000 ops/sec, 0.090ms latency
+    Iteration 13/13... 11055 ops/sec, 0.090ms latency
+  Redis (non-TLS): 10667.00±238.89 ops/sec (CV: 2.2%), 0.093±0.002ms latency, Quality: good
+  Final keys in database: 396093
 🔐 Attempting TLS connection to Redis at 127.0.0.1:6390
   Using custom port scheme: Redis=6390, KeyDB=6391, Dragonfly=6392, Valkey=6393
   📡 Method 1: Using tls:// scheme with custom port 6390...
@@ -444,46 +444,46 @@ Testing Redis...
   🧪 Testing basic command over TLS...
   ✅ PING successful over TLS
   Running 13 iterations for Redis (TLS)...
-  Initial keys in database: 394433
+  Initial keys in database: 395242
   Flushing database before test...
-  Database flushed in 211.03ms. Keys remaining: 0
-    Iteration 1/13... 8494 ops/sec, 0.117ms latency
-    Iteration 2/13... 8463 ops/sec, 0.117ms latency
-    Iteration 3/13... 8608 ops/sec, 0.115ms latency
-    Iteration 4/13... 8549 ops/sec, 0.116ms latency
-    Iteration 5/13... 8782 ops/sec, 0.113ms latency
-    Iteration 6/13... 8853 ops/sec, 0.112ms latency
-    Iteration 7/13... 8755 ops/sec, 0.113ms latency
-    Iteration 8/13... 8686 ops/sec, 0.114ms latency
-    Iteration 9/13... 8904 ops/sec, 0.111ms latency
-    Iteration 10/13... 8873 ops/sec, 0.112ms latency
-    Iteration 11/13... 8955 ops/sec, 0.111ms latency
-    Iteration 12/13... 8991 ops/sec, 0.110ms latency
-    Iteration 13/13... 9071 ops/sec, 0.109ms latency
-  Redis (TLS): 8768.05±196.26 ops/sec (CV: 2.2%), 0.113±0.003ms latency, Quality: good
-  Final keys in database: 395113
+  Database flushed in 253.62ms. Keys remaining: 0
+    Iteration 1/13... 8379 ops/sec, 0.118ms latency
+    Iteration 2/13... 8353 ops/sec, 0.119ms latency
+    Iteration 3/13... 8532 ops/sec, 0.116ms latency
+    Iteration 4/13... 8452 ops/sec, 0.117ms latency
+    Iteration 5/13... 8618 ops/sec, 0.115ms latency
+    Iteration 6/13... 8702 ops/sec, 0.114ms latency
+    Iteration 7/13... 8758 ops/sec, 0.113ms latency
+    Iteration 8/13... 8620 ops/sec, 0.115ms latency
+    Iteration 9/13... 8783 ops/sec, 0.113ms latency
+    Iteration 10/13... 8865 ops/sec, 0.112ms latency
+    Iteration 11/13... 8867 ops/sec, 0.112ms latency
+    Iteration 12/13... 8894 ops/sec, 0.112ms latency
+    Iteration 13/13... 8941 ops/sec, 0.111ms latency
+  Redis (TLS): 8674.21±199.89 ops/sec (CV: 2.3%), 0.115±0.003ms latency, Quality: good
+  Final keys in database: 395243
 
 Testing KeyDB...
   Configuration: Server Threads: 4
   Running 13 iterations for KeyDB (non-TLS)...
-  Initial keys in database: 395241
+  Initial keys in database: 394830
   Flushing database before test...
-  Database flushed in 220.13ms. Keys remaining: 0
-    Iteration 1/13... 13575 ops/sec, 0.073ms latency
-    Iteration 2/13... 13622 ops/sec, 0.073ms latency
-    Iteration 3/13... 13744 ops/sec, 0.072ms latency
-    Iteration 4/13... 13758 ops/sec, 0.072ms latency
-    Iteration 5/13... 13994 ops/sec, 0.071ms latency
-    Iteration 6/13... 13956 ops/sec, 0.071ms latency
-    Iteration 7/13... 14034 ops/sec, 0.071ms latency
-    Iteration 8/13... 13915 ops/sec, 0.071ms latency
-    Iteration 9/13... 14140 ops/sec, 0.070ms latency
-    Iteration 10/13... 14212 ops/sec, 0.070ms latency
-    Iteration 11/13... 14369 ops/sec, 0.069ms latency
-    Iteration 12/13... 14296 ops/sec, 0.069ms latency
-    Iteration 13/13... 14392 ops/sec, 0.069ms latency
-  KeyDB (non-TLS): 14000.47±273.80 ops/sec (CV: 2.0%), 0.071±0.001ms latency, Quality: excellent
-  Final keys in database: 395171
+  Database flushed in 204.35ms. Keys remaining: 0
+    Iteration 1/13... 13603 ops/sec, 0.073ms latency
+    Iteration 2/13... 13594 ops/sec, 0.073ms latency
+    Iteration 3/13... 13593 ops/sec, 0.073ms latency
+    Iteration 4/13... 13610 ops/sec, 0.073ms latency
+    Iteration 5/13... 13678 ops/sec, 0.072ms latency
+    Iteration 6/13... 13864 ops/sec, 0.071ms latency
+    Iteration 7/13... 13964 ops/sec, 0.071ms latency
+    Iteration 8/13... 13945 ops/sec, 0.071ms latency
+    Iteration 9/13... 14157 ops/sec, 0.070ms latency
+    Iteration 10/13... 14204 ops/sec, 0.070ms latency
+    Iteration 11/13... 14319 ops/sec, 0.069ms latency
+    Iteration 12/13... 14292 ops/sec, 0.069ms latency
+    Iteration 13/13... 14313 ops/sec, 0.069ms latency
+  KeyDB (non-TLS): 13933.44±297.20 ops/sec (CV: 2.1%), 0.071±0.002ms latency, Quality: good
+  Final keys in database: 395460
 🔐 Attempting TLS connection to KeyDB at 127.0.0.1:6391
   Using custom port scheme: Redis=6390, KeyDB=6391, Dragonfly=6392, Valkey=6393
   📡 Method 1: Using tls:// scheme with custom port 6391...
@@ -491,46 +491,46 @@ Testing KeyDB...
   🧪 Testing basic command over TLS...
   ✅ PING successful over TLS
   Running 13 iterations for KeyDB (TLS)...
-  Initial keys in database: 394967
+  Initial keys in database: 394598
   Flushing database before test...
-  Database flushed in 212.26ms. Keys remaining: 0
-    Iteration 1/13... 10665 ops/sec, 0.093ms latency
-    Iteration 2/13... 10616 ops/sec, 0.093ms latency
-    Iteration 3/13... 10789 ops/sec, 0.092ms latency
-    Iteration 4/13... 10886 ops/sec, 0.091ms latency
-    Iteration 5/13... 10930 ops/sec, 0.091ms latency
-    Iteration 6/13... 11059 ops/sec, 0.090ms latency
-    Iteration 7/13... 11012 ops/sec, 0.090ms latency
-    Iteration 8/13... 10979 ops/sec, 0.090ms latency
-    Iteration 9/13... 11059 ops/sec, 0.090ms latency
-    Iteration 10/13... 11092 ops/sec, 0.089ms latency
-    Iteration 11/13... 11137 ops/sec, 0.089ms latency
-    Iteration 12/13... 11161 ops/sec, 0.089ms latency
-    Iteration 13/13... 11106 ops/sec, 0.089ms latency
-  KeyDB (TLS): 10960.89±176.49 ops/sec (CV: 1.6%), 0.090±0.001ms latency, Quality: excellent
-  Final keys in database: 395229
+  Database flushed in 240.92ms. Keys remaining: 0
+    Iteration 1/13... 10463 ops/sec, 0.095ms latency
+    Iteration 2/13... 10494 ops/sec, 0.094ms latency
+    Iteration 3/13... 10597 ops/sec, 0.094ms latency
+    Iteration 4/13... 10659 ops/sec, 0.093ms latency
+    Iteration 5/13... 10878 ops/sec, 0.091ms latency
+    Iteration 6/13... 10929 ops/sec, 0.091ms latency
+    Iteration 7/13... 10862 ops/sec, 0.091ms latency
+    Iteration 8/13... 10934 ops/sec, 0.091ms latency
+    Iteration 9/13... 11063 ops/sec, 0.090ms latency
+    Iteration 10/13... 11148 ops/sec, 0.089ms latency
+    Iteration 11/13... 11131 ops/sec, 0.089ms latency
+    Iteration 12/13... 11136 ops/sec, 0.089ms latency
+    Iteration 13/13... 11228 ops/sec, 0.088ms latency
+  KeyDB (TLS): 10886.28±260.01 ops/sec (CV: 2.4%), 0.091±0.002ms latency, Quality: good
+  Final keys in database: 394608
 
 Testing Dragonfly...
   Configuration: Proactor Threads: 4
   Running 13 iterations for Dragonfly (non-TLS)...
-  Initial keys in database: 393166
+  Initial keys in database: 393188
   Flushing database before test...
-  Database flushed in 21.29ms. Keys remaining: 0
-    Iteration 1/13... 11217 ops/sec, 0.088ms latency
-    Iteration 2/13... 11212 ops/sec, 0.088ms latency
-    Iteration 3/13... 11261 ops/sec, 0.088ms latency
-    Iteration 4/13... 11341 ops/sec, 0.087ms latency
-    Iteration 5/13... 11423 ops/sec, 0.087ms latency
-    Iteration 6/13... 11506 ops/sec, 0.086ms latency
-    Iteration 7/13... 11465 ops/sec, 0.086ms latency
-    Iteration 8/13... 11292 ops/sec, 0.088ms latency
-    Iteration 9/13... 11433 ops/sec, 0.087ms latency
-    Iteration 10/13... 11403 ops/sec, 0.087ms latency
-    Iteration 11/13... 11638 ops/sec, 0.085ms latency
-    Iteration 12/13... 11600 ops/sec, 0.085ms latency
-    Iteration 13/13... 11618 ops/sec, 0.085ms latency
-  Dragonfly (non-TLS): 11416.08±147.62 ops/sec (CV: 1.3%), 0.087±0.001ms latency, Quality: excellent
-  Final keys in database: 395407
+  Database flushed in 20.05ms. Keys remaining: 0
+    Iteration 1/13... 11183 ops/sec, 0.089ms latency
+    Iteration 2/13... 11397 ops/sec, 0.087ms latency
+    Iteration 3/13... 11625 ops/sec, 0.085ms latency
+    Iteration 4/13... 11601 ops/sec, 0.085ms latency
+    Iteration 5/13... 11585 ops/sec, 0.086ms latency
+    Iteration 6/13... 11604 ops/sec, 0.085ms latency
+    Iteration 7/13... 11660 ops/sec, 0.085ms latency
+    Iteration 8/13... 11692 ops/sec, 0.085ms latency
+    Iteration 9/13... 11851 ops/sec, 0.084ms latency
+    Iteration 10/13... 11827 ops/sec, 0.084ms latency
+    Iteration 11/13... 12042 ops/sec, 0.082ms latency
+    Iteration 12/13... 11815 ops/sec, 0.084ms latency
+    Iteration 13/13... 12015 ops/sec, 0.083ms latency
+  Dragonfly (non-TLS): 11684.42±235.18 ops/sec (CV: 2.0%), 0.085±0.002ms latency, Quality: good
+  Final keys in database: 396350
 🔐 Attempting TLS connection to Dragonfly at 127.0.0.1:6392
   Using custom port scheme: Redis=6390, KeyDB=6391, Dragonfly=6392, Valkey=6393
   📡 Method 1: Using tls:// scheme with custom port 6392...
@@ -540,46 +540,46 @@ Testing Dragonfly...
   🧪 Testing basic command over TLS...
   ✅ PING successful over TLS
   Running 13 iterations for Dragonfly (TLS)...
-  Initial keys in database: 392833
+  Initial keys in database: 393262
   Flushing database before test...
-  Database flushed in 16.46ms. Keys remaining: 0
-    Iteration 1/13... 8545 ops/sec, 0.116ms latency
-    Iteration 2/13... 8780 ops/sec, 0.113ms latency
-    Iteration 3/13... 8845 ops/sec, 0.112ms latency
-    Iteration 4/13... 8747 ops/sec, 0.113ms latency
-    Iteration 5/13... 8763 ops/sec, 0.113ms latency
-    Iteration 6/13... 9035 ops/sec, 0.110ms latency
-    Iteration 7/13... 9063 ops/sec, 0.109ms latency
-    Iteration 8/13... 8921 ops/sec, 0.111ms latency
-    Iteration 9/13... 9020 ops/sec, 0.110ms latency
-    Iteration 10/13... 8961 ops/sec, 0.111ms latency
-    Iteration 11/13... 8980 ops/sec, 0.110ms latency
-    Iteration 12/13... 9142 ops/sec, 0.109ms latency
-    Iteration 13/13... 8844 ops/sec, 0.112ms latency
-  Dragonfly (TLS): 8895.82±162.53 ops/sec (CV: 1.8%), 0.112±0.002ms latency, Quality: excellent
-  Final keys in database: 394746
+  Database flushed in 16.42ms. Keys remaining: 0
+    Iteration 1/13... 8705 ops/sec, 0.114ms latency
+    Iteration 2/13... 8941 ops/sec, 0.111ms latency
+    Iteration 3/13... 8857 ops/sec, 0.112ms latency
+    Iteration 4/13... 8698 ops/sec, 0.114ms latency
+    Iteration 5/13... 8886 ops/sec, 0.112ms latency
+    Iteration 6/13... 8958 ops/sec, 0.111ms latency
+    Iteration 7/13... 8815 ops/sec, 0.113ms latency
+    Iteration 8/13... 9047 ops/sec, 0.110ms latency
+    Iteration 9/13... 9041 ops/sec, 0.110ms latency
+    Iteration 10/13... 9092 ops/sec, 0.109ms latency
+    Iteration 11/13... 9140 ops/sec, 0.109ms latency
+    Iteration 12/13... 9268 ops/sec, 0.107ms latency
+    Iteration 13/13... 9330 ops/sec, 0.106ms latency
+  Dragonfly (TLS): 8982.82±195.76 ops/sec (CV: 2.2%), 0.111±0.002ms latency, Quality: good
+  Final keys in database: 394386
 
 Testing Valkey...
   Configuration: IO Threads: 4
   Running 13 iterations for Valkey (non-TLS)...
-  Initial keys in database: 395207
+  Initial keys in database: 395451
   Flushing database before test...
-  Database flushed in 0.21ms. Keys remaining: 0
-    Iteration 1/13... 15513 ops/sec, 0.064ms latency
-    Iteration 2/13... 15564 ops/sec, 0.064ms latency
-    Iteration 3/13... 15609 ops/sec, 0.063ms latency
-    Iteration 4/13... 16135 ops/sec, 0.061ms latency
-    Iteration 5/13... 16068 ops/sec, 0.062ms latency
-    Iteration 6/13... 15996 ops/sec, 0.062ms latency
-    Iteration 7/13... 15624 ops/sec, 0.063ms latency
-    Iteration 8/13... 16265 ops/sec, 0.061ms latency
-    Iteration 9/13... 16306 ops/sec, 0.061ms latency
-    Iteration 10/13... 15946 ops/sec, 0.062ms latency
-    Iteration 11/13... 16382 ops/sec, 0.060ms latency
-    Iteration 12/13... 16681 ops/sec, 0.059ms latency
-    Iteration 13/13... 16421 ops/sec, 0.060ms latency
-  Valkey (non-TLS): 16039.31±373.92 ops/sec (CV: 2.3%), 0.062±0.001ms latency, Quality: good
-  Final keys in database: 394991
+  Database flushed in 0.11ms. Keys remaining: 0
+    Iteration 1/13... 15909 ops/sec, 0.062ms latency
+    Iteration 2/13... 15830 ops/sec, 0.063ms latency
+    Iteration 3/13... 15677 ops/sec, 0.063ms latency
+    Iteration 4/13... 16146 ops/sec, 0.061ms latency
+    Iteration 5/13... 16007 ops/sec, 0.062ms latency
+    Iteration 6/13... 16254 ops/sec, 0.061ms latency
+    Iteration 7/13... 15820 ops/sec, 0.063ms latency
+    Iteration 8/13... 16435 ops/sec, 0.060ms latency
+    Iteration 9/13... 16497 ops/sec, 0.060ms latency
+    Iteration 10/13... 16507 ops/sec, 0.060ms latency
+    Iteration 11/13... 16793 ops/sec, 0.059ms latency
+    Iteration 12/13... 16809 ops/sec, 0.059ms latency
+    Iteration 13/13... 16711 ops/sec, 0.059ms latency
+  Valkey (non-TLS): 16261.14±393.28 ops/sec (CV: 2.4%), 0.061±0.001ms latency, Quality: good
+  Final keys in database: 395418
 🔐 Attempting TLS connection to Valkey at 127.0.0.1:6393
   Using custom port scheme: Redis=6390, KeyDB=6391, Dragonfly=6392, Valkey=6393
   📡 Method 1: Using tls:// scheme with custom port 6393...
@@ -587,24 +587,24 @@ Testing Valkey...
   🧪 Testing basic command over TLS...
   ✅ PING successful over TLS
   Running 13 iterations for Valkey (TLS)...
-  Initial keys in database: 394528
+  Initial keys in database: 394542
   Flushing database before test...
-  Database flushed in 0.13ms. Keys remaining: 0
-    Iteration 1/13... 11942 ops/sec, 0.083ms latency
-    Iteration 2/13... 11954 ops/sec, 0.083ms latency
-    Iteration 3/13... 11994 ops/sec, 0.083ms latency
-    Iteration 4/13... 12052 ops/sec, 0.082ms latency
-    Iteration 5/13... 12106 ops/sec, 0.082ms latency
-    Iteration 6/13... 12180 ops/sec, 0.081ms latency
-    Iteration 7/13... 11943 ops/sec, 0.083ms latency
-    Iteration 8/13... 12297 ops/sec, 0.081ms latency
-    Iteration 9/13... 12505 ops/sec, 0.079ms latency
-    Iteration 10/13... 12427 ops/sec, 0.080ms latency
-    Iteration 11/13... 12512 ops/sec, 0.079ms latency
-    Iteration 12/13... 12595 ops/sec, 0.079ms latency
-    Iteration 13/13... 12749 ops/sec, 0.078ms latency
-  Valkey (TLS): 12250.41±280.36 ops/sec (CV: 2.3%), 0.081±0.002ms latency, Quality: good
-  Final keys in database: 395465
+  Database flushed in 0.14ms. Keys remaining: 0
+    Iteration 1/13... 11956 ops/sec, 0.083ms latency
+    Iteration 2/13... 11742 ops/sec, 0.084ms latency
+    Iteration 3/13... 11895 ops/sec, 0.083ms latency
+    Iteration 4/13... 12084 ops/sec, 0.082ms latency
+    Iteration 5/13... 12055 ops/sec, 0.082ms latency
+    Iteration 6/13... 12199 ops/sec, 0.081ms latency
+    Iteration 7/13... 12053 ops/sec, 0.082ms latency
+    Iteration 8/13... 12284 ops/sec, 0.081ms latency
+    Iteration 9/13... 12235 ops/sec, 0.081ms latency
+    Iteration 10/13... 12356 ops/sec, 0.080ms latency
+    Iteration 11/13... 12417 ops/sec, 0.080ms latency
+    Iteration 12/13... 12578 ops/sec, 0.079ms latency
+    Iteration 13/13... 12588 ops/sec, 0.079ms latency
+  Valkey (TLS): 12187.79±256.39 ops/sec (CV: 2.1%), 0.081±0.002ms latency, Quality: good
+  Final keys in database: 394821
 
 Enhanced results saved:
   CSV: ./benchmarklogs-4t/wordpress_object_cache_test.csv
@@ -613,7 +613,7 @@ Enhanced results saved:
   Raw Data: ./benchmarklogs-4t/wordpress_object_cache_test_raw.json
 ============================================================
 Enhanced test suite completed!
-Total execution time: 979.24 seconds
+Total execution time: 980.41 seconds
 Total tests run: 8
 Statistical iterations per test: 13
 Results saved to ./benchmarklogs-4t/
@@ -624,35 +624,35 @@ Thread Variant: 4 | Iterations per test: 13
 ====================================================================================================
 Rank Database                  Ops/sec   ±StdDev      CV%  Latency  Quality     95% CI     Reliable
 ----------------------------------------------------------------------------------------------------
-#1  Valkey                  16039      374    2.3%  0.062ms 🟡good    15,832-16,247      ✅
-#2  KeyDB                   14000      274    2.0%  0.071ms 🟢excellent 13,849-14,152      ✅
-#3  Valkey (TLS)            12250      280    2.3%  0.081ms 🟡good    12,095-12,406      ✅
-#4  Dragonfly               11416      148    1.3%  0.087ms 🟢excellent 11,334-11,498      ✅
-#5  KeyDB (TLS)             10961      176    1.6%  0.090ms 🟢excellent 10,863-11,059      ✅
-#6  Redis                   10909      206    1.9%  0.091ms 🟢excellent 10,795-11,024      ✅
-#7  Dragonfly (TLS)          8896      163    1.8%  0.112ms 🟢excellent  8,806-8,986      ✅
-#8  Redis (TLS)              8768      196    2.2%  0.113ms 🟡good     8,659-8,877      ✅
+#1  Valkey                  16261      393    2.4%  0.061ms 🟡good    16,043-16,479      ✅
+#2  KeyDB                   13933      297    2.1%  0.071ms 🟡good    13,769-14,098      ✅
+#3  Valkey (TLS)            12188      256    2.1%  0.081ms 🟡good    12,046-12,330      ✅
+#4  Dragonfly               11684      235    2.0%  0.085ms 🟡good    11,554-11,815      ✅
+#5  KeyDB (TLS)             10886      260    2.4%  0.091ms 🟡good    10,742-11,031      ✅
+#6  Redis                   10667      239    2.2%  0.093ms 🟡good    10,534-10,800      ✅
+#7  Dragonfly (TLS)          8983      196    2.2%  0.111ms 🟡good     8,874-9,091      ✅
+#8  Redis (TLS)              8674      200    2.3%  0.115ms 🟡good     8,563-8,785      ✅
 ====================================================================================================
 Quick Insights:
 - Reliable measurements: 8/8
-- 🏆 Best: Valkey - 16,039 ops/sec
-- 📊 Average precision: 1.9% CV
+- 🏆 Best: Valkey - 16,261 ops/sec
+- 📊 Average precision: 2.2% CV
 
 ================================================================================
 WORDPRESS PERFORMANCE ANALYSIS
 ================================================================================
-Redis                | Light pages:   1091/sec | Heavy pages:    218/sec
-Redis (TLS)          | Light pages:    877/sec | Heavy pages:    175/sec
-KeyDB                | Light pages:   1400/sec | Heavy pages:    280/sec
-KeyDB (TLS)          | Light pages:   1096/sec | Heavy pages:    219/sec
-Dragonfly            | Light pages:   1142/sec | Heavy pages:    228/sec
-Dragonfly (TLS)      | Light pages:    890/sec | Heavy pages:    178/sec
-Valkey               | Light pages:   1604/sec | Heavy pages:    321/sec
-Valkey (TLS)         | Light pages:   1225/sec | Heavy pages:    245/sec
+Redis                | Light pages:   1067/sec | Heavy pages:    213/sec
+Redis (TLS)          | Light pages:    867/sec | Heavy pages:    173/sec
+KeyDB                | Light pages:   1393/sec | Heavy pages:    279/sec
+KeyDB (TLS)          | Light pages:   1089/sec | Heavy pages:    218/sec
+Dragonfly            | Light pages:   1168/sec | Heavy pages:    234/sec
+Dragonfly (TLS)      | Light pages:    898/sec | Heavy pages:    180/sec
+Valkey               | Light pages:   1626/sec | Heavy pages:    325/sec
+Valkey (TLS)         | Light pages:   1219/sec | Heavy pages:    244/sec
 
 WordPress Cache Recommendations:
 - 🏆 Best performer: Valkey
-- 📊 Estimated capacity: 535 concurrent users (30 cache ops/user/sec)
+- 📊 Estimated capacity: 542 concurrent users (30 cache ops/user/sec)
 - 💡 For production WordPress, consider read/write ratios: 90/10 for cached sites, 70/30 for dynamic sites
 ================================================================================
 
@@ -660,10 +660,10 @@ WordPress Cache Recommendations:
 TLS vs NON-TLS PERFORMANCE COMPARISON
 Thread Variant: 4
 ============================================================
-Redis      | Non-TLS:    10909±206  | TLS:     8768±196  | Impact: +19.6% *
-KeyDB      | Non-TLS:    14000±274  | TLS:    10961±176  | Impact: +21.7% *
-Dragonfly  | Non-TLS:    11416±148  | TLS:     8896±163  | Impact: +22.1% *
-Valkey     | Non-TLS:    16039±374  | TLS:    12250±280  | Impact: +23.6% *
+Redis      | Non-TLS:    10667±239  | TLS:     8674±200  | Impact: +18.7% *
+KeyDB      | Non-TLS:    13933±297  | TLS:    10886±260  | Impact: +21.9% *
+Dragonfly  | Non-TLS:    11684±235  | TLS:     8983±196  | Impact: +23.1% *
+Valkey     | Non-TLS:    16261±393  | TLS:    12188±256  | Impact: +25.0% *
 ------------------------------------------------------------
 * = Statistically significant difference (95% confidence)
 ============================================================
@@ -673,16 +673,15 @@ STATISTICAL INSIGHTS
 Thread Variant: 4 | Iterations: 13
 ================================================================================
 Measurement Quality Distribution:
-  🟢 Excellent :  5 tests (62.5%)
-  🟡 Good      :  3 tests (37.5%)
+  🟡 Good      :  8 tests (100.0%)
 
 Coefficient of Variation Analysis:
-  Average CV: 1.9% (lower is better)
-  Range: 1.3% - 2.3%
-  📊 Excellent measurement consistency across all tests
+  Average CV: 2.2% (lower is better)
+  Range: 2.0% - 2.4%
+  📊 Good measurement consistency
 
 Performance Analysis:
-  Performance range: 8768 - 16039 ops/sec (82.9% spread)
+  Performance range: 8674 - 16261 ops/sec (87.5% spread)
   📈 Moderate performance differences between databases
 
 Statistical Recommendations:
@@ -692,7 +691,7 @@ Statistical Recommendations:
 ============================================================
 TEST SUITE COMPLETED SUCCESSFULLY!
 ============================================================
-Total execution time: 979.25 seconds
+Total execution time: 980.43 seconds
 Statistical iterations per database: 13
 Results saved to: ./benchmarklogs-4t
 
