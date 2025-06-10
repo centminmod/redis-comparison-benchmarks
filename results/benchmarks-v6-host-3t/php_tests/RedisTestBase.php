@@ -835,6 +835,24 @@ class RedisTestBase {
             if ($success) {
                 echo "  ✅ TLS connection successful with tls://$tls_host:$port\n";
                 
+                // Authenticate if this is Dragonfly (requires password for TLS)
+                if (strpos(strtolower($database_name), 'dragonfly') !== false) {
+                    $dragonfly_password = getenv('DRAGONFLY_PASSWORD') ?: 'testpass';
+                    echo "  🔐 Authenticating to Dragonfly with password...\n";
+                    try {
+                        $auth_result = $tls_redis->auth($dragonfly_password);
+                        if ($auth_result === true) {
+                            echo "  ✅ Authentication successful to Dragonfly\n";
+                        } else {
+                            echo "  ❌ Authentication failed to Dragonfly\n";
+                            throw new Exception("Authentication failed to Dragonfly");
+                        }
+                    } catch (Exception $e) {
+                        echo "  ❌ Authentication error to Dragonfly: " . $e->getMessage() . "\n";
+                        throw $e;
+                    }
+                }
+                
                 // Test basic command
                 echo "  🧪 Testing basic command over TLS...\n";
                 try {

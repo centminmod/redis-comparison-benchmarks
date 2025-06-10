@@ -38,9 +38,9 @@ Statistical Analysis: 13 iterations with confidence intervals
 🚀 Starting Predis WordPress Object Cache Test...
 
 Starting WordPress Object Cache Test (Predis)...
-Timestamp: 2025-06-09 14:44:44 UTC
+Timestamp: 2025-06-09 18:08:46 UTC
 Predis Version: unknown
-PHP Version: 8.4.7
+PHP Version: 8.4.8
 Enhanced Testing Configuration (Predis):
 - Iterations per test: 13
 - Iteration pause: 500ms
@@ -62,32 +62,32 @@ TLS Certificates: Found and validated (Predis-compatible)
 Checking TLS readiness (Predis)...
   Redis: TLS port accessible ✓
   KeyDB: TLS port accessible ✓
-  Dragonfly: TLS port not accessible ✗
+  Dragonfly: TLS port accessible ✓
   Valkey: TLS port accessible ✓
 
-Predis TLS testing will be attempted for: Redis, KeyDB, Valkey
+Predis TLS testing will be attempted for: Redis, KeyDB, Dragonfly, Valkey
 ============================================================
 Testing Redis with Predis...
   Configuration: IO Threads: 1
   Running 13 iterations for Redis (non-TLS-Predis)...
-  Initial keys in database: 395294
+  Initial keys in database: 394513
   Flushing database before test...
-  Database flushed in 198.19ms. Keys remaining: 0
-    Iteration 1/13... 13941 ops/sec, 0.071ms latency
-    Iteration 2/13... 14732 ops/sec, 0.067ms latency
-    Iteration 3/13... 15110 ops/sec, 0.066ms latency
-    Iteration 4/13... 15144 ops/sec, 0.066ms latency
-    Iteration 5/13... 15192 ops/sec, 0.065ms latency
-    Iteration 6/13... 15271 ops/sec, 0.065ms latency
-    Iteration 7/13... 15392 ops/sec, 0.064ms latency
-    Iteration 8/13... 15250 ops/sec, 0.065ms latency
-    Iteration 9/13... 15296 ops/sec, 0.065ms latency
-    Iteration 10/13... 15158 ops/sec, 0.065ms latency
-    Iteration 11/13... 15088 ops/sec, 0.066ms latency
-    Iteration 12/13... 15067 ops/sec, 0.066ms latency
-    Iteration 13/13... 15243 ops/sec, 0.065ms latency
-  Redis (non-TLS-Predis): 15067.91±373.79 ops/sec (CV: 2.5%), 0.066±0.002ms latency, Quality: good
-  Final keys in database: 61505
+  Database flushed in 204.18ms. Keys remaining: 0
+    Iteration 1/13... 13639 ops/sec, 0.073ms latency
+    Iteration 2/13... 14601 ops/sec, 0.068ms latency
+    Iteration 3/13... 14854 ops/sec, 0.067ms latency
+    Iteration 4/13... 14675 ops/sec, 0.068ms latency
+    Iteration 5/13... 14851 ops/sec, 0.067ms latency
+    Iteration 6/13... 15015 ops/sec, 0.066ms latency
+    Iteration 7/13... 14870 ops/sec, 0.067ms latency
+    Iteration 8/13... 15097 ops/sec, 0.066ms latency
+    Iteration 9/13... 14728 ops/sec, 0.067ms latency
+    Iteration 10/13... 14895 ops/sec, 0.067ms latency
+    Iteration 11/13... 14904 ops/sec, 0.067ms latency
+    Iteration 12/13... 14908 ops/sec, 0.067ms latency
+    Iteration 13/13... 15023 ops/sec, 0.066ms latency
+  Redis (non-TLS-Predis): 14773.84±367.96 ops/sec (CV: 2.5%), 0.067±0.002ms latency, Quality: good
+  Final keys in database: 61507
 🔐 Attempting TLS connection to Unknown at 127.0.0.1:6390 (Predis)
   Using custom port scheme: Redis=6390, KeyDB=6391, Dragonfly=6392, Valkey=6393
   Note: Predis uses 'tls' scheme and 'ssl' context array
@@ -95,46 +95,46 @@ Testing Redis with Predis...
   🧪 Testing TLS connection with SET/GET commands...
   ✅ TLS connection successful with Predis 'tls' scheme
   Running 13 iterations for Redis (TLS-Predis)...
-  Initial keys in database: 394602
+  Initial keys in database: 395474
   Flushing database before test...
-  Database flushed in 197.83ms. Keys remaining: 0
-    Iteration 1/13... 9915 ops/sec, 0.100ms latency
-    Iteration 2/13... 10617 ops/sec, 0.094ms latency
-    Iteration 3/13... 10884 ops/sec, 0.091ms latency
-    Iteration 4/13... 10867 ops/sec, 0.091ms latency
-    Iteration 5/13... 11054 ops/sec, 0.090ms latency
-    Iteration 6/13... 10882 ops/sec, 0.091ms latency
-    Iteration 7/13... 10986 ops/sec, 0.090ms latency
-    Iteration 8/13... 10910 ops/sec, 0.091ms latency
-    Iteration 9/13... 10843 ops/sec, 0.092ms latency
-    Iteration 10/13... 11076 ops/sec, 0.090ms latency
-    Iteration 11/13... 10978 ops/sec, 0.091ms latency
-    Iteration 12/13... 11039 ops/sec, 0.090ms latency
-    Iteration 13/13... 11124 ops/sec, 0.089ms latency
-  Redis (TLS-Predis): 10859.64±312.55 ops/sec (CV: 2.9%), 0.092±0.003ms latency, Quality: good
-  Final keys in database: 61479
+  Database flushed in 194.59ms. Keys remaining: 0
+    Iteration 1/13... 9727 ops/sec, 0.102ms latency
+    Iteration 2/13... 10566 ops/sec, 0.094ms latency
+    Iteration 3/13... 10609 ops/sec, 0.094ms latency
+    Iteration 4/13... 10756 ops/sec, 0.092ms latency
+    Iteration 5/13... 10721 ops/sec, 0.093ms latency
+    Iteration 6/13... 10912 ops/sec, 0.091ms latency
+    Iteration 7/13... 10883 ops/sec, 0.091ms latency
+    Iteration 8/13... 11019 ops/sec, 0.090ms latency
+    Iteration 9/13... 10824 ops/sec, 0.092ms latency
+    Iteration 10/13... 10853 ops/sec, 0.092ms latency
+    Iteration 11/13... 10657 ops/sec, 0.093ms latency
+    Iteration 12/13... 10762 ops/sec, 0.092ms latency
+    Iteration 13/13... 10849 ops/sec, 0.092ms latency
+  Redis (TLS-Predis): 10703.00±319.17 ops/sec (CV: 3.0%), 0.093±0.003ms latency, Quality: good
+  Final keys in database: 61472
 
 Testing KeyDB with Predis...
   Configuration: Server Threads: 1
   Running 13 iterations for KeyDB (non-TLS-Predis)...
-  Initial keys in database: 394341
+  Initial keys in database: 394249
   Flushing database before test...
-  Database flushed in 209.28ms. Keys remaining: 0
-    Iteration 1/13... 11859 ops/sec, 0.084ms latency
-    Iteration 2/13... 12668 ops/sec, 0.078ms latency
-    Iteration 3/13... 12900 ops/sec, 0.077ms latency
-    Iteration 4/13... 13061 ops/sec, 0.076ms latency
-    Iteration 5/13... 13054 ops/sec, 0.076ms latency
-    Iteration 6/13... 13074 ops/sec, 0.076ms latency
-    Iteration 7/13... 13029 ops/sec, 0.076ms latency
-    Iteration 8/13... 13076 ops/sec, 0.076ms latency
-    Iteration 9/13... 13046 ops/sec, 0.076ms latency
-    Iteration 10/13... 13044 ops/sec, 0.076ms latency
-    Iteration 11/13... 13061 ops/sec, 0.076ms latency
-    Iteration 12/13... 13032 ops/sec, 0.076ms latency
-    Iteration 13/13... 13049 ops/sec, 0.076ms latency
-  KeyDB (non-TLS-Predis): 12919.42±337.66 ops/sec (CV: 2.6%), 0.077±0.002ms latency, Quality: good
-  Final keys in database: 61499
+  Database flushed in 212.68ms. Keys remaining: 0
+    Iteration 1/13... 11596 ops/sec, 0.086ms latency
+    Iteration 2/13... 12436 ops/sec, 0.080ms latency
+    Iteration 3/13... 12657 ops/sec, 0.078ms latency
+    Iteration 4/13... 12766 ops/sec, 0.078ms latency
+    Iteration 5/13... 12787 ops/sec, 0.078ms latency
+    Iteration 6/13... 12827 ops/sec, 0.077ms latency
+    Iteration 7/13... 12854 ops/sec, 0.077ms latency
+    Iteration 8/13... 12852 ops/sec, 0.077ms latency
+    Iteration 9/13... 12894 ops/sec, 0.077ms latency
+    Iteration 10/13... 12841 ops/sec, 0.077ms latency
+    Iteration 11/13... 12869 ops/sec, 0.077ms latency
+    Iteration 12/13... 12930 ops/sec, 0.077ms latency
+    Iteration 13/13... 12825 ops/sec, 0.077ms latency
+  KeyDB (non-TLS-Predis): 12702.62±355.86 ops/sec (CV: 2.8%), 0.078±0.002ms latency, Quality: good
+  Final keys in database: 61502
 🔐 Attempting TLS connection to Unknown at 127.0.0.1:6391 (Predis)
   Using custom port scheme: Redis=6390, KeyDB=6391, Dragonfly=6392, Valkey=6393
   Note: Predis uses 'tls' scheme and 'ssl' context array
@@ -142,69 +142,84 @@ Testing KeyDB with Predis...
   🧪 Testing TLS connection with SET/GET commands...
   ✅ TLS connection successful with Predis 'tls' scheme
   Running 13 iterations for KeyDB (TLS-Predis)...
-  Initial keys in database: 393612
+  Initial keys in database: 394063
   Flushing database before test...
-  Database flushed in 189.44ms. Keys remaining: 0
-    Iteration 1/13... 9004 ops/sec, 0.110ms latency
-    Iteration 2/13... 9552 ops/sec, 0.104ms latency
-    Iteration 3/13... 9705 ops/sec, 0.102ms latency
-    Iteration 4/13... 9829 ops/sec, 0.101ms latency
-    Iteration 5/13... 9942 ops/sec, 0.100ms latency
-    Iteration 6/13... 9957 ops/sec, 0.100ms latency
-    Iteration 7/13... 9994 ops/sec, 0.099ms latency
-    Iteration 8/13... 10005 ops/sec, 0.099ms latency
-    Iteration 9/13... 9957 ops/sec, 0.100ms latency
-    Iteration 10/13... 10011 ops/sec, 0.099ms latency
-    Iteration 11/13... 9945 ops/sec, 0.100ms latency
-    Iteration 12/13... 9962 ops/sec, 0.100ms latency
-    Iteration 13/13... 10021 ops/sec, 0.099ms latency
-  KeyDB (TLS-Predis): 9837.40±285.21 ops/sec (CV: 2.9%), 0.101±0.003ms latency, Quality: good
-  Final keys in database: 61458
+  Database flushed in 184.49ms. Keys remaining: 0
+    Iteration 1/13... 8844 ops/sec, 0.113ms latency
+    Iteration 2/13... 9413 ops/sec, 0.106ms latency
+    Iteration 3/13... 9630 ops/sec, 0.103ms latency
+    Iteration 4/13... 9668 ops/sec, 0.103ms latency
+    Iteration 5/13... 9704 ops/sec, 0.102ms latency
+    Iteration 6/13... 9697 ops/sec, 0.103ms latency
+    Iteration 7/13... 9794 ops/sec, 0.102ms latency
+    Iteration 8/13... 9785 ops/sec, 0.102ms latency
+    Iteration 9/13... 9829 ops/sec, 0.101ms latency
+    Iteration 10/13... 9856 ops/sec, 0.101ms latency
+    Iteration 11/13... 9803 ops/sec, 0.101ms latency
+    Iteration 12/13... 9792 ops/sec, 0.102ms latency
+    Iteration 13/13... 9751 ops/sec, 0.102ms latency
+  KeyDB (TLS-Predis): 9658.96±270.60 ops/sec (CV: 2.8%), 0.103±0.003ms latency, Quality: good
+  Final keys in database: 61459
 
 Testing Dragonfly with Predis...
   Configuration: Proactor Threads: 1
   Running 13 iterations for Dragonfly (non-TLS-Predis)...
-  Initial keys in database: 390073
+  Initial keys in database: 390529
   Flushing database before test...
-  Database flushed in 19.97ms. Keys remaining: 0
-    Iteration 1/13... 9698 ops/sec, 0.103ms latency
-    Iteration 2/13... 10347 ops/sec, 0.096ms latency
-    Iteration 3/13... 10534 ops/sec, 0.094ms latency
-    Iteration 4/13... 10704 ops/sec, 0.093ms latency
-    Iteration 5/13... 10698 ops/sec, 0.093ms latency
-    Iteration 6/13... 10789 ops/sec, 0.092ms latency
-    Iteration 7/13... 10745 ops/sec, 0.092ms latency
-    Iteration 8/13... 10817 ops/sec, 0.092ms latency
-    Iteration 9/13... 10957 ops/sec, 0.091ms latency
-    Iteration 10/13... 10795 ops/sec, 0.092ms latency
-    Iteration 11/13... 10849 ops/sec, 0.092ms latency
-    Iteration 12/13... 10782 ops/sec, 0.092ms latency
-    Iteration 13/13... 10847 ops/sec, 0.092ms latency
-  Dragonfly (non-TLS-Predis): 10658.58±326.87 ops/sec (CV: 3.1%), 0.093±0.003ms latency, Quality: good
-  Final keys in database: 61306
-  Skipping TLS test for Dragonfly (port not accessible)
+  Database flushed in 21.01ms. Keys remaining: 0
+    Iteration 1/13... 10013 ops/sec, 0.099ms latency
+    Iteration 2/13... 10603 ops/sec, 0.094ms latency
+    Iteration 3/13... 10537 ops/sec, 0.094ms latency
+    Iteration 4/13... 10668 ops/sec, 0.093ms latency
+    Iteration 5/13... 10898 ops/sec, 0.091ms latency
+    Iteration 6/13... 10717 ops/sec, 0.093ms latency
+    Iteration 7/13... 10826 ops/sec, 0.092ms latency
+    Iteration 8/13... 10693 ops/sec, 0.093ms latency
+    Iteration 9/13... 10781 ops/sec, 0.092ms latency
+    Iteration 10/13... 10871 ops/sec, 0.091ms latency
+    Iteration 11/13... 10538 ops/sec, 0.094ms latency
+    Iteration 12/13... 11000 ops/sec, 0.090ms latency
+    Iteration 13/13... 10824 ops/sec, 0.092ms latency
+  Dragonfly (non-TLS-Predis): 10689.89±246.63 ops/sec (CV: 2.3%), 0.093±0.002ms latency, Quality: good
+  Final keys in database: 61297
+🔐 Attempting TLS connection to Unknown at 127.0.0.1:6392 (Predis)
+  Using custom port scheme: Redis=6390, KeyDB=6391, Dragonfly=6392, Valkey=6393
+  Note: Predis uses 'tls' scheme and 'ssl' context array
+  📡 Method 1: Predis 'tls' scheme with SSL context...
+  🧪 Testing TLS connection with SET/GET commands...
+  ❌ Predis 'tls' scheme failed: NOAUTH Authentication required.
+  📡 Method 2: Predis 'rediss' URI scheme...
+  ❌ Predis 'rediss' URI failed: NOAUTH Authentication required.
+  📡 Method 3: Predis TLS with localhost hostname...
+  ❌ Predis localhost TLS failed: NOAUTH Authentication required.
+  ❌ All Predis TLS connection methods failed for Unknown at port 6392
+  📋 Note: TLS connection failed likely due to server certificate configuration
+  🔄 With recent Docker config changes, TLS should now work properly
+  🚫 Bypassing TLS test for Unknown to allow testing to continue
+  ✅ Non-TLS results remain valid and reliable for performance comparison
+  → TLS test skipped for Dragonfly due to Predis connection failure
 
 Testing Valkey with Predis...
   Configuration: IO Threads: 1
   Running 13 iterations for Valkey (non-TLS-Predis)...
-  Initial keys in database: 391691
+  Initial keys in database: 391159
   Flushing database before test...
   Database flushed in 0.09ms. Keys remaining: 0
-    Iteration 1/13... 13924 ops/sec, 0.071ms latency
-    Iteration 2/13... 14718 ops/sec, 0.067ms latency
-    Iteration 3/13... 15090 ops/sec, 0.066ms latency
-    Iteration 4/13... 15291 ops/sec, 0.065ms latency
-    Iteration 5/13... 15161 ops/sec, 0.065ms latency
-    Iteration 6/13... 15219 ops/sec, 0.065ms latency
-    Iteration 7/13... 15321 ops/sec, 0.065ms latency
-    Iteration 8/13... 15274 ops/sec, 0.065ms latency
-    Iteration 9/13... 15281 ops/sec, 0.065ms latency
-    Iteration 10/13... 15121 ops/sec, 0.066ms latency
-    Iteration 11/13... 15259 ops/sec, 0.065ms latency
-    Iteration 12/13... 15096 ops/sec, 0.066ms latency
-    Iteration 13/13... 15366 ops/sec, 0.065ms latency
-  Valkey (non-TLS-Predis): 15086.17±386.17 ops/sec (CV: 2.6%), 0.066±0.002ms latency, Quality: good
-  Final keys in database: 61507
+    Iteration 1/13... 13282 ops/sec, 0.075ms latency
+    Iteration 2/13... 14516 ops/sec, 0.068ms latency
+    Iteration 3/13... 14794 ops/sec, 0.067ms latency
+    Iteration 4/13... 14884 ops/sec, 0.067ms latency
+    Iteration 5/13... 14864 ops/sec, 0.067ms latency
+    Iteration 6/13... 15128 ops/sec, 0.066ms latency
+    Iteration 7/13... 14983 ops/sec, 0.066ms latency
+    Iteration 8/13... 15134 ops/sec, 0.066ms latency
+    Iteration 9/13... 14754 ops/sec, 0.067ms latency
+    Iteration 10/13... 14960 ops/sec, 0.066ms latency
+    Iteration 11/13... 14852 ops/sec, 0.067ms latency
+    Iteration 12/13... 14940 ops/sec, 0.066ms latency
+    Iteration 13/13... 14923 ops/sec, 0.067ms latency
+  Valkey (non-TLS-Predis): 14770.33±474.43 ops/sec (CV: 3.2%), 0.067±0.002ms latency, Quality: good
+  Final keys in database: 61511
 🔐 Attempting TLS connection to Unknown at 127.0.0.1:6393 (Predis)
   Using custom port scheme: Redis=6390, KeyDB=6391, Dragonfly=6392, Valkey=6393
   Note: Predis uses 'tls' scheme and 'ssl' context array
@@ -212,24 +227,24 @@ Testing Valkey with Predis...
   🧪 Testing TLS connection with SET/GET commands...
   ✅ TLS connection successful with Predis 'tls' scheme
   Running 13 iterations for Valkey (TLS-Predis)...
-  Initial keys in database: 390759
+  Initial keys in database: 390840
   Flushing database before test...
-  Database flushed in 0.14ms. Keys remaining: 0
-    Iteration 1/13... 9801 ops/sec, 0.101ms latency
-    Iteration 2/13... 10593 ops/sec, 0.094ms latency
-    Iteration 3/13... 10904 ops/sec, 0.091ms latency
-    Iteration 4/13... 10974 ops/sec, 0.091ms latency
-    Iteration 5/13... 10867 ops/sec, 0.091ms latency
-    Iteration 6/13... 11150 ops/sec, 0.089ms latency
-    Iteration 7/13... 10972 ops/sec, 0.091ms latency
-    Iteration 8/13... 11002 ops/sec, 0.090ms latency
-    Iteration 9/13... 10968 ops/sec, 0.091ms latency
-    Iteration 10/13... 10869 ops/sec, 0.091ms latency
-    Iteration 11/13... 10982 ops/sec, 0.090ms latency
-    Iteration 12/13... 10821 ops/sec, 0.092ms latency
-    Iteration 13/13... 11043 ops/sec, 0.090ms latency
-  Valkey (TLS-Predis): 10841.91±339.48 ops/sec (CV: 3.1%), 0.092±0.003ms latency, Quality: good
-  Final keys in database: 61471
+  Database flushed in 0.16ms. Keys remaining: 0
+    Iteration 1/13... 9823 ops/sec, 0.101ms latency
+    Iteration 2/13... 10443 ops/sec, 0.095ms latency
+    Iteration 3/13... 10679 ops/sec, 0.093ms latency
+    Iteration 4/13... 10654 ops/sec, 0.093ms latency
+    Iteration 5/13... 10785 ops/sec, 0.092ms latency
+    Iteration 6/13... 10816 ops/sec, 0.092ms latency
+    Iteration 7/13... 10914 ops/sec, 0.091ms latency
+    Iteration 8/13... 10926 ops/sec, 0.091ms latency
+    Iteration 9/13... 10809 ops/sec, 0.092ms latency
+    Iteration 10/13... 10762 ops/sec, 0.092ms latency
+    Iteration 11/13... 10805 ops/sec, 0.092ms latency
+    Iteration 12/13... 10817 ops/sec, 0.092ms latency
+    Iteration 13/13... 10756 ops/sec, 0.092ms latency
+  Valkey (TLS-Predis): 10691.51±288.19 ops/sec (CV: 2.7%), 0.093±0.003ms latency, Quality: good
+  Final keys in database: 61472
 
 Enhanced Predis results saved:
   CSV: ./benchmarklogs-1t/wordpress_object_cache_test_predis_predis.csv
@@ -238,7 +253,7 @@ Enhanced Predis results saved:
   Raw Data: ./benchmarklogs-1t/wordpress_object_cache_test_predis_predis_raw.json
 ============================================================
 Enhanced Predis test suite completed!
-Total execution time: 2,779.76 seconds
+Total execution time: 2,779.48 seconds
 Total tests run: 7
 Statistical iterations per test: 13
 Results saved to ./benchmarklogs-1t/
@@ -250,13 +265,13 @@ Thread Variant: 1 | Iterations per test: 13
 ====================================================================================================
 Rank Database                       Ops/sec   ±StdDev      CV%  Latency  Quality     95% CI     Reliable
 ----------------------------------------------------------------------------------------------------
-#1  Valkey (Predis)              15086      386    2.6%  0.066ms 🟡good    14,872-15,300      ✅
-#2  Redis (Predis)               15068      374    2.5%  0.066ms 🟡good    14,861-15,275      ✅
-#3  KeyDB (Predis)               12919      338    2.6%  0.077ms 🟡good    12,732-13,107      ✅
-#4  Redis (TLS-Predis)           10860      313    2.9%  0.092ms 🟡good    10,686-11,033      ✅
-#5  Valkey (TLS-Predis)          10842      339    3.1%  0.092ms 🟡good    10,654-11,030      ✅
-#6  Dragonfly (Predis)           10659      327    3.1%  0.093ms 🟡good    10,477-10,840      ✅
-#7  KeyDB (TLS-Predis)            9837      285    2.9%  0.101ms 🟡good     9,679-9,996      ✅
+#1  Redis (Predis)               14774      368    2.5%  0.067ms 🟡good    14,570-14,978      ✅
+#2  Valkey (Predis)              14770      474    3.2%  0.067ms 🟡good    14,507-15,033      ✅
+#3  KeyDB (Predis)               12703      356    2.8%  0.078ms 🟡good    12,505-12,900      ✅
+#4  Redis (TLS-Predis)           10703      319    3.0%  0.093ms 🟡good    10,526-10,880      ✅
+#5  Valkey (TLS-Predis)          10692      288    2.7%  0.093ms 🟡good    10,532-10,851      ✅
+#6  Dragonfly (Predis)           10690      247    2.3%  0.093ms 🟡good    10,553-10,827      ✅
+#7  KeyDB (TLS-Predis)            9659      271    2.8%  0.103ms 🟡good     9,509-9,809      ✅
 ====================================================================================================
 Implementation: Predis (Pure PHP Redis Client)
 📈 Compare with phpredis results to see implementation trade-offs
@@ -265,10 +280,10 @@ Implementation: Predis (Pure PHP Redis Client)
 TLS vs NON-TLS PERFORMANCE COMPARISON (Predis)
 Thread Variant: 1
 ============================================================
-Redis      | Non-TLS:    15068±374  | TLS:    10860±313  | Impact: +27.9% *
-KeyDB      | Non-TLS:    12919±338  | TLS:     9837±285  | Impact: +23.9% *
-Dragonfly  | Non-TLS:    10659±327  | TLS:   FAILED | Impact: N/A
-Valkey     | Non-TLS:    15086±386  | TLS:    10842±339  | Impact: +28.1% *
+Redis      | Non-TLS:    14774±368  | TLS:    10703±319  | Impact: +27.6% *
+KeyDB      | Non-TLS:    12703±356  | TLS:     9659±271  | Impact: +24.0% *
+Dragonfly  | Non-TLS:    10690±247  | TLS:   FAILED | Impact: N/A
+Valkey     | Non-TLS:    14770±474  | TLS:    10692±288  | Impact: +27.6% *
 ------------------------------------------------------------
 * = Statistically significant difference (95% confidence)
 Implementation: Predis (Pure PHP)
@@ -283,7 +298,7 @@ Measurement Quality Distribution:
 
 Coefficient of Variation Analysis:
   Average CV: 2.8% (lower is better)
-  Range: 2.5% - 3.1%
+  Range: 2.3% - 3.2%
   📊 Good measurement consistency with Predis
 
 Predis Implementation Notes:
@@ -310,9 +325,9 @@ Predis Configuration Analysis:
   🔗 Persistent connections: Disabled
 
 Performance Characteristics:
-  📈 Average non-TLS performance: 13,433 ops/sec
-  🔒 Average TLS performance: 10,513 ops/sec
-  📊 TLS overhead: 21.7%
+  📈 Average non-TLS performance: 13,234 ops/sec
+  🔒 Average TLS performance: 10,351 ops/sec
+  📊 TLS overhead: 21.8%
   ℹ️  Note: 25-40% TLS overhead is normal for Redis over SSL
 
 Predis Advantages:
@@ -330,8 +345,8 @@ Predis Advantages:
 🔒 TLS Support: Enhanced reliability compared to phpredis
 
 📄 Generated files:
-  php_wordpress_test_phpredis.log (29KB)
-  php_wordpress_test_predis.log (15.4KB)
+  php_wordpress_test_phpredis.log (31.1KB)
+  php_wordpress_test_predis.log (16.3KB)
   wordpress_object_cache_test_predis_predis.csv (1.6KB)
   wordpress_object_cache_test_predis_predis.json (87.4KB)
   wordpress_object_cache_test_predis_predis.md (2.6KB)
