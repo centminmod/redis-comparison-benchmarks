@@ -499,7 +499,7 @@ class RedisTestBasePredis {
             $this->displayDatabaseThreadConfig($db_name, $config);
             
             // Test non-TLS with Predis
-            $redis = $this->connectRedis($config['host'], $config['port'], false);
+            $redis = $this->connectRedis($config['host'], $config['port'], false, $db_name);
             if ($redis) {
                 $result = $this->runSingleTest($redis, $db_name, false, $config['port']);
                 if ($result) {
@@ -511,7 +511,7 @@ class RedisTestBasePredis {
             
             // Test TLS only for databases with accessible TLS ports
             if ($this->test_both_tls && in_array($db_name, $tls_ready_databases)) {
-                $redis_tls = $this->connectRedis($config['host'], $config['tls_port'], true);
+                $redis_tls = $this->connectRedis($config['host'], $config['tls_port'], true, $db_name);
                 if ($redis_tls) {
                     $result = $this->runSingleTest($redis_tls, $db_name, true, $config['tls_port']);
                     if ($result) {

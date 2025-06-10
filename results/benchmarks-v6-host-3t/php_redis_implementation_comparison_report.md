@@ -1,30 +1,30 @@
 # PHP Redis Implementation Comparison Report
 
-**Generated:** 2025-06-09 18:55:33 UTC
+**Generated:** 2025-06-10 04:51:37 UTC
 
 ## Implementation Overview
 
 | Implementation | Total Tests | TLS Tests | Non-TLS Tests |
 |---|---|---|---|
-| predis | 7 | 3 | 4 |
-| phpredis | 7 | 3 | 4 |
+| predis | 8 | 4 | 4 |
+| phpredis | 8 | 4 | 4 |
 
 ## Performance Summary
 
 ### predis
-- **Average Operations/sec:** 10561
-- **Average Latency:** 0.099ms
-- **TLS Performance Impact:** 24.5%
+- **Average Operations/sec:** 10721
+- **Average Latency:** 0.096ms
+- **TLS Performance Impact:** 24.6%
 
 ### phpredis
-- **Average Operations/sec:** 11944
-- **Average Latency:** 0.086ms
-- **TLS Performance Impact:** 19.1%
+- **Average Operations/sec:** 11853
+- **Average Latency:** 0.087ms
+- **TLS Performance Impact:** 20.5%
 
 ## TLS Reliability
 
-- **predis TLS Success Rate:** 75.0% (3/4 databases)
-- **phpredis TLS Success Rate:** 75.0% (3/4 databases)
+- **predis TLS Success Rate:** 100.0% (4/4 databases)
+- **phpredis TLS Success Rate:** 100.0% (4/4 databases)
 
 ## Recommendations
 
