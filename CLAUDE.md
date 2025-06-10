@@ -2,6 +2,12 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## AI Guidance
+
+* After receiving tool results, carefully reflect on their quality and determine optimal next steps before proceeding. Use your thinking to plan and iterate based on this new information, and then take the best next action.
+* For maximum efficiency, whenever you need to perform multiple independent operations, invoke all relevant tools simultaneously rather than sequentially.
+* Before you finish, please verify your solution
+
 ## Memory Bank System
 
 This project uses a structured memory bank system with specialized context files. Always check these files for relevant information before starting work:
