@@ -306,6 +306,8 @@ This memory bank system ensures continuity between sessions and provides compreh
 
 **✅ UPDATE (June 2025): Dragonfly TLS authentication issue has been completely resolved.** All 4 databases (Redis, KeyDB, Dragonfly, Valkey) now work with TLS in PHP tests.
 
+**✅ FINAL FIX (June 2025): Critical bug in database name parameter passing has been resolved.** The root cause was that `connectRedis` calls in both PHPRedis and Predis implementations were missing the database name parameter, causing authentication logic to never trigger for Dragonfly TLS connections.
+
 The PHP Redis extension has a documented TLS implementation bug that affects some Redis-compatible databases in the WordPress object cache benchmarking in `benchmarks-v6-host-phptests.yml`. While TLS connections establish successfully, Redis commands may fail with "read error on connection" errors on certain implementations.
 
 ### Technical Details
@@ -425,6 +427,16 @@ Implemented a flexible authentication system using the `DRAGONFLY_PASSWORD` envi
 - ✅ **PHP Test Compatibility**: Both PHPRedis and Predis successfully connect to Dragonfly TLS
 - ✅ **Memtier Benchmark Support**: All thread variants working with Dragonfly TLS authentication
 - ✅ **Complete Database Coverage**: All 4 databases (Redis, KeyDB, Dragonfly, Valkey) now support TLS in PHP tests
+
+### Final Resolution (June 2025)
+
+**Critical Database Name Parameter Bug Fixed**: The final issue preventing Dragonfly TLS authentication was that both `tests/php/RedisTestBase.php` and `tests/php/RedisTestBase-predis.php` were not passing the database name parameter to the `connectRedis` method calls. This caused the authentication logic to never trigger because the database was identified as "Unknown" instead of "Dragonfly".
+
+**Files Modified**:
+- `tests/php/RedisTestBase.php` (lines 460, 471): Added `$db_name` parameter to `connectRedis` calls
+- `tests/php/RedisTestBase-predis.php` (lines 502, 514): Added `$db_name` parameter to `connectRedis` calls
+
+**Result**: Dragonfly TLS authentication now works correctly in both PHPRedis and Predis implementations.
 
 ### Files Modified (Dragonfly TLS Authentication Fix)
 
