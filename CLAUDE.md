@@ -382,7 +382,7 @@ For detailed troubleshooting information, see CLAUDE-troubleshooting.md.
 
 ### New Feature: Comprehensive Chart Documentation
 
-**Added**: GitHub workflow now automatically generates `php_redis_charts_summary.md` with embedded PNG charts and detailed technical explanations.
+**Added**: GitHub workflow now automatically generates `redis_charts_summary.md` with embedded PNG charts and detailed technical explanations.
 
 **Key Features**:
 - **Comprehensive Coverage**: Displays all generated performance charts in organized sections
@@ -398,8 +398,8 @@ For detailed troubleshooting information, see CLAUDE-troubleshooting.md.
 4. **Implementation Comparison**: PHPRedis vs Predis comparison charts (when available)
 
 **Generated Location**: 
-- Workflow: `./benchmarklogs-{threads}t/php_redis_charts_summary.md`
-- Results: `results/benchmarks-v6-host-{threads}t/php_redis_charts_summary.md`
+- Workflow: `./benchmarklogs-{threads}t/redis_charts_summary.md`
+- Results: `results/benchmarks-v6-host-{threads}t/redis_charts_summary.md`
 
 **Benefits**:
 - Single comprehensive document for all performance visualizations
