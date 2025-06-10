@@ -8,7 +8,7 @@
 require_once 'RedisTestBase.php';
 
 class WordPressSessionTest extends RedisTestBase {
-    private $test_duration = 30;
+    private $test_duration = 10;
     private $key_prefix = 'wp_session_';
     private $active_sessions = [];
     

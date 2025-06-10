@@ -13,7 +13,7 @@ require_once 'RedisTestBase.php';
 
 class WordPressObjectCacheTest extends RedisTestBase {
     private $operations = 100000;  // Operations per iteration
-    private $test_duration = 30;   // Duration per iteration in seconds
+    private $test_duration = 10;   // Duration per iteration in seconds
     private $read_write_ratio = 70; // 70% reads, 30% writes
     
     // WordPress-like cache groups
@@ -272,7 +272,7 @@ if (php_sapi_name() === 'cli') {
         // Default configuration
         $config = [
             'duration' => 30,
-            'test_iterations' => 13,
+            'test_iterations' => 5,
             'output_dir' => './php_benchmark_results',
             'test_tls' => true,
             'flush_before_test' => true,

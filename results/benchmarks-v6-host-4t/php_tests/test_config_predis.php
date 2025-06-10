@@ -1,8 +1,8 @@
 <?php
 return [
-    'duration' => 30,
+    'duration' => 10,
     'implementation' => 'predis',
-    'test_iterations' => 13,
+    'test_iterations' => 5,
     'iteration_pause_ms' => 500,
     'save_raw_results' => true,
     'output_dir' => './benchmarklogs-4t',

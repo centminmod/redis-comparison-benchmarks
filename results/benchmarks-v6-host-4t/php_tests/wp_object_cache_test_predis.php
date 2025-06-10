@@ -16,7 +16,7 @@ require_once 'RedisTestBase-predis.php';
 
 class WordPressObjectCacheTestPredis extends RedisTestBasePredis {
     private $operations = 100000;  // Operations per iteration
-    private $test_duration = 30;   // Duration per iteration in seconds
+    private $test_duration = 10;   // Duration per iteration in seconds
     private $read_write_ratio = 70; // 70% reads, 30% writes
     
     // WordPress-like cache groups

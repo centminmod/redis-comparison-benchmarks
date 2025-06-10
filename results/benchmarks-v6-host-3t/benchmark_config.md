@@ -3,7 +3,7 @@
 | Parameter | Value |
 |-----------|-------|
 | Thread Variant | 3 |
-| Requests | 5000 |
+| Requests | 3000 |
 | Clients | 100 |
 | Pipeline | 1 |
 | Data Size | 512 bytes |
@@ -17,5 +17,5 @@
 | Dragonfly Proactor Threads | 3 |
 | Valkey IO Threads | 3 |
 
-Run Date: Tue Jun 10 08:45:52 UTC 2025
-Workflow Run: 41
+Run Date: Tue Jun 10 10:41:04 UTC 2025
+Workflow Run: 42

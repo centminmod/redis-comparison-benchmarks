@@ -8,7 +8,7 @@
 require_once 'RedisTestBase.php';
 
 class WordPressCacheInvalidationTest extends RedisTestBase {
-    private $test_duration = 30;
+    private $test_duration = 10;
     private $key_prefix = 'wp_cache_';
     private $tag_prefix = 'wp_tag_';
     

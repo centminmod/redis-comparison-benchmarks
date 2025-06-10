@@ -7,7 +7,7 @@ on:
       requests:
         description: 'Number of requests per thread'
         required: false
-        default: '5000'
+        default: '3000'
         type: string
       clients:
         description: 'Number of clients per thread'
@@ -93,7 +93,7 @@ jobs:
     runs-on: ubuntu-24.04
     env:
       KEY_MINIMUM: 1
-      PHP_TEST_DURATION: 30
+      PHP_TEST_DURATION: 10
       DRAGONFLY_PASSWORD: "testpass"      # Password for Dragonfly TLS authentication
       
       # PHP Redis Implementation Control (Environment Variables)
@@ -101,7 +101,7 @@ jobs:
       PHP_REDIS_PHPREDIS_ENABLED: "true"
       PHP_REDIS_PREDIS_ENABLED: "true" 
       PHP_REDIS_TLS_FOCUS: "true"         # Enhanced TLS testing
-      PHP_REDIS_STATISTICAL_ITERATIONS: "13"
+      PHP_REDIS_STATISTICAL_ITERATIONS: "5"
       PHP_REDIS_DETAILED_DEBUG: "false"
     strategy:
       matrix:
@@ -1562,6 +1562,13 @@ jobs:
 
         # Configure enhanced test with iterations from environment
         sed -i "s/private \$test_duration = 30/private \$test_duration = ${PHP_TEST_DURATION}/" tests/php/wp_object_cache_test.php
+        sed -i "s/private \$test_duration = 30/private \$test_duration = ${PHP_TEST_DURATION}/" tests/php/wp_transient_test.php
+        sed -i "s/private \$test_duration = 30/private \$test_duration = ${PHP_TEST_DURATION}/" tests/php/wp_invalidation_test.php
+        sed -i "s/private \$test_duration = 30/private \$test_duration = ${PHP_TEST_DURATION}/" tests/php/wp_session_test.php
+        sed -i "s/private \$test_duration = 30/private \$test_duration = ${PHP_TEST_DURATION}/" tests/php/wp_high_frequency_test.php
+        sed -i "s/private \$test_duration = 30/private \$test_duration = ${PHP_TEST_DURATION}/" tests/php/wp_object_cache_test_predis.php
+        sed -i "s/'duration' => 30/'duration' => ${PHP_TEST_DURATION}/" tests/php/wp_object_cache_test_configured.php
+        sed -i "s/'duration' => 30/'duration' => ${PHP_TEST_DURATION}/" tests/php/wp_object_cache_test_predis_configured.php
         
         # Create enhanced thread-aware configuration with statistical testing
         echo '<?php' > tests/php/test_config.php
@@ -1614,6 +1621,7 @@ jobs:
         cp *.crt *.key *.pem tests/php/ 2>/dev/null || echo "TLS certificates not found, will skip TLS tests"
         chmod 644 tests/php/*.crt tests/php/*.pem 2>/dev/null || true
         chmod 600 tests/php/*.key 2>/dev/null || true
+        
         
         # Create Predis-specific configuration
         echo '<?php' > tests/php/test_config_predis.php

@@ -20,7 +20,7 @@ function main() {
     echo "============================================================\n";
     echo "Implementation: Predis (Pure PHP Redis Client)\n";
     echo "Enhanced TLS Support: Yes\n";
-    echo "Statistical Analysis: 13 iterations with confidence intervals\n\n";
+    echo "Statistical Analysis: 5 iterations with confidence intervals\n\n";
     
     // Determine config file
     $config_file = isset($argv[1]) ? $argv[1] : 'test_config_predis.php';
@@ -31,8 +31,8 @@ function main() {
         echo "\nExpected config file format:\n";
         echo "<?php\n";
         echo "return [\n";
-        echo "    'duration' => 30,\n";
-        echo "    'test_iterations' => 13,\n";
+        echo "    'duration' => 10,\n";
+        echo "    'test_iterations' => 5,\n";
         echo "    'output_dir' => './results',\n";
         echo "    'implementation' => 'predis',\n";
         echo "    // ... other configuration options\n";
@@ -66,7 +66,7 @@ function main() {
         echo "📊 Test Configuration:\n";
         echo "  Implementation: Predis (Pure PHP)\n";
         echo "  Duration per iteration: {$config['duration']}s\n";
-        echo "  Test iterations: " . ($config['test_iterations'] ?? 13) . "\n";
+        echo "  Test iterations: " . ($config['test_iterations'] ?? 5) . "\n";
         echo "  Output directory: {$config['output_dir']}\n";
         echo "  TLS testing: " . (($config['test_tls'] ?? true) ? 'Enabled' : 'Disabled') . "\n";
         echo "  Flush before test: " . (($config['flush_before_test'] ?? false) ? 'Yes' : 'No') . "\n";
@@ -168,7 +168,7 @@ function createSampleConfig($filename = 'test_config_predis_sample.php') {
 return [
     // Test execution parameters
     \'duration\' => 30,                    // Duration per iteration in seconds
-    \'test_iterations\' => 13,             // Number of iterations for statistical analysis
+    \'test_iterations\' => 5,             // Number of iterations for statistical analysis
     \'iteration_pause_ms\' => 500,         // Pause between iterations
     \'save_raw_results\' => true,          // Save detailed iteration data
     
@@ -266,7 +266,7 @@ if (isset($argv[1]) && in_array($argv[1], ['--help', '-h'])) {
     echo "  --help, -h        Show this help message\n\n";
     echo "Features:\n";
     echo "  - Enhanced TLS support with Predis\n";
-    echo "  - Statistical analysis with 13 iterations\n";
+    echo "  - Statistical analysis with 5 iterations\n";
     echo "  - WordPress-realistic cache operations\n";
     echo "  - Connection retry logic and error recovery\n";
     echo "  - Comprehensive performance reporting\n\n";

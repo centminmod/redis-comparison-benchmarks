@@ -8,7 +8,7 @@
 require_once 'RedisTestBase.php';
 
 class WordPressHighFrequencyTest extends RedisTestBase {
-    private $test_duration = 30;
+    private $test_duration = 10;
     private $key_prefix = 'wp_hf_';
     
     public function __construct($config) {
