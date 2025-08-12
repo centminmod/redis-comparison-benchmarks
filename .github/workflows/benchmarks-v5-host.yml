@@ -100,7 +100,7 @@ jobs:
     
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
@@ -1432,7 +1432,7 @@ jobs:
       KEY_MINIMUM: 1
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
     - name: Download benchmark artifacts only
       uses: actions/download-artifact@v5
