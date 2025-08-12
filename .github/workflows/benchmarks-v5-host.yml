@@ -1435,7 +1435,7 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Download benchmark artifacts only
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v5
       with:
         path: ./artifacts
         pattern: benchmark_v5_artifacts_*
