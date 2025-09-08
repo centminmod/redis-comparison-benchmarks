@@ -1271,7 +1271,7 @@ jobs:
         wc -l combined_all_results.md 
 
     - name: Set up Python 3.x
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: "3.x" 
 
