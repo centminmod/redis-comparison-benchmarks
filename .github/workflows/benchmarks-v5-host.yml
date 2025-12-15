@@ -1411,7 +1411,7 @@ jobs:
         echo "Valkey IO Threads: ${{ matrix.variant.valkey_io_threads }}" >> results/benchmarks-v5-host-${{ matrix.variant.threads }}t/last_updated.txt
 
     - name: Upload Thread-Specific Benchmark Logs and Charts
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: benchmark_v5_artifacts_${{ matrix.variant.threads }}t
         path: |

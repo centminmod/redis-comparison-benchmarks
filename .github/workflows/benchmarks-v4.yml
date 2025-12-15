@@ -1428,7 +1428,7 @@ jobs:
         fi 
 
     - name: Upload Benchmark Logs and Charts
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: all_benchmark_v4_artifacts
         path: |

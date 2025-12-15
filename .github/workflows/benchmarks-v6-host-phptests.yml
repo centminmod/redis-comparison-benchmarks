@@ -2152,7 +2152,7 @@ jobs:
         echo "  PHP Version: $(php --version | head -1)" >> results/benchmarks-v6-host-${{ matrix.variant.threads }}t/last_updated.txt
 
     - name: Upload Thread-Specific Benchmark Logs and Charts
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: benchmark_v6_artifacts_${{ matrix.variant.threads }}t
         path: |
